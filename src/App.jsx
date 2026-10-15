@@ -13,6 +13,7 @@ import CyberBackground from "./components/CyberBackground";
 import DaemonLogo from "./components/DaemonLogo";
 import PlayerTerminal from "./pages/PlayerTerminal";
 import AdminCommand from "./pages/AdminCommand";
+import ProjectorStage from "./pages/ProjectorStage";
 import SoundEngine from "./utils/soundEngine";
 import "./App.css";
 
@@ -83,6 +84,8 @@ function Shell() {
       <div className="app-content">
         <Routes>
           <Route path="/admin" element={<AdminCommand />} />
+          <Route path="/stage" element={<ProjectorStage />} />
+          <Route path="/leaderboard" element={<ProjectorStage />} />
           <Route path="*" element={<PlayerTerminal />} />
         </Routes>
       </div>

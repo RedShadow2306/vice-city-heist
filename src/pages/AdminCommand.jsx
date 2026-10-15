@@ -82,36 +82,13 @@ function PinGate({ onSuccess }) {
 
 /* ─── admin dashboard ───────────────────────────────────── */
 function AdminDashboard() {
-  const [players, setPlayers]   = useState(MOCK_PLAYERS);
+  const [players, setPlayers]   = useState(MOCK_PLAYERS.map(p => ({ ...p, isMock: true })));
+  const [hasRealPlayers, setHasRealPlayers] = useState(false);
   const [frozen, setFrozen]     = useState({});          // { playerId: bool }
   const [globalFreeze, setGF]   = useState(false);
   const [log, setLog]           = useState([]);
   const busRef = useRef(null);
   const logRef = useRef(null);
-
-  /* broadcast channel */
-  useEffect(() => {
-    busRef.current = getBus();
-    return () => busRef.current?.close();
-  }, []);
-
-  /* poll – simulate live updates */
-  useEffect(() => {
-    const id = setInterval(() => {
-      setPlayers(prev => prev.map(p => ({
-        ...p,
-        score: frozen[p.id] || globalFreeze
-          ? p.score
-          : p.status === "active" ? p.score + Math.floor(Math.random() * 5) : p.score,
-      })));
-    }, POLL_MS);
-    return () => clearInterval(id);
-  }, [frozen, globalFreeze]);
-
-  /* auto-scroll log */
-  useEffect(() => {
-    logRef.current?.scrollTo(0, logRef.current.scrollHeight);
-  }, [log]);
 
   const addLog = useCallback((msg) => {
     setLog(l => [...l.slice(-99), `[${new Date().toLocaleTimeString()}] ${msg}`]);
@@ -121,6 +98,98 @@ function AdminDashboard() {
     busRef.current?.postMessage(payload);
   }, []);
 
+  /* Poll server on port 5176 for real players & global state */
+  useEffect(() => {
+    const pollServer = async () => {
+      try {
+        const res = await fetch("http://localhost:5176/api/state");
+        const data = await res.json();
+        if (data.players && data.players.length > 0) {
+          setHasRealPlayers(true);
+          setPlayers(data.players.map(p => ({
+            id: p.id,
+            alias: p.alias || p.name || `Station ${p.id.slice(-4)}`,
+            name: p.name || "",
+            college: p.college || "",
+            chapter: p.currentLevel || 1,
+            score: (p.rulesCleared || 0) * 150 + ((p.currentLevel || 1) - 1) * 600 + Math.max(0, p.timeLeft || 0),
+            status: p.isBreached ? "BREACHED" : p.status || "active",
+            isBreached: Boolean(p.isBreached),
+            rulesCleared: p.rulesCleared || 0,
+            timeLeft: p.timeLeft,
+            isMock: false,
+          })));
+        }
+        if (typeof data.gameState?.globalFreeze === "boolean") {
+          setGF(data.gameState.globalFreeze);
+        }
+      } catch (_) {}
+    };
+
+    pollServer();
+    const id = setInterval(pollServer, POLL_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  /* Broadcast channel listener */
+  useEffect(() => {
+    busRef.current = getBus();
+    if (!busRef.current) return;
+    busRef.current.onmessage = (evt) => {
+      const { type, player, playerId: pid, frozen: f } = evt.data || {};
+      if (type === "player_update" && player) {
+        setHasRealPlayers(true);
+        setPlayers(prev => {
+          const p = player;
+          const mapped = {
+            id: p.id,
+            alias: p.alias || p.name || `Station ${p.id.slice(-4)}`,
+            name: p.name || "",
+            college: p.college || "",
+            chapter: p.currentLevel || 1,
+            score: (p.rulesCleared || 0) * 150 + ((p.currentLevel || 1) - 1) * 600 + Math.max(0, p.timeLeft || 0),
+            status: p.isBreached ? "BREACHED" : p.status || "active",
+            isBreached: Boolean(p.isBreached),
+            rulesCleared: p.rulesCleared || 0,
+            timeLeft: p.timeLeft,
+            isMock: false,
+          };
+          const existing = prev.some(item => item.id === p.id);
+          if (existing) {
+            return prev.map(item => item.id === p.id ? mapped : item);
+          }
+          return [...prev.filter(item => !item.isMock), mapped];
+        });
+      } else if (type === "remove") {
+        setPlayers(prev => prev.filter(p => p.id !== pid));
+      } else if (type === "freeze") {
+        setFrozen(prev => ({ ...prev, [pid]: f }));
+      } else if (type === "globalFreeze") {
+        setGF(f);
+      }
+    };
+    return () => busRef.current?.close();
+  }, []);
+
+  /* Mock player score ticker (only when no real players are connected) */
+  useEffect(() => {
+    if (hasRealPlayers) return;
+    const id = setInterval(() => {
+      setPlayers(prev => prev.map(p => ({
+        ...p,
+        score: frozen[p.id] || globalFreeze
+          ? p.score
+          : p.status === "active" ? p.score + Math.floor(Math.random() * 5) : p.score,
+      })));
+    }, POLL_MS);
+    return () => clearInterval(id);
+  }, [frozen, globalFreeze, hasRealPlayers]);
+
+  /* auto-scroll log */
+  useEffect(() => {
+    logRef.current?.scrollTo(0, logRef.current.scrollHeight);
+  }, [log]);
+
   const toggleFreeze = useCallback((id, alias) => {
     SoundEngine.init();
     setFrozen(prev => {
@@ -128,7 +197,15 @@ function AdminDashboard() {
       const action = next[id] ? "FROZEN" : "UNFROZEN";
       SoundEngine[next[id] ? "playFreeze" : "playUnlock"]();
       addLog(`Player ${alias} (${id}) → ${action}`);
-      broadcast({ type: "freeze", playerId: id, frozen: next[id] });
+      broadcast({ type: next[id] ? "freeze" : "unfreeze", playerId: id, frozen: next[id] });
+      fetch("http://localhost:5176/api/admin/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: next[id] ? "FREEZE_PLAYER" : "UNFREEZE_PLAYER",
+          playerId: id,
+        }),
+      }).catch(() => {});
       return next;
     });
   }, [addLog, broadcast]);
@@ -140,6 +217,11 @@ function AdminDashboard() {
       SoundEngine[next ? "playFreeze" : "playUnlock"]();
       addLog(`GLOBAL ${next ? "FREEZE" : "UNFREEZE"} applied`);
       broadcast({ type: "globalFreeze", frozen: next });
+      fetch("http://localhost:5176/api/admin/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: next ? "GLOBAL_FREEZE" : "GLOBAL_UNFREEZE" }),
+      }).catch(() => {});
       return next;
     });
   }, [addLog, broadcast]);
@@ -154,15 +236,91 @@ function AdminDashboard() {
     broadcast({ type: "advance", playerId: id });
   }, [addLog, broadcast]);
 
+  const removePlayer = useCallback((id, alias) => {
+    SoundEngine.init();
+    SoundEngine.playAlert();
+    setPlayers(prev => prev.filter(p => p.id !== id));
+    addLog(`Admin ejected & removed ${alias} (${id}) from game`);
+    broadcast({ type: "remove", playerId: id });
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "REMOVE_PLAYER", playerId: id }),
+    }).catch(() => {});
+  }, [addLog, broadcast]);
+
+  const startStoryAll = useCallback(() => {
+    SoundEngine.init();
+    SoundEngine.playWantedStar();
+    addLog("Admin launched Story Mode cutscene for all player stations");
+    broadcast({ type: "start_story" });
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "START_STORY_MODE" }),
+    }).catch(() => {});
+  }, [addLog, broadcast]);
+
+  const triggerSirenAll = useCallback(() => {
+    SoundEngine.init();
+    SoundEngine.playSiren();
+    addLog("Admin triggered VCPD Emergency Siren on all stations");
+    broadcast({ type: "siren" });
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "TRIGGER_SIREN" }),
+    }).catch(() => {});
+  }, [addLog, broadcast]);
+
+  const resetLobbyAll = useCallback(() => {
+    if (!window.confirm("⚠️ Reset all terminals back to Lobby? This will reset all player sessions.")) return;
+    SoundEngine.init();
+    SoundEngine.playAlert();
+    addLog("Admin reset all stations to Lobby");
+    broadcast({ type: "reset_lobby" });
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "RESET_TO_LOBBY" }),
+    }).catch(() => {});
+  }, [addLog, broadcast]);
+
   return (
     <div className="admin-root">
       {/* top bar */}
       <header className="admin-header">
-        <span className="admin-logo">🚔 VCPD COMMAND</span>
-        <div className="admin-header-right">
-          <span className={`global-status${globalFreeze ? " freeze-on" : ""}`}>
-            {globalFreeze ? "❄ ALL FROZEN" : "✓ SYSTEMS NOMINAL"}
+        <div className="admin-header-left" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <span className="admin-logo">🚔 VCPD COMMAND</span>
+          <span className="admin-roster-count mono" style={{ fontSize: "11px", color: "var(--vc-teal)" }}>
+            {players.length} {hasRealPlayers ? "Live Stations" : "Demo Stations"}
           </span>
+        </div>
+        <div className="admin-header-right">
+          <button
+            id="start-story-btn"
+            className="admin-btn green"
+            onClick={startStoryAll}
+            title="Dispatch Story Cutscene to all terminals"
+          >
+            🎬 START STORY (ALL)
+          </button>
+          <button
+            id="siren-btn"
+            className="admin-btn warn"
+            onClick={triggerSirenAll}
+            title="Trigger VCPD siren on all terminals"
+          >
+            🚨 SIREN
+          </button>
+          <button
+            id="reset-lobby-btn"
+            className="admin-btn"
+            onClick={resetLobbyAll}
+            title="Reset all terminals to Waiting Lobby"
+          >
+            🔄 RESET LOBBY
+          </button>
           <button
             id="global-freeze-btn"
             className={`admin-btn${globalFreeze ? " danger" : " warn"}`}
@@ -187,6 +345,7 @@ function AdminDashboard() {
                 <th>STATUS</th>
                 <th>FREEZE</th>
                 <th>ADVANCE</th>
+                <th>REMOVE</th>
               </tr>
             </thead>
             <tbody>
@@ -227,6 +386,16 @@ function AdminDashboard() {
                         title="Push to next chapter"
                       >
                         ▶
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        id={`remove-${p.id}`}
+                        className="admin-btn tiny danger"
+                        onClick={() => removePlayer(p.id, p.alias)}
+                        title="Eject and remove player from game"
+                      >
+                        🚫
                       </button>
                     </td>
                   </tr>

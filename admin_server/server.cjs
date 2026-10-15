@@ -27,6 +27,7 @@ let gameState = {
 };
 
 let players = {}; // { [playerId]: { id, name, alias, college, status, currentLevel, rulesCleared, timeLeft, isBreached, lastSeen } }
+let removedPlayers = new Set(); // Track ejected player IDs
 
 // Helper to send JSON responses with CORS headers
 function sendJson(res, statusCode, data) {
@@ -80,6 +81,7 @@ const server = http.createServer((req, res) => {
       try {
         const data = JSON.parse(body);
         const id = data.id || ('P_' + Math.random().toString(36).substring(2, 8));
+        removedPlayers.delete(id);
         players[id] = {
           id,
           name: data.name || 'Anonymous Agent',
@@ -107,6 +109,10 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const data = JSON.parse(body);
+        if (data.id && removedPlayers.has(data.id)) {
+          sendJson(res, 200, { success: false, removed: true, error: 'PLAYER_REMOVED', gameState });
+          return;
+        }
         if (data.id && players[data.id]) {
           players[data.id] = {
             ...players[data.id],
@@ -164,7 +170,18 @@ const server = http.createServer((req, res) => {
             playerId,
             timestamp: Date.now(),
           };
+        } else if (action === 'REMOVE_PLAYER' && playerId) {
+          removedPlayers.add(playerId);
+          if (players[playerId]) {
+            delete players[playerId];
+          }
+          gameState.activeCommand = {
+            action: 'REMOVE_PLAYER',
+            playerId,
+            timestamp: Date.now(),
+          };
         } else if (action === 'RESET_TO_LOBBY') {
+          removedPlayers.clear();
           gameState.activeCommand = {
             action: 'RESET_TO_LOBBY',
             timestamp: Date.now(),

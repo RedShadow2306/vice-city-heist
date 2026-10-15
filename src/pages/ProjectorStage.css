@@ -287,6 +287,31 @@
   white-space: nowrap;
 }
 
+.stage-breached {
+  border-left-color: #ff3366 !important;
+  background: rgba(45, 0, 15, 0.65) !important;
+}
+
+.stage-breached-tag {
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  color: #ff4b4b;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(255, 75, 75, 0.8);
+  white-space: nowrap;
+  border: 1px solid rgba(255, 75, 75, 0.45);
+  background: rgba(255, 75, 75, 0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
+  animation: breachTagPulse 1.2s infinite alternate;
+}
+
+@keyframes breachTagPulse {
+  from { opacity: 0.75; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1.02); }
+}
+
 /* ════════════════════════════════
    FOOTER
 ════════════════════════════════ */

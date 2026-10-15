@@ -2160,6 +2160,13 @@
   margin-bottom: 10px;
 }
 
+.lockout-badge.ejected-badge {
+  color: #fff;
+  background: #E53935;
+  box-shadow: 0 0 15px rgba(229, 57, 53, 0.7);
+  animation: pulse 1s infinite;
+}
+
 .lockout-text {
   font-size: 14px;
   color: rgba(255, 242, 227, 0.85);

@@ -427,10 +427,29 @@
       color: var(--vice-cyan);
     }
 
+    .btn-row-action.btn-remove {
+      background: rgba(255, 60, 60, 0.15);
+      border-color: #FF4B4B;
+      color: #FFA5A5;
+    }
+
+    .btn-row-action.btn-remove:hover {
+      background: #FF4B4B;
+      border-color: #FF4B4B;
+      color: #fff;
+    }
+
     .btn-row-action:hover {
       background: var(--vice-pink);
       border-color: var(--vice-pink);
       color: #fff;
+    }
+
+    .action-btns-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     /* Event Log */
@@ -718,21 +737,33 @@
             <td>${p.rulesCleared || 0} Layers</td>
             <td>${p.timeLeft ? formatTime(p.timeLeft) : '15:00'}</td>
             <td>
-              ${isLocked ? `
-                <button class="btn-row-action unfreeze" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">
-                  🔓 UNFREEZE / RETRY
+              <div class="action-btns-cell">
+                ${isLocked ? `
+                  <button class="btn-row-action unfreeze" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">
+                    🔓 UNFREEZE
+                  </button>
+                ` : `
+                  <button class="btn-row-action" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">
+                    🔓 REFRESH
+                  </button>
+                `}
+                <button class="btn-row-action btn-remove" onclick="removePlayer('${p.id}', '${(p.name || 'Agent').replace(/'/g, "\\'")}')">
+                  🚫 REMOVE
                 </button>
-              ` : `
-                <button class="btn-row-action" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">
-                  🔓 REFRESH
-                </button>
-              `}
+              </div>
             </td>
           </tr>
         `;
       });
 
       tbody.innerHTML = html;
+    }
+
+    async function removePlayer(playerId, name) {
+      if (confirm(`⚠️ Remove & Disqualify player:\n"${name}" (${playerId})?\n\nThis will immediately eject their terminal from the game.`)) {
+        await sendCommand('REMOVE_PLAYER', playerId);
+        addLog(`🚫 Ejected & removed player: <span class="log-action">${name}</span> (${playerId})`);
+      }
     }
 
     function startPolling() {

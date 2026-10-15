@@ -429,7 +429,12 @@ function GtaWantedStars({ wantedCount }) {
 
 export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* Screens: 'lobby' | 'cutscene' | 'briefing' | 'game' | 'story_intermission_1' | 'story_intermission_2' | 'mission_failed' | 'end' */
-  const [screen, setScreen] = useState("lobby");
+  const [screen, setScreen] = useState(() => {
+    if (localStorage.getItem("vch_locked_breach") === "true" || localStorage.getItem("vch_ejected") === "true") {
+      return "mission_failed";
+    }
+    return "lobby";
+  });
 
   /* Player Registration & Session Details */
   const [playerId] = useState(() => localStorage.getItem("vch_player_id") || "P_" + Math.random().toString(36).substring(2, 8));
@@ -440,7 +445,23 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   /* Lockout & Security Freeze State */
   const [isLockedBreach, setIsLockedBreach] = useState(() => localStorage.getItem("vch_locked_breach") === "true");
+  const [isEjected, setIsEjected] = useState(() => localStorage.getItem("vch_ejected") === "true");
   const [breachReason, setBreachReason] = useState(() => localStorage.getItem("vch_breach_reason") || "");
+
+  const handleEjected = useCallback(() => {
+    clearInterval(timerRef.current);
+    setIsLockedBreach(true);
+    setIsEjected(true);
+    setBreachReason("DISQUALIFIED & REMOVED FROM TOURNAMENT BY DISPATCH ADMIN");
+    localStorage.setItem("vch_locked_breach", "true");
+    localStorage.setItem("vch_ejected", "true");
+    localStorage.setItem("vch_breach_reason", "DISQUALIFIED & REMOVED FROM TOURNAMENT BY DISPATCH ADMIN");
+    setScreen("mission_failed");
+    exitFullscreenSafe();
+    SoundEngine.init();
+    SoundEngine.playAlert();
+    SoundEngine.playDenied();
+  }, []);
 
   /* 3-Level 45-Minute Progressive Campaign State */
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -503,11 +524,15 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
     // 1. Post to Port 5176 Admin Server
     try {
-      await fetch(`${ADMIN_API_URL}/api/player/update`, {
+      const res = await fetch(`${ADMIN_API_URL}/api/player/update`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      const data = await res.json();
+      if (data && data.removed) {
+        handleEjected();
+      }
     } catch (_) {
       // Admin server might be running elsewhere or offline
     }
@@ -520,7 +545,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         bus.close();
       }
     } catch (_) {}
-  }, [playerId, playerName, playerAlias, playerCollege, isLockedBreach, screen, currentLevel, unlockedCount]);
+  }, [playerId, playerName, playerAlias, playerCollege, isLockedBreach, screen, currentLevel, unlockedCount, handleEjected]);
 
   /* ── Start Fullscreen Mode ── */
   const requestFullscreenSafe = () => {
@@ -552,6 +577,48 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     reportToAdmin({ status: "STORY_CUTSCENE", currentLevel: 1 });
   }, [reportToAdmin]);
 
+  /* ── Listen for BroadcastChannel events (e.g. Remote Eject, Story Mode, Siren, Reset) ── */
+  useEffect(() => {
+    if (typeof BroadcastChannel === "undefined") return;
+    const bus = new BroadcastChannel(CHANNEL_NAME);
+    bus.onmessage = (evt) => {
+      const { type, playerId: pid } = evt.data || {};
+      if (type === "remove" && pid === playerId) {
+        handleEjected();
+      } else if (type === "start_story") {
+        if (screen === "lobby") {
+          launchStoryMode();
+        }
+      } else if (type === "siren") {
+        SoundEngine.init();
+        SoundEngine.playSiren();
+      } else if (type === "reset_lobby") {
+        clearInterval(timerRef.current);
+        setScreen("lobby");
+        setIsLockedBreach(false);
+        setIsEjected(false);
+        localStorage.removeItem("vch_locked_breach");
+        localStorage.removeItem("vch_breach_reason");
+        localStorage.removeItem("vch_ejected");
+        exitFullscreenSafe();
+      } else if (type === "unfreeze") {
+        if (!pid || pid === playerId) {
+          setIsLockedBreach(false);
+          setIsEjected(false);
+          localStorage.removeItem("vch_locked_breach");
+          localStorage.removeItem("vch_breach_reason");
+          localStorage.removeItem("vch_ejected");
+          if (screen === "mission_failed") {
+            setScreen("game");
+            setTimeLeft(cfg.startSeconds);
+            timeLeftRef.current = cfg.startSeconds;
+          }
+        }
+      }
+    };
+    return () => bus.close();
+  }, [playerId, handleEjected, screen, launchStoryMode, cfg.startSeconds]);
+
   /* ── Listen for Admin Commands (via Polling Port 5176 & BroadcastChannel) ── */
   useEffect(() => {
     const checkAdminCommands = async () => {
@@ -574,19 +641,28 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             } else if (cmd.action === "UNFREEZE_PLAYER") {
               if (!cmd.playerId || cmd.playerId === playerId) {
                 setIsLockedBreach(false);
+                setIsEjected(false);
                 localStorage.removeItem("vch_locked_breach");
                 localStorage.removeItem("vch_breach_reason");
+                localStorage.removeItem("vch_ejected");
                 if (screen === "mission_failed") {
                   setScreen("game");
                   setTimeLeft(cfg.startSeconds);
                   timeLeftRef.current = cfg.startSeconds;
                 }
               }
+            } else if (cmd.action === "REMOVE_PLAYER") {
+              if (cmd.playerId === playerId) {
+                handleEjected();
+              }
             } else if (cmd.action === "RESET_TO_LOBBY") {
               clearInterval(timerRef.current);
               setScreen("lobby");
               setIsLockedBreach(false);
+              setIsEjected(false);
               localStorage.removeItem("vch_locked_breach");
+              localStorage.removeItem("vch_breach_reason");
+              localStorage.removeItem("vch_ejected");
               exitFullscreenSafe();
             } else if (cmd.action === "TRIGGER_SIREN") {
               SoundEngine.playSiren();
@@ -598,7 +674,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
     const interval = setInterval(checkAdminCommands, 1000);
     return () => clearInterval(interval);
-  }, [screen, launchStoryMode, playerId, cfg.startSeconds]);
+  }, [screen, launchStoryMode, playerId, cfg.startSeconds, handleEjected]);
 
   /* ── Anti-Cheat: Fullscreen & Tab Switch Watcher ── */
   useEffect(() => {
@@ -606,22 +682,30 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
     const handleVisibilityChange = () => {
       if (document.hidden && screen === "game") {
+        clearInterval(timerRef.current);
         setIsLockedBreach(true);
         setBreachReason("UNAUTHORIZED TAB SWITCH DETECTED");
         localStorage.setItem("vch_locked_breach", "true");
         localStorage.setItem("vch_breach_reason", "UNAUTHORIZED TAB SWITCH DETECTED");
-        SoundEngine.playAlert();
+        setScreen("mission_failed");
+        exitFullscreenSafe();
+        SoundEngine.init();
+        SoundEngine.playMissionFailed();
         reportToAdmin({ isBreached: true, status: "LOCKED_TAB_SWITCH" });
       }
     };
 
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement && screen === "game") {
+        clearInterval(timerRef.current);
         setIsLockedBreach(true);
         setBreachReason("FULLSCREEN DEPARTURE DETECTED");
         localStorage.setItem("vch_locked_breach", "true");
         localStorage.setItem("vch_breach_reason", "FULLSCREEN DEPARTURE DETECTED");
-        SoundEngine.playAlert();
+        setScreen("mission_failed");
+        exitFullscreenSafe();
+        SoundEngine.init();
+        SoundEngine.playMissionFailed();
         reportToAdmin({ isBreached: true, status: "LOCKED_FULLSCREEN_EXIT" });
       }
     };
@@ -1342,33 +1426,41 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
       {/* ── SCREEN 7: CLASSIC GTA VICE CITY MISSION FAILED (Locked until Admin Unfreezes) ── */}
       {screen === "mission_failed" && (
-        <section className="mission-failed-fullscreen-stage">
+        <section className={`mission-failed-fullscreen-stage ${isEjected ? "ejected-stage" : ""}`}>
           <div className="failed-inner-box">
-            <h1 className="vice-display-lg failed-title">MISSION FAILED</h1>
+            <h1 className="vice-display-lg failed-title">
+              {isEjected ? "DISQUALIFIED" : "MISSION FAILED"}
+            </h1>
             <p className="failed-reason">{breachReason}</p>
 
             <div className="failed-lockout-notice">
-              <span className="lockout-badge">🔒 TERMINAL LOCKED DOWN</span>
+              <span className={`lockout-badge ${isEjected ? "ejected-badge" : ""}`}>
+                {isEjected ? "🚫 EJECTED BY ADMIN" : "🔒 TERMINAL LOCKED DOWN"}
+              </span>
               <p className="lockout-text">
-                Your station has been locked by Central Security. You cannot proceed or refresh. Await Central Dispatch / Admin authorization from Port 5176 to unfreeze your terminal.
+                {isEjected
+                  ? "Your station has been removed and disqualified from the tournament by Central Dispatch Admin. You cannot continue this session."
+                  : "Your station has been locked by Central Security. You cannot proceed or refresh. Await Central Dispatch / Admin authorization from Port 5176 to unfreeze your terminal."}
               </p>
             </div>
 
-            <div className="solo-dev-unfreeze">
-              <button
-                type="button"
-                className="dev-override-btn"
-                onClick={() => {
-                  setIsLockedBreach(false);
-                  localStorage.removeItem("vch_locked_breach");
-                  localStorage.removeItem("vch_breach_reason");
-                  setScreen("lobby");
-                  exitFullscreenSafe();
-                }}
-              >
-                [OVERRIDE: RETURN TO LOBBY]
-              </button>
-            </div>
+            {!isEjected && (
+              <div className="solo-dev-unfreeze">
+                <button
+                  type="button"
+                  className="dev-override-btn"
+                  onClick={() => {
+                    setIsLockedBreach(false);
+                    localStorage.removeItem("vch_locked_breach");
+                    localStorage.removeItem("vch_breach_reason");
+                    setScreen("lobby");
+                    exitFullscreenSafe();
+                  }}
+                >
+                  [OVERRIDE: RETURN TO LOBBY]
+                </button>
+              </div>
+            )}
           </div>
         </section>
       )}
