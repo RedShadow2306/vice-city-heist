@@ -3,6 +3,7 @@
  * Authentic DAEMON '26 Official Fest Logo matching the Main Association Website
  */
 import React from "react";
+import { getAssetUrl } from "../utils/assetPath";
 import "./DaemonLogo.css";
 
 export default function DaemonLogo({
@@ -23,14 +24,14 @@ export default function DaemonLogo({
         <div className="daemon-emblem-wrap">
           <div className="daemon-emblem-glow" />
           <img
-            src="/daemon-logo.png"
+            src={getAssetUrl("/daemon-logo.png")}
             alt="DAEMON '26 Official Emblem"
             className="daemon-emblem-img"
             loading="eager"
             onError={(e) => {
               // fallback to SVG if PNG fails
               if (!e.target.src.endsWith(".svg")) {
-                e.target.src = "/daemon-logo.svg";
+                e.target.src = getAssetUrl("/daemon-logo.svg");
               }
             }}
           />

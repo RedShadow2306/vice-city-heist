@@ -15,6 +15,7 @@ import PlayerTerminal from "./pages/PlayerTerminal";
 import AdminCommand from "./pages/AdminCommand";
 import ProjectorStage from "./pages/ProjectorStage";
 import SoundEngine from "./utils/soundEngine";
+import { getAssetUrl } from "./utils/assetPath";
 import "./App.css";
 
 const ADMIN_PORTAL_URL = "http://localhost:5176/";
@@ -66,12 +67,12 @@ function Shell() {
             title="Open DAEMON '26 Main Association Fest Website"
           >
             <img
-              src="/daemon-logo.png"
+              src={getAssetUrl("/daemon-logo.png")}
               alt="DAEMON Logo"
               className="nav-portal-logo-icon"
               onError={(e) => {
                 if (!e.target.src.endsWith(".svg")) {
-                  e.target.src = "/daemon-logo.svg";
+                  e.target.src = getAssetUrl("/daemon-logo.svg");
                 }
               }}
             />

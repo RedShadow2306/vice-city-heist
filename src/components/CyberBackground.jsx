@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { ViceFPSGovernor } from "../utils/fpsGovernor";
 import SoundEngine from "../utils/soundEngine";
+import { getAssetUrl } from "../utils/assetPath";
 
 const ROAD_SEGS  = 36;
 const ROAD_W     = 16;
@@ -258,7 +259,7 @@ export default function CyberBackground({ onLiteChange }) {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "url('/images/vice-hero.jpg')",
+          backgroundImage: `url('${getAssetUrl("/images/vice-hero.jpg")}')`,
           backgroundSize: "cover",
           backgroundPosition: "center 20%",
           opacity: 0.28,

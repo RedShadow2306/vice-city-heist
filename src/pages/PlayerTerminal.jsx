@@ -30,6 +30,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import confetti from "canvas-confetti";
 import SoundEngine from "../utils/soundEngine";
 import { getManagerDirective, MANAGER_PRAISE } from "../utils/managerDialogue";
+import { getAssetUrl } from "../utils/assetPath";
 import "./PlayerTerminal.css";
 
 const CHANNEL_NAME = "vch-admin-bus";
@@ -473,7 +474,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const [showPassword, setShowPassword] = useState(true);
 
   /* Video & Manager Avatar Assets */
-  const [managerImgSrc] = useState("/images/manager.png");
+  const [managerImgSrc] = useState(() => getAssetUrl("/images/manager.png"));
   const videoRef = useRef(null);
 
   /* Game Session */
@@ -962,7 +963,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           {/* Main Association Website Sunset Background Layers */}
           <div className="lobby-bg-viewport" aria-hidden="true">
             <img
-              src="/images/vice-hero.jpg"
+              src={getAssetUrl("/images/vice-hero.jpg")}
               alt="DAEMON Vice City Sunset"
               className="lobby-bg-img"
             />
@@ -1087,7 +1088,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           <div className="video-player-frame">
             <video
               ref={videoRef}
-              src="/video/heist_intro.mp4"
+              src={getAssetUrl("/video/heist_intro.mp4")}
               autoPlay
               playsInline
               onEnded={handleCutsceneDone}
