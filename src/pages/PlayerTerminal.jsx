@@ -36,21 +36,21 @@ import "./PlayerTerminal.css";
 const CHANNEL_NAME = "vch-admin-bus";
 const ADMIN_API_URL = "http://localhost:5176";
 
-/* ─── 3-Level Progressive Campaign Configurations ─── */
+/* ─── 4-Level Progressive Campaign Configurations (10 Min Each) ─── */
 const CAMPAIGN_LEVELS = {
   1: {
     levelNumber: 1,
     title: "LEVEL 1 // OUTER LOBBY & TELLERS GATE",
     shortName: "Level 1: Tellers Gate",
     subtitle: "Floor 01 · Teller Security Perimeter",
-    rules: 12,
-    startSeconds: 900, // 15:00 minutes
+    rules: 10,
+    startSeconds: 600, // 10:00 minutes
     drillSpeedMultiplier: 1.0,
     wantedStars: 2,
     bonusSeconds: 15,
     minLength: 8,
     minUpper: 2,
-    digitSumTarget: 25,
+    digitSumTarget: 20,
     primeCountReq: 1,
     vowelCountReq: 2,
     color: "#48D5D0",
@@ -62,37 +62,56 @@ const CAMPAIGN_LEVELS = {
     title: "LEVEL 2 // EXECUTIVE CASH CORRIDORS",
     shortName: "Level 2: Cash Corridor",
     subtitle: "Floor 02 · Safety Deposit Airlocks",
-    rules: 22,
-    startSeconds: 720, // 12:00 minutes (Faster urgency!)
-    drillSpeedMultiplier: 1.5,
-    wantedStars: 4,
+    rules: 20,
+    startSeconds: 600, // 10:00 minutes
+    drillSpeedMultiplier: 1.4,
+    wantedStars: 3,
     bonusSeconds: 12,
-    minLength: 11,
-    minUpper: 4,
-    digitSumTarget: 32,
+    minLength: 12,
+    minUpper: 3,
+    digitSumTarget: 28,
     primeCountReq: 2,
     vowelCountReq: 3,
     color: "#FFD166",
     promotionRank: "CHIEF TITANIUM VAULT CUSTODIAN",
-    nextLevelLocation: "FINAL LEVEL 3: TITANIUM DEEP VAULT",
+    nextLevelLocation: "LEVEL 3: TITANIUM DEEP VAULT",
   },
   3: {
     levelNumber: 3,
-    title: "FINAL LEVEL 3 // TITANIUM DEEP VAULT",
+    title: "LEVEL 3 // TITANIUM DEEP VAULT",
     shortName: "Level 3: Deep Vault",
     subtitle: "Sub-Level · Master Titanium Chamber",
-    rules: 35,
-    startSeconds: 600, // 10:00 minutes (Maximum overdrive speed!)
-    drillSpeedMultiplier: 2.0,
-    wantedStars: 6,
+    rules: 32,
+    startSeconds: 600, // 10:00 minutes
+    drillSpeedMultiplier: 1.8,
+    wantedStars: 5,
     bonusSeconds: 10,
-    minLength: 14,
-    minUpper: 5,
-    digitSumTarget: 40,
+    minLength: 15,
+    minUpper: 4,
+    digitSumTarget: 36,
     primeCountReq: 3,
-    vowelCountReq: 5,
+    vowelCountReq: 4,
     color: "#F84391",
     promotionRank: "HONORARY BANK DIRECTOR",
+    nextLevelLocation: "FINAL LEVEL 4: OMEGA QUANTUM CORE",
+  },
+  4: {
+    levelNumber: 4,
+    title: "FINAL LEVEL 4 // OMEGA QUANTUM CORE",
+    shortName: "Level 4: Omega Core",
+    subtitle: "Subterranean · Quantum Cryptographic Sanctum",
+    rules: 45,
+    startSeconds: 600, // 10:00 minutes (Supreme Difficulty)
+    drillSpeedMultiplier: 2.4,
+    wantedStars: 6,
+    bonusSeconds: 8,
+    minLength: 18,
+    minUpper: 5,
+    digitSumTarget: 46,
+    primeCountReq: 4,
+    vowelCountReq: 5,
+    color: "#9B00FF",
+    promotionRank: "LEGENDARY GRAND DEFENDER OF VICE CITY",
     nextLevelLocation: null,
   },
 };
@@ -147,8 +166,8 @@ function getDigitSum(pw) {
   return (pw.match(/\d/g) || []).reduce((acc, d) => acc + Number(d), 0);
 }
 
-/* ─── Build Full 35-Rule Security Suite ─── */
-function buildAll35Rules(session, cfg) {
+/* ─── Build Full 45-Rule Security Suite ─── */
+function buildAll45Rules(session, cfg) {
   return [
     {
       id: 1,
@@ -401,6 +420,76 @@ function buildAll35Rules(session, cfg) {
       hint: "Add or remove one character so the length is an even number.",
       check: (pw) => [...pw].length > 0 && [...pw].length % 2 === 0,
     },
+    {
+      id: 36,
+      text: 'VCPD Radio Protocol: Include standard radio receipt confirmation: "10-4"',
+      badge: () => "10-4",
+      hint: 'Include "10-4" in your master key.',
+      check: (pw) => pw.includes("10-4"),
+    },
+    {
+      id: 37,
+      text: 'Include ASCII hexadecimal code for letter "V" (Vice): "56"',
+      badge: () => "Hex 56",
+      hint: 'The ASCII hex code for "V" is 56. Type "56".',
+      check: (pw) => pw.includes("56"),
+    },
+    {
+      id: 38,
+      text: "Enclose at least one character inside curly brackets: { }",
+      badge: () => "{ }",
+      hint: 'Wrap any letter or number in curly braces, e.g., "{7}" or "{V}".',
+      check: (pw) => /\{[^{}]+\}/.test(pw),
+    },
+    {
+      id: 39,
+      text: 'Relativistic security factor: Include energy mass equivalence constant: "mc^2" or "mc2"',
+      badge: () => "mc^2",
+      hint: 'Type "mc^2" or "mc2".',
+      check: (pw) => /mc\^2|mc2/i.test(pw),
+    },
+    {
+      id: 40,
+      text: 'Include legendary Vice City neon hotspot: "MALIBU"',
+      badge: () => "MALIBU",
+      hint: 'Include the nightclub name "MALIBU" (case-insensitive).',
+      check: (pw) => /malibu/i.test(pw),
+    },
+    {
+      id: 41,
+      text: 'Include 3 consecutive Fibonacci sequence numbers: "112", "123", "235", or "358"',
+      badge: () => "Fibonacci",
+      hint: 'Type a 3-number Fibonacci sequence: "112", "123", "235", or "358".',
+      check: (pw) => /112|123|235|358/.test(pw),
+    },
+    {
+      id: 42,
+      text: 'Include the quadrennial leap day: "FEB29" or "29FEB"',
+      badge: () => "Leap Day",
+      hint: 'Include leap day string "FEB29" or "29FEB".',
+      check: (pw) => /feb29|29feb/i.test(pw),
+    },
+    {
+      id: 43,
+      text: "Include Tommy's high-speed getaway vehicle: \"INFERNUS\" or \"CHEETAH\"",
+      badge: () => "Supercar",
+      hint: 'Type supercar model "INFERNUS" or "CHEETAH" (case-insensitive).',
+      check: (pw) => /infernus|cheetah/i.test(pw),
+    },
+    {
+      id: 44,
+      text: 'Include standard local network CIDR prefix: "/24" or "/16"',
+      badge: () => "CIDR",
+      hint: 'Include subnet prefix "/24" or "/16".',
+      check: (pw) => pw.includes("/24") || pw.includes("/16"),
+    },
+    {
+      id: 45,
+      text: 'The Master Lockdown Seal: Include emergency vault command: "VAULT_LOCKED"',
+      badge: () => "VAULT_LOCKED",
+      hint: 'Type "VAULT_LOCKED" to complete the final quantum lock.',
+      check: (pw) => /VAULT_LOCKED/i.test(pw),
+    },
   ];
 }
 
@@ -464,10 +553,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     SoundEngine.playDenied();
   }, []);
 
-  /* 3-Level 45-Minute Progressive Campaign State */
+  /* 4-Level 40-Minute Progressive Campaign State (10 Min Each) */
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [levelScores, setLevelScores] = useState({ 1: 0, 2: 0, 3: 0 });
-  const [levelTimes, setLevelTimes] = useState({ 1: 0, 2: 0, 3: 0 });
+  const [levelScores, setLevelScores] = useState({ 1: 0, 2: 0, 3: 0, 4: 0 });
+  const [levelTimes, setLevelTimes] = useState({ 1: 0, 2: 0, 3: 0, 4: 0 });
   const [totalCampaignSeconds, setTotalCampaignSeconds] = useState(0);
 
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -480,7 +569,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* Game Session */
   const [password, setPassword] = useState("");
   const [unlockedCount, setUnlockedCount] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(900); // 15:00 minutes
+  const [timeLeft, setTimeLeft] = useState(600); // 10:00 minutes
   const [survivedSeconds, setSurvivedSeconds] = useState(0);
   const [revealedHints, setRevealedHints] = useState(() => new Set());
   const [bonusFloat, setBonusFloat] = useState(null);
@@ -505,7 +594,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const timerRef = useRef(null);
 
   const cfg = CAMPAIGN_LEVELS[currentLevel] || CAMPAIGN_LEVELS[1];
-  const allRules = useMemo(() => buildAll35Rules(sessionData, cfg), [sessionData, cfg]);
+  const allRules = useMemo(() => buildAll45Rules(sessionData, cfg), [sessionData, cfg]);
   const activeRulesList = useMemo(() => allRules.slice(0, cfg.rules), [allRules, cfg]);
 
   /* ── Report Player Status to Standalone Admin Server (Port 5176) ── */
@@ -776,6 +865,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       } else if (currentLevel === 2) {
         setScreen("story_intermission_2");
         reportToAdmin({ status: "CLEARED_LEVEL_2", currentLevel: 3 });
+      } else if (currentLevel === 3) {
+        setScreen("story_intermission_3");
+        reportToAdmin({ status: "CLEARED_LEVEL_3", currentLevel: 4 });
       } else {
         // Grand Victory!
         exitFullscreenSafe();
@@ -1133,7 +1225,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 </div>
                 <div className="gba-text-content">
                   <p className="gba-typewriter-text">
-                    "ASSISTANT! Tommy Vercetti and his crew just blasted through the lobby! Tommy will take about 10 to 15 minutes to breach the inner blast gates! You must set an unbreakable cipher on this terminal immediately! Every suggestion you make, I will verify the security protocols!"
+                    "ASSISTANT! Tommy Vercetti and his crew just blasted through the lobby! Tommy has a 10-minute timer per floor before each blast gate breaches! You must set an unbreakable cipher on this terminal immediately! Every suggestion you make, I will verify the security protocols!"
                   </p>
                 </div>
                 <div className="gba-prompt-arrow blink">▼</div>
@@ -1405,7 +1497,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 </div>
                 <div className="gba-text-content">
                   <p className="gba-typewriter-text">
-                    "THIS IS HIS FINAL STAND, ASSISTANT! All 35 security layers must be locked simultaneously—and FASTER than ever! If you fail, the bank's entire gold reserve is his! SECURE THE TITANIUM VAULT!"
+                    "HOLD THE LINE, ASSISTANT! All 32 security layers must be locked simultaneously—and FASTER than ever! If you fail, the bank's entire gold reserve is his! SECURE THE TITANIUM VAULT!"
                   </p>
                 </div>
                 <div className="gba-prompt-arrow blink">▼</div>
@@ -1419,6 +1511,57 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 onClick={() => handleStartActiveDefense(3)}
               >
                 DEPLOY LEVEL 3 MAXIMUM CIPHER ➔
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── SCREEN 6B: STORY INTERMISSION 3 (Omega Core Lockdown) ── */}
+      {screen === "story_intermission_3" && (
+        <section className="intermission-fullscreen-stage">
+          <div className="intermission-card">
+            <div className="intermission-newspaper-header">
+              <span className="newspaper-date">🌴 MIDNIGHT IN VICE CITY... 🌴</span>
+              <h2 className="vice-display-lg newspaper-headline">
+                CODE RED: OMEGA QUANTUM CORE UNDER DIRECT ASSAULT!
+              </h2>
+            </div>
+
+            <div className="intermission-story-box">
+              <p>
+                Repelled from the Titanium Deep Vault, Tommy Vercetti deployed military-grade diamond plasma cutters and cyber-jamming arrays into the subterranean Omega Quantum Sanctum! If this final core breaches, Vice City's entire treasury will be wiped out!
+              </p>
+            </div>
+
+            <div className="gba-interactive-wrapper briefing-gba">
+              <div className="gba-manager-slide-container slide-in">
+                <div className="manager-portrait-frame speaking">
+                  <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
+                </div>
+              </div>
+
+              <div className="gba-dialogue-box">
+                <div className="gba-nameplate">
+                  <span>👔 MANAGER GORDON BENNETT</span>
+                  <span className="gba-mood-chip urgent">MAXIMUM CRISIS</span>
+                </div>
+                <div className="gba-text-content">
+                  <p className="gba-typewriter-text">
+                    "OFFICER! HE PENETRATED THE OMEGA QUANTUM CORE! 45 ultra-cryptographic lock tumblers must now be calibrated simultaneously in under 10 minutes! His drill is operating at 240% overdrive! STAND FIRM AND ENGAGE THE OMEGA CIPHER!"
+                  </p>
+                </div>
+                <div className="gba-prompt-arrow blink">▼</div>
+              </div>
+            </div>
+
+            <div className="action-row center-actions">
+              <button
+                type="button"
+                className="vice-btn primary-btn large-cta"
+                onClick={() => handleStartActiveDefense(4)}
+              >
+                ENGAGE LEVEL 4 OMEGA CIPHER ➔
               </button>
             </div>
           </div>
@@ -1475,7 +1618,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             <div className="respect-plus-badge">RESPECT +</div>
 
             <p className="victory-speech">
-              Manager Bennett: <em>"UNBELIEVABLE! You defended all 3 floors across 45 minutes of intense siege! The Titanium Vault is permanently clamped shut, and VCPD SWAT arrested Vercetti's crew! By order of the Board, you are hereby appointed HONORARY BANK DIRECTOR!"</em>
+              Manager Bennett: <em>"UNBELIEVABLE! You defended all 4 security vaults across 40 minutes of intense siege! The Omega Quantum Vault is permanently clamped shut, and VCPD SWAT arrested Vercetti's crew! By order of the Board, you are hereby appointed LEGENDARY GRAND DEFENDER OF VICE CITY!"</em>
             </p>
 
             <div className="action-row center-actions">

@@ -85,7 +85,7 @@ export default function ProjectorStage() {
           ...p,
           score: frozen[p.id] || globalFreeze
             ? p.score
-            : p.chapter >= 3
+            : p.chapter >= 4
               ? p.score
               : p.score + Math.floor(Math.random() * 8),
           delta: frozen[p.id] || globalFreeze ? 0 : Math.floor(Math.random() * 8),
@@ -145,7 +145,7 @@ export default function ProjectorStage() {
       if (type === "remove")       setBoard(prev => prev.filter(p => p.id !== playerId));
       if (type === "advance") {
         setBoard(prev => prev.map(p =>
-          p.id === playerId ? { ...p, chapter: Math.min(p.chapter + 1, 3) } : p
+          p.id === playerId ? { ...p, chapter: Math.min(p.chapter + 1, 4) } : p
         ).sort((a, b) => b.score - a.score));
       }
     };
@@ -209,7 +209,7 @@ export default function ProjectorStage() {
 
               {/* chapter progress */}
               <div className="stage-progress">
-                {[1, 2, 3].map(ch => (
+                {[1, 2, 3, 4].map(ch => (
                   <span
                     key={ch}
                     className={`stage-seg${player.chapter >= ch ? " done" : ""}`}

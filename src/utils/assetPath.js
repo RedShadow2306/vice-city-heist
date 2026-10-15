@@ -20,4 +20,5 @@ export function getAssetUrl(path) {
   return base.endsWith("/") ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
 }
 
+export const getAssetPath = getAssetUrl;
 export default getAssetUrl;
