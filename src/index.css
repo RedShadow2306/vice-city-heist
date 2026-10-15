@@ -1,0 +1,273 @@
+/* index.css  -  Vice City Heist: Bank Manager Vault Defense */
+
+/* Authentic GTA Vice City Font Declarations */
+@font-face {
+  font-family: 'Pricedown';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/pricedown.woff') format('woff'),
+       url('https://fonts.cdnfonts.com/s/4837/pricedown%20bl.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Pricedown';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/pricedown.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Rage Italic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/rage-italic.woff') format('woff'),
+       url('https://fonts.cdnfonts.com/s/14164/RAGE_1.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Rage Italic';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/rage-italic.woff') format('woff');
+}
+
+/* ═══════════════════════════════════════════════
+   AUTHENTIC VICE CITY & DAEMON '26 DESIGN TOKENS
+   ═══════════════════════════════════════════════ */
+:root {
+  /* Vice City signature colors from DAEMON '26 */
+  --vice-hotpink:   #F84391;
+  --vice-flamingo:  #FF6AAE;
+  --vice-turquoise: #48D5D0;
+  --vice-sky:       #75B8E8;
+  --vice-coral:     #FF806F;
+  --vice-peach:     #FFC49A;
+  --vice-lavender:  #B8A4EC;
+  --vice-twilight:  #45355F;
+  --vice-ink:       #26182F;
+  --vice-cream:     #FFF2E3;
+  --vice-gold:      #FFD166;
+  --vice-obsidian:  #05060C;
+
+  /* legacy map for existing styles */
+  --vc-pink:        #F84391;
+  --vc-magenta:     #FF6AAE;
+  --vc-teal:        #48D5D0;
+  --vc-purple:      #B8A4EC;
+  --vc-orange:      #FF806F;
+  --vc-gold:        #FFD166;
+  --vc-cyan:        #48D5D0;
+
+  /* background & surfaces */
+  --vc-bg:          #080511;
+  --vc-bg-2:        #120B20;
+  --vc-surface:     rgba(38, 24, 47, 0.72);
+  --vc-surface-2:   rgba(248, 67, 145, 0.08);
+
+  /* borders */
+  --vc-border-pink:   rgba(248, 67, 145, 0.4);
+  --vc-border-teal:   rgba(72, 213, 208, 0.35);
+  --vc-border-purple: rgba(184, 164, 236, 0.35);
+
+  /* glow */
+  --glow-pink:   0 0 25px rgba(248, 67, 145, 0.65), 0 0 50px rgba(248, 67, 145, 0.25);
+  --glow-teal:   0 0 25px rgba(72, 213, 208, 0.6),  0 0 50px rgba(72, 213, 208, 0.2);
+  --glow-purple: 0 0 25px rgba(184, 164, 236, 0.6), 0 0 50px rgba(184, 164, 236, 0.2);
+  --glow-gold:   0 0 25px rgba(255, 209, 102, 0.7), 0 0 50px rgba(255, 209, 102, 0.3);
+
+  /* typography */
+  --font-display: "Pricedown", "Pricedown Bl", Impact, sans-serif;
+  --font-script:  "Rage Italic", "Rage", cursive;
+  --font-ui:      "Outfit", sans-serif;
+  --font-mono:    "Share Tech Mono", ui-monospace, monospace;
+
+  font: 16px/150% var(--font-ui);
+  color: var(--vice-cream);
+  background: var(--vc-bg);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Custom Cyberpunk Cursor ── */
+@media (pointer: fine) {
+  html,
+  body,
+  #root,
+  * {
+    cursor: url('/cursors/daemon-cursor.png') 0 0, auto !important;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  label,
+  [role="button"],
+  .cursor-pointer,
+  .cursor-pointer * {
+    cursor: url('/cursors/daemon-cursor-pointer.png') 0 0, pointer !important;
+  }
+}
+
+/* ── Reset & Box Sizing ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--vc-bg);
+  min-height: 100svh;
+  overflow-x: hidden;
+  font-family: var(--font-ui);
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border: none;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+/* ── Authentic GTA Vice City Typography Classes ── */
+.vice-display {
+  font-family: var(--font-display) !important;
+  color: #FFFFFF !important;
+  letter-spacing: -0.015em;
+  text-shadow:
+    3px 3px 0px #000000,
+    -1.5px -1.5px 0px #000000,
+    1.5px -1.5px 0px #000000,
+    -1.5px 1.5px 0px #000000,
+    1.5px 1.5px 0px #000000,
+    5px 5px 0px #000000,
+    6px 6px 0px rgba(0, 0, 0, 0.6);
+  -webkit-text-stroke: 2.2px #000000;
+  paint-order: stroke fill;
+}
+
+.vice-display-lg {
+  font-family: var(--font-display) !important;
+  color: #FFFFFF !important;
+  letter-spacing: -0.02em;
+  text-shadow:
+    4px 4px 0px #000000,
+    -2px -2px 0px #000000,
+    2px -2px 0px #000000,
+    -2px 2px 0px #000000,
+    6px 6px 0px #000000,
+    8px 8px 0px rgba(0, 0, 0, 0.7);
+  -webkit-text-stroke: 3.5px #000000;
+  paint-order: stroke fill;
+}
+
+.vice-script {
+  font-family: var(--font-script) !important;
+  color: var(--vice-hotpink) !important;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 12px rgba(248, 67, 145, 0.65);
+}
+
+/* ── CRT scanline overlay (subtle) ── */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 2px,
+    rgba(0, 0, 0, 0.12) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+  animation: scanMove 10s linear infinite;
+}
+
+@keyframes scanMove {
+  from { background-position: 0 0; }
+  to   { background-position: 0 200px; }
+}
+
+/* ── CRT vignette ── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center,
+    transparent 50%,
+    rgba(5, 6, 12, 0.75) 100%
+  );
+  pointer-events: none;
+  z-index: 9997;
+}
+
+/* ── Base Elements ── */
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: var(--vice-hotpink);
+  margin: 0;
+}
+
+h3, h4, h5, h6 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--vice-cream);
+  margin: 0;
+}
+
+a {
+  color: var(--vice-hotpink);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--vice-turquoise);
+}
+
+button {
+  font-family: var(--font-ui);
+}
+
+/* ── Sleek Custom Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(38, 24, 47, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--vice-hotpink), var(--vice-twilight));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vice-hotpink);
+}
+
+/* ── Utility ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

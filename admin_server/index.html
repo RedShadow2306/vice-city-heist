@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VCPD Central Dispatch // Admin Command</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --vice-pink: #F84391;
+      --vice-cyan: #48D5D0;
+      --vice-gold: #FFD166;
+      --vice-purple: #B8A4EC;
+      --vice-dark: #070913;
+      --vice-card: rgba(14, 18, 32, 0.92);
+      --font-main: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--vice-dark);
+      color: #FFF2E3;
+      font-family: var(--font-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(ellipse at 80% 20%, rgba(248, 67, 145, 0.15), transparent 50%),
+        radial-gradient(ellipse at 20% 80%, rgba(72, 213, 208, 0.12), transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* PIN Gate Overlay */
+    #pin-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 15, 0.96);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .pin-modal {
+      background: var(--vice-card);
+      border: 2px solid var(--vice-pink);
+      box-shadow: 0 0 35px rgba(248, 67, 145, 0.4);
+      border-radius: 16px;
+      padding: 36px 40px;
+      text-align: center;
+      max-width: 360px;
+      width: 90%;
+    }
+
+    .pin-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--vice-cyan);
+      background: rgba(72, 213, 208, 0.15);
+      border: 1px solid var(--vice-cyan);
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+
+    .pin-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .pin-sub {
+      font-size: 13px;
+      color: rgba(255, 242, 227, 0.6);
+      margin-bottom: 24px;
+    }
+
+    .pin-display {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--vice-pink);
+      background: transparent;
+      transition: all 0.2s;
+    }
+
+    .pin-dot.filled {
+      background: var(--vice-pink);
+      box-shadow: 0 0 10px var(--vice-pink);
+    }
+
+    .pin-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .pin-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .pin-btn:hover {
+      background: var(--vice-pink);
+      border-color: var(--vice-pink);
+      transform: translateY(-2px);
+    }
+
+    .pin-btn.action {
+      font-size: 13px;
+      color: var(--vice-cyan);
+      border-color: rgba(72, 213, 208, 0.3);
+    }
+
+    /* Admin Container */
+    .admin-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px clamp(16px, 3vw, 40px);
+      width: 100%;
+    }
+
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(248, 67, 145, 0.3);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-icon {
+      font-size: 32px;
+      filter: drop-shadow(0 0 10px var(--vice-pink));
+    }
+
+    .header-title {
+      font-size: clamp(20px, 2.5vw, 28px);
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: #fff;
+    }
+
+    .header-title span { color: var(--vice-pink); }
+
+    .header-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--vice-cyan);
+      letter-spacing: 0.1em;
+    }
+
+    .port-chip {
+      background: rgba(72, 213, 208, 0.15);
+      border: 1px solid var(--vice-cyan);
+      color: var(--vice-cyan);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--vice-cyan);
+      box-shadow: 0 0 8px var(--vice-cyan);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Master Action Controls */
+    .controls-panel {
+      background: var(--vice-card);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .panel-header {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--vice-gold);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .controls-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .btn-action {
+      font-family: var(--font-main);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      padding: 14px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.15);
+    }
+
+    .btn-start-all {
+      background: linear-gradient(135deg, #F84391 0%, #D81B60 100%);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(248, 67, 145, 0.4);
+      flex: 1 1 280px;
+    }
+
+    .btn-freeze {
+      background: rgba(255, 75, 75, 0.2);
+      border: 1px solid #FF4B4B;
+      color: #FF8585;
+    }
+
+    .btn-unfreeze {
+      background: rgba(72, 213, 208, 0.2);
+      border: 1px solid var(--vice-cyan);
+      color: var(--vice-cyan);
+    }
+
+    .btn-reset {
+      background: rgba(255, 209, 102, 0.15);
+      border: 1px solid var(--vice-gold);
+      color: var(--vice-gold);
+    }
+
+    .btn-siren {
+      background: rgba(184, 164, 236, 0.2);
+      border: 1px solid var(--vice-purple);
+      color: var(--vice-purple);
+    }
+
+    /* Live Player Roster */
+    .roster-card {
+      background: var(--vice-card);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .roster-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .roster-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .player-counter {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 4px 10px;
+      border-radius: 12px;
+      color: var(--vice-cyan);
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 242, 227, 0.6);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: #FFF2E3;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .agent-cell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .agent-name {
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .agent-alias {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--vice-cyan);
+    }
+
+    .badge-status {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .badge-lobby {
+      background: rgba(72, 213, 208, 0.15);
+      border: 1px solid var(--vice-cyan);
+      color: var(--vice-cyan);
+    }
+
+    .badge-active {
+      background: rgba(248, 67, 145, 0.15);
+      border: 1px solid var(--vice-pink);
+      color: var(--vice-pink);
+    }
+
+    .badge-failed {
+      background: rgba(255, 60, 60, 0.2);
+      border: 1px solid #FF4B4B;
+      color: #FFA5A5;
+      animation: pulse 1s infinite;
+    }
+
+    .badge-passed {
+      background: rgba(255, 209, 102, 0.2);
+      border: 1px solid var(--vice-gold);
+      color: var(--vice-gold);
+    }
+
+    .btn-row-action {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-row-action.unfreeze {
+      background: rgba(72, 213, 208, 0.2);
+      border-color: var(--vice-cyan);
+      color: var(--vice-cyan);
+    }
+
+    .btn-row-action:hover {
+      background: var(--vice-pink);
+      border-color: var(--vice-pink);
+      color: #fff;
+    }
+
+    /* Event Log */
+    .log-card {
+      background: var(--vice-card);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+
+    .log-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      height: 160px;
+      overflow-y: auto;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: rgba(255, 242, 227, 0.7);
+      line-height: 1.6;
+    }
+
+    .log-entry { margin-bottom: 4px; }
+    .log-time { color: var(--vice-cyan); }
+    .log-action { color: var(--vice-gold); }
+
+    .sync-freq-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--vice-cyan);
+    }
+
+    .table-empty-notice {
+      text-align: center;
+      color: rgba(255, 242, 227, 0.5);
+      padding: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PIN GATE OVERLAY -->
+  <div id="pin-overlay">
+    <div class="pin-modal">
+      <div class="pin-badge">🚔 VCPD CENTRAL DISPATCH</div>
+      <h2 class="pin-title">COMMAND ACCESS</h2>
+      <p class="pin-sub">Enter 4-digit Admin PIN to unlock console</p>
+
+      <div class="pin-display">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
+      </div>
+
+      <div class="pin-grid">
+        <button class="pin-btn" onclick="enterPin('1')">1</button>
+        <button class="pin-btn" onclick="enterPin('2')">2</button>
+        <button class="pin-btn" onclick="enterPin('3')">3</button>
+        <button class="pin-btn" onclick="enterPin('4')">4</button>
+        <button class="pin-btn" onclick="enterPin('5')">5</button>
+        <button class="pin-btn" onclick="enterPin('6')">6</button>
+        <button class="pin-btn" onclick="enterPin('7')">7</button>
+        <button class="pin-btn" onclick="enterPin('8')">8</button>
+        <button class="pin-btn" onclick="enterPin('9')">9</button>
+        <button class="pin-btn action" onclick="clearPin()">CLR</button>
+        <button class="pin-btn" onclick="enterPin('0')">0</button>
+        <button class="pin-btn action" onclick="enterPin('1986')">AUTO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN CONSOLE -->
+  <div class="admin-container">
+    <header class="header-bar">
+      <div class="header-brand">
+        <span class="header-icon">🚔</span>
+        <div>
+          <h1 class="header-title">VCPD CENTRAL DISPATCH <span>// CONTROL CONSOLE</span></h1>
+          <p class="header-sub">EL BANCO CORRUPTO GRANDE · CENTRAL TOURNAMENT DIRECTOR</p>
+        </div>
+      </div>
+
+      <div class="port-chip">
+        <div class="status-dot"></div>
+        <span>PORT 5176 ACTIVE · SYNC WITH PLAYERS (:5173)</span>
+      </div>
+    </header>
+
+    <!-- MASTER CONTROLS -->
+    <div class="controls-panel">
+      <div class="panel-header">⚡ TOURNAMENT MASTER CONTROLS</div>
+      <div class="controls-grid">
+        <button class="btn-action btn-start-all" onclick="sendCommand('START_STORY_MODE')">
+          <span>🚀 START STORY MODE FOR ALL PLAYERS</span>
+        </button>
+        <button class="btn-action btn-freeze" onclick="sendCommand('GLOBAL_FREEZE')">
+          <span>⏸ GLOBAL FREEZE</span>
+        </button>
+        <button class="btn-action btn-unfreeze" onclick="sendCommand('GLOBAL_UNFREEZE')">
+          <span>▶ GLOBAL UNFREEZE</span>
+        </button>
+        <button class="btn-action btn-reset" onclick="sendCommand('RESET_TO_LOBBY')">
+          <span>🔄 RESET ALL TO LOBBY</span>
+        </button>
+        <button class="btn-action btn-siren" onclick="sendCommand('TRIGGER_SIREN')">
+          <span>🚨 TRIGGER SIREN ALARM</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LIVE ROSTER -->
+    <div class="roster-card">
+      <div class="roster-header">
+        <div class="roster-title">
+          <span>👥 CONNECTED PLAYER TERMINALS</span>
+          <span class="player-counter" id="player-count">0 Players Online</span>
+        </div>
+        <div class="sync-freq-badge">
+          SYNC FREQUENCY: 800ms
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>AGENT & STATION</th>
+              <th>COLLEGE / TEAM</th>
+              <th>STATUS</th>
+              <th>LEVEL</th>
+              <th>RULES LOCKED</th>
+              <th>TIME LEFT</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="roster-tbody">
+            <tr>
+              <td colspan="7" class="table-empty-notice">
+                Waiting for players to connect from Lobby (http://localhost:5173/)...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EVENT LOG -->
+    <div class="log-card">
+      <div class="panel-header">📡 DISPATCH TRANSMISSION LOG</div>
+      <div class="log-box" id="log-box">
+        <div class="log-entry">
+          <span class="log-time">[SYSTEM]</span> Console initialized on port 5176. Ready for connections.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // PIN Logic
+    let pinCode = "";
+    const ADMIN_PIN = "1986";
+
+    function enterPin(digit) {
+      if (digit === '1986') {
+        pinCode = '1986';
+        checkPin();
+        return;
+      }
+      if (pinCode.length < 4) {
+        pinCode += digit;
+        updateDots();
+        if (pinCode.length === 4) checkPin();
+      }
+    }
+
+    function clearPin() {
+      pinCode = "";
+      updateDots();
+    }
+
+    function updateDots() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById('dot-' + i);
+        if (i < pinCode.length) dot.classList.add('filled');
+        else dot.classList.remove('filled');
+      }
+    }
+
+    function checkPin() {
+      if (pinCode === ADMIN_PIN) {
+        document.getElementById('pin-overlay').style.display = 'none';
+        addLog("Admin authenticated with valid PIN 1986.");
+        startPolling();
+      } else {
+        alert("Incorrect PIN! Try again.");
+        clearPin();
+      }
+    }
+
+    function addLog(msg) {
+      const box = document.getElementById('log-box');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // Send Command to Server
+    async function sendCommand(action, playerId = null) {
+      try {
+        const res = await fetch('/api/admin/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, playerId })
+        });
+        const data = await res.json();
+        addLog(`Sent command: <span class="log-action">${action}</span> ${playerId ? `(Player: ${playerId})` : ''}`);
+        pollState();
+      } catch (err) {
+        addLog(`Error sending command: ${err.message}`);
+      }
+    }
+
+    // Poll State
+    async function pollState() {
+      try {
+        const res = await fetch('/api/state');
+        const data = await res.json();
+        renderRoster(data.players || []);
+      } catch (err) {
+        // server might be temporarily unreachable
+      }
+    }
+
+    function renderRoster(players) {
+      document.getElementById('player-count').textContent = `${players.length} Players Online`;
+      const tbody = document.getElementById('roster-tbody');
+
+      if (!players || players.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="table-empty-notice">
+              No players currently registered in Lobby. Open http://localhost:5173/ to join!
+            </td>
+          </tr>`;
+        return;
+      }
+
+      let html = '';
+      players.forEach(p => {
+        let statusBadge = '';
+        if (p.isBreached || p.status === 'BREACH_LOCKED' || p.status === 'LOCKED_FAILED') {
+          statusBadge = `<span class="badge-status badge-failed">⚠️ LOCKED / FAILED</span>`;
+        } else if (p.status === 'IN_LOBBY') {
+          statusBadge = `<span class="badge-status badge-lobby">🟢 IN LOBBY</span>`;
+        } else if (p.status === 'GRAND_WON' || p.status === 'WON') {
+          statusBadge = `<span class="badge-status badge-passed">👑 GRAND CHAMPION</span>`;
+        } else {
+          statusBadge = `<span class="badge-status badge-active">🔥 ACTIVE DEFENSE</span>`;
+        }
+
+        const formatTime = (s) => {
+          const m = Math.floor(s / 60);
+          const sec = s % 60;
+          return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+        };
+
+        const isLocked = p.isBreached || p.status === 'BREACH_LOCKED' || p.status === 'LOCKED_FAILED';
+
+        html += `
+          <tr>
+            <td>
+              <div class="agent-cell">
+                <span class="agent-name">${p.name || 'Anonymous'}</span>
+                <span class="agent-alias">${p.alias || 'Station'} (ID: ${p.id.slice(0, 6)})</span>
+              </div>
+            </td>
+            <td>${p.college || 'Vice City'}</td>
+            <td>${statusBadge}</td>
+            <td><strong>Level ${p.currentLevel || 1}</strong></td>
+            <td>${p.rulesCleared || 0} Layers</td>
+            <td>${p.timeLeft ? formatTime(p.timeLeft) : '15:00'}</td>
+            <td>
+              ${isLocked ? `
+                <button class="btn-row-action unfreeze" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">
+                  🔓 UNFREEZE / RETRY
+                </button>
+              ` : `
+                <button class="btn-row-action" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">
+                  🔓 REFRESH
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function startPolling() {
+      pollState();
+      setInterval(pollState, 800);
+    }
+  </script>
+</body>
+</html>

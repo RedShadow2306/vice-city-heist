@@ -1,0 +1,153 @@
+.daemon-logo-root {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  -webkit-user-select: none;
+  user-select: none;
+  line-height: 1;
+  position: relative;
+  text-decoration: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.daemon-logo-root:hover {
+  transform: scale(1.03);
+}
+
+.daemon-logo-root.vertical {
+  flex-direction: column;
+  text-align: center;
+  gap: 10px;
+}
+
+/* Emblem container with neon ambient pulse */
+.daemon-emblem-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.daemon-emblem-glow {
+  position: absolute;
+  inset: -4px;
+  background: radial-gradient(circle, rgba(248, 67, 145, 0.5) 0%, rgba(72, 213, 208, 0.3) 60%, transparent 80%);
+  border-radius: 50%;
+  filter: blur(8px);
+  opacity: 0.75;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.daemon-logo-root:hover .daemon-emblem-glow {
+  opacity: 1;
+  transform: scale(1.15);
+  filter: blur(12px);
+}
+
+.daemon-emblem-img {
+  object-fit: contain;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 10px rgba(248, 67, 145, 0.7));
+  transition: all 0.3s ease;
+}
+
+.daemon-logo-root:hover .daemon-emblem-img {
+  filter: drop-shadow(0 0 16px rgba(72, 213, 208, 0.85));
+}
+
+/* Text Lockup */
+.daemon-text-lockup {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* DAEMON main title (Pricedown font) */
+.daemon-title-text {
+  font-family: var(--font-display, "Pricedown", sans-serif);
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  letter-spacing: 0.02em;
+  margin: 0;
+  padding: 0;
+  line-height: 0.9;
+  -webkit-text-stroke: 2.2px #000000;
+  paint-order: stroke fill;
+  text-shadow: 
+    3px 3px 0 #000000, 
+    -1px -1px 0 #000000, 
+    1px -1px 0 #000000, 
+    -1px 1px 0 #000000, 
+    4px 4px 0px #000000;
+  transition: transform 0.2s ease;
+}
+
+/* Vice City '26 Cursive Script */
+.daemon-script-wrap {
+  position: relative;
+  z-index: 10;
+  align-self: flex-start;
+  padding-left: 4px;
+}
+
+.daemon-logo-root.vertical .daemon-script-wrap {
+  align-self: center;
+  padding-left: 0;
+}
+
+.daemon-script-text {
+  font-family: var(--font-script, "Rage Italic", cursive);
+  font-style: italic;
+  color: #FFFFFF;
+  display: block;
+  transform: rotate(-12deg);
+  transform-origin: left center;
+  -webkit-text-stroke: 1.3px #F84391;
+  paint-order: stroke fill;
+  text-shadow: 
+    2px 2px 0 #000000, 
+    -1px -1px 0 #000000, 
+    1px -1px 0 #000000, 
+    -1px 1px 0 #000000, 
+    0 0 12px rgba(248, 67, 145, 0.95);
+  margin-top: -3px;
+  line-height: 1;
+}
+
+.daemon-script-text .script-year {
+  font-size: 0.8em;
+  color: #FFFFFF;
+}
+
+.daemon-script-underline {
+  background: #F84391;
+  border-radius: 999px;
+  width: 110%;
+  transform: rotate(-12deg);
+  transform-origin: left center;
+  margin-top: -1px;
+  box-shadow: 1.5px 1.5px 0 #000000, 0 0 8px #F84391;
+}
+
+/* Sizes */
+/* SM (Navbar / Compact) */
+.daemon-size-sm .daemon-emblem-img { width: 36px; height: 36px; }
+.daemon-size-sm .daemon-title-text { font-size: 24px; -webkit-text-stroke: 1.8px #000000; }
+.daemon-size-sm .daemon-script-text { font-size: 14px; }
+.daemon-size-sm .daemon-script-underline { height: 2px; }
+
+/* MD (Standard Header) */
+.daemon-size-md .daemon-emblem-img { width: 46px; height: 46px; }
+.daemon-size-md .daemon-title-text { font-size: 32px; -webkit-text-stroke: 2.2px #000000; }
+.daemon-size-md .daemon-script-text { font-size: 18px; }
+.daemon-size-md .daemon-script-underline { height: 2.5px; }
+
+/* LG (Hero / Prominent) */
+.daemon-size-lg .daemon-emblem-img { width: 68px; height: 68px; }
+.daemon-size-lg .daemon-title-text { font-size: 48px; -webkit-text-stroke: 2.8px #000000; }
+.daemon-size-lg .daemon-script-text { font-size: 24px; -webkit-text-stroke: 1.6px #F84391; }
+.daemon-size-lg .daemon-script-underline { height: 3.5px; }

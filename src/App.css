@@ -1,0 +1,166 @@
+/* App.css  -  Vice City Heist Shell & Navigation */
+
+.app-shell {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══ TOP FLOATING NAVIGATION ═══ */
+.app-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 28px;
+  background: rgba(10, 8, 20, 0.65);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid rgba(248, 67, 145, 0.25);
+  box-shadow: 0 4px 30px rgba(5, 6, 12, 0.4);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.nav-heist-sub {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--vice-turquoise, #48D5D0);
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  font-family: var(--font-ui, sans-serif);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 242, 227, 0.65);
+  text-decoration: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: #FFFFFF;
+  border-color: rgba(248, 67, 145, 0.4);
+  background: rgba(248, 67, 145, 0.12);
+  box-shadow: 0 0 14px rgba(248, 67, 145, 0.25);
+}
+
+.nav-link.active {
+  color: #FFFFFF;
+  border-color: var(--vice-hotpink);
+  background: rgba(248, 67, 145, 0.2);
+  box-shadow: 0 0 20px rgba(248, 67, 145, 0.35), inset 0 0 10px rgba(248, 67, 145, 0.15);
+}
+
+.nav-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--vice-hotpink);
+  box-shadow: 0 0 10px var(--vice-hotpink);
+  border-radius: 2px;
+}
+
+.external-portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vice-turquoise) !important;
+  border-color: rgba(72, 213, 208, 0.3) !important;
+  background: rgba(72, 213, 208, 0.08) !important;
+}
+
+.external-portal-link:hover {
+  background: rgba(72, 213, 208, 0.2) !important;
+  box-shadow: 0 0 16px rgba(72, 213, 208, 0.4) !important;
+}
+
+.nav-portal-logo-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(72, 213, 208, 0.6));
+  flex-shrink: 0;
+}
+
+.nav-lite-tag {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: var(--vice-turquoise);
+  border: 1px solid rgba(72, 213, 208, 0.3);
+  border-radius: 4px;
+  padding: 3px 8px;
+  letter-spacing: 0.1em;
+  animation: litePulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes litePulse {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+/* ── Content Container ── */
+.app-content {
+  flex: 1;
+  padding-top: 68px;
+  position: relative;
+  z-index: 5;
+}
+
+/* ── Discreet Organizer Footer ── */
+.discreet-organizer-footer {
+  text-align: center;
+  padding: 12px 16px;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+}
+
+.organizer-shortcut-text {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: rgba(255, 242, 227, 0.2);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.organizer-shortcut-text:hover {
+  color: var(--vice-turquoise, #48D5D0);
+}

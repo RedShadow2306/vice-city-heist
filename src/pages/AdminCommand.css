@@ -1,0 +1,364 @@
+/* AdminCommand.css  -  GTA Vice City Theme  */
+@import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Bebas+Neue&display=swap");
+
+/* ════════════════════════════════
+   SHARED
+════════════════════════════════ */
+.admin-logo {
+  font-family: var(--font-display, "Pricedown", sans-serif);
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  color: var(--vice-hotpink, #F84391);
+  text-shadow:
+    0 0 12px rgba(248,67,145,0.8),
+    0 0 30px rgba(248,67,145,0.4);
+}
+
+/* ════════════════════════════════
+   PIN GATE
+════════════════════════════════ */
+.pin-gate {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  font-family: var(--font-mono, "Share Tech Mono", monospace);
+  color: var(--vc-orange, #FF6B35);
+  position: relative;
+  z-index: 10;
+}
+.pin-gate.shake { animation: vcPinShake 0.55s ease-in-out; }
+@keyframes vcPinShake {
+  0%,100% { transform: translateX(0) rotate(0deg); }
+  20%     { transform: translateX(-10px) rotate(-1deg); }
+  40%     { transform: translateX(10px) rotate(1deg); }
+  60%     { transform: translateX(-6px) rotate(-0.5deg); }
+  80%     { transform: translateX(6px); }
+}
+.pin-header { margin-bottom: 4px; }
+.pin-label {
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255,107,53,0.55);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+/* dotted display */
+.pin-dots { display: flex; gap: 16px; margin: 6px 0; }
+.pin-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,107,53,0.4);
+  background: transparent;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.pin-dot.filled {
+  background: var(--vc-pink, #FF2D78);
+  border-color: var(--vc-pink, #FF2D78);
+  box-shadow: 0 0 14px rgba(255,45,120,0.8), 0 0 28px rgba(255,45,120,0.3);
+  animation: dotPop 0.2s ease-out;
+}
+@keyframes dotPop {
+  from { transform: scale(0.6); }
+  to   { transform: scale(1); }
+}
+.pin-attempts {
+  font-size: 11px;
+  color: var(--vc-pink, #FF2D78);
+  text-shadow: 0 0 8px rgba(255,45,120,0.6);
+  margin: 0;
+  letter-spacing: 0.06em;
+}
+
+/* numpad */
+.pin-pad { display: grid; grid-template-columns: repeat(3, 64px); gap: 12px; }
+.pin-key {
+  background: rgba(255,107,53,0.07);
+  border: 1px solid rgba(255,107,53,0.3);
+  color: var(--vc-orange, #FF6B35);
+  font-family: var(--font-display, "Bebas Neue", sans-serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  width: 64px; height: 64px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  text-shadow: 0 0 10px rgba(255,107,53,0.5);
+  position: relative;
+  overflow: hidden;
+}
+/* neon fill sweep */
+.pin-key::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at center, rgba(255,107,53,0.2), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pin-key:hover::before { opacity: 1; }
+.pin-key:hover {
+  background: rgba(255,107,53,0.18);
+  box-shadow: 0 0 18px rgba(255,107,53,0.4);
+}
+.pin-key:active { transform: scale(0.9); }
+.pin-clear {
+  color: var(--vc-pink, #FF2D78);
+  border-color: rgba(255,45,120,0.3);
+  font-size: 14px;
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+}
+.pin-enter {
+  color: var(--vc-teal, #00F5FF);
+  border-color: rgba(0,245,255,0.3);
+  font-size: 20px;
+}
+
+/* ════════════════════════════════
+   ADMIN DASHBOARD ROOT
+════════════════════════════════ */
+.admin-root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono, "Share Tech Mono", monospace);
+  color: var(--vc-orange, #FF6B35);
+  position: relative;
+  z-index: 10;
+  padding: 0 clamp(12px, 3vw, 44px);
+  box-sizing: border-box;
+}
+
+/* ── header ── */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0 12px;
+  border-bottom: 1px solid rgba(255,107,53,0.25);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.admin-header-right { display: flex; align-items: center; gap: 14px; }
+
+.global-status {
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--vc-teal, #00F5FF);
+  text-shadow: 0 0 10px rgba(0,245,255,0.5);
+}
+.global-status.freeze-on {
+  color: var(--vc-teal, #00F5FF);
+  animation: statusFreeze 1.4s infinite alternate;
+}
+@keyframes statusFreeze {
+  from { opacity: 0.7; text-shadow: 0 0 10px rgba(0,245,255,0.4); }
+  to   { opacity: 1;   text-shadow: 0 0 20px rgba(0,245,255,0.8); }
+}
+
+/* ── admin buttons ── */
+.admin-btn {
+  background: rgba(255,107,53,0.07);
+  border: 1px solid rgba(255,107,53,0.4);
+  color: var(--vc-orange, #FF6B35);
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  text-shadow: 0 0 8px rgba(255,107,53,0.4);
+}
+.admin-btn:hover:not(:disabled) {
+  background: rgba(255,107,53,0.18);
+  box-shadow: 0 0 18px rgba(255,107,53,0.4);
+}
+.admin-btn:active:not(:disabled) { transform: scale(0.96); }
+.admin-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.admin-btn.danger {
+  color: var(--vc-pink, #FF2D78);
+  border-color: rgba(255,45,120,0.4);
+  background: rgba(255,45,120,0.07);
+  text-shadow: 0 0 8px rgba(255,45,120,0.4);
+}
+.admin-btn.danger:hover:not(:disabled) {
+  background: rgba(255,45,120,0.18);
+  box-shadow: 0 0 18px rgba(255,45,120,0.4);
+}
+.admin-btn.warn {
+  color: var(--vc-gold, #FFD700);
+  border-color: rgba(255,215,0,0.4);
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+.admin-btn.warn:hover:not(:disabled) {
+  background: rgba(255,215,0,0.1);
+  box-shadow: 0 0 18px rgba(255,215,0,0.3);
+}
+.admin-btn.green {
+  color: var(--vc-teal, #00F5FF);
+  border-color: rgba(0,245,255,0.3);
+  text-shadow: 0 0 8px rgba(0,245,255,0.4);
+}
+.admin-btn.green:hover:not(:disabled) {
+  background: rgba(0,245,255,0.1);
+  box-shadow: 0 0 16px rgba(0,245,255,0.35);
+}
+.admin-btn.tiny { padding: 4px 11px; font-size: 10px; }
+
+/* ── sections ── */
+.admin-section { margin: 26px 0; }
+.admin-section-title {
+  font-family: var(--font-display, "Bebas Neue", sans-serif);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: rgba(255,107,53,0.7);
+  margin: 0 0 14px;
+  text-shadow: 0 0 12px rgba(255,107,53,0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,107,53,0.3), transparent);
+}
+
+/* ════════════════════════════════
+   INSPECTOR TABLE
+════════════════════════════════ */
+.inspector-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(255,107,53,0.2);
+  border-radius: 8px;
+  box-shadow: 0 0 30px rgba(255,107,53,0.06), inset 0 0 20px rgba(0,0,0,0.3);
+}
+.inspector-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.inspector-table th {
+  background: rgba(255,107,53,0.08);
+  color: rgba(255,107,53,0.6);
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,107,53,0.2);
+  text-transform: uppercase;
+}
+.inspector-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(255,107,53,0.08);
+  vertical-align: middle;
+  transition: background 0.15s;
+}
+.inspector-table tr:last-child td { border-bottom: none; }
+.inspector-table tr.row-frozen {
+  opacity: 0.45;
+  background: rgba(0,245,255,0.03);
+}
+.inspector-table tr:hover td { background: rgba(255,107,53,0.04); }
+
+.mono { font-family: var(--font-mono, "Share Tech Mono", monospace); }
+.alias {
+  color: var(--vc-gold, #FFD700);
+  text-shadow: 0 0 8px rgba(255,215,0,0.3);
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.chap-badge {
+  background: rgba(155,0,255,0.12);
+  border: 1px solid rgba(155,0,255,0.3);
+  border-radius: 3px;
+  padding: 2px 9px;
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--vc-purple, #9B00FF);
+  text-shadow: 0 0 8px rgba(155,0,255,0.5);
+  letter-spacing: 0.06em;
+}
+.score-cell {
+  color: var(--vc-teal, #00F5FF);
+  text-shadow: 0 0 8px rgba(0,245,255,0.4);
+  letter-spacing: 0.04em;
+}
+.status-badge {
+  font-family: var(--font-ui, "Orbitron", sans-serif);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 9px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+.status-badge.active {
+  background: rgba(0,245,255,0.1);
+  color: var(--vc-teal, #00F5FF);
+  border: 1px solid rgba(0,245,255,0.25);
+  text-shadow: 0 0 6px rgba(0,245,255,0.5);
+}
+.status-badge.idle {
+  background: rgba(255,107,53,0.1);
+  color: var(--vc-orange, #FF6B35);
+  border: 1px solid rgba(255,107,53,0.25);
+}
+.status-badge.frozen {
+  background: rgba(155,0,255,0.12);
+  color: var(--vc-purple, #9B00FF);
+  border: 1px solid rgba(155,0,255,0.3);
+  text-shadow: 0 0 8px rgba(155,0,255,0.5);
+}
+
+/* ════════════════════════════════
+   ACTION LOG
+════════════════════════════════ */
+.log-panel {
+  background: rgba(7,0,15,0.65);
+  border: 1px solid rgba(255,107,53,0.18);
+  border-radius: 8px;
+  padding: 14px 16px;
+  height: 180px;
+  overflow-y: auto;
+  font-size: 12px;
+  color: rgba(255,107,53,0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
+}
+.log-panel::-webkit-scrollbar { width: 3px; }
+.log-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--vc-pink), var(--vc-orange));
+  border-radius: 3px;
+}
+.log-line {
+  color: var(--vc-gold, #FFD700);
+  text-shadow: 0 0 6px rgba(255,215,0,0.3);
+  animation: logEntry 0.25s ease-out;
+}
+@keyframes logEntry {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.log-empty { color: rgba(255,107,53,0.25); font-style: italic; }

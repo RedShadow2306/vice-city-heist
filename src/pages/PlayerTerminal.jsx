@@ -1,0 +1,1406 @@
+/**
+ * PlayerTerminal.jsx  –  Vice City Heist: Bank Manager Vault Defense
+ *
+ * Implements Full User Storyline:
+ *   1. Waiting Lobby: Player enters Name, Station Alias, College/Team & waits for Central Dispatch.
+ *   2. Admin Control Sync: When Admin (Port 5176) starts game, all terminals launch into Fullscreen Story Mode!
+ *   3. Tommy Vercetti Entrance Cutscene: Plays /video/heist_intro.mp4.
+ *   4. Locker Room & Manager GBA Conversation Box:
+ *      - Background: /images/vault_lockers.jpg
+ *      - Bank Manager Gordon Bennett (/images/manager.png) slides in from the left!
+ *      - Pokémon GBA conversation box with retro sound blips, typewriter text, and animated indicator arrow (▼).
+ *      - Manager gives live reactive feedback as assistant suggests passwords.
+ *   5. Timer & Classic GTA Wanted Star Level (Top Corner near Timer):
+ *      - Timer ONLY activates during active defense!
+ *      - Level 1: 2 Wanted Stars (Outer Lobby // Tellers Gate - 12 rules - 15m)
+ *      - Level 2: 4 Wanted Stars (Executive Cash Corridors - 22 rules - 12m - Faster Drill)
+ *      - Level 3: 6 MAX Wanted Stars (Titanium Deep Vault - 35 rules - 10m - Overdrive Drill)
+ *   6. Story Intermissions ("Tommy Didn't Accept Defeat"):
+ *      - After Level 1: "3 DAYS LATER IN VICE CITY... TOMMY VERCETTI REFUSED TO ACCEPT DEFEAT!"
+ *      - After Level 2: "ONE WEEK LATER... FINAL SIEGE AT TITANIUM DEEP VAULT!"
+ *   7. Fullscreen Lock & Anti-Tab Switch Protection:
+ *      - Switching tabs or exiting fullscreen freezes terminal with a breach alert.
+ *      - Released only when user loses, quits, wins, or Admin unfreezes them.
+ *   8. Classic GTA Vice City Mission Failed Screen:
+ *      - If time expires or breach occurs, displays classic red "MISSION FAILED" with doom gong sound.
+ *      - Terminal remains locked until Admin unfreezes them on Port 5176!
+ */
+
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import confetti from "canvas-confetti";
+import SoundEngine from "../utils/soundEngine";
+import { getManagerDirective, MANAGER_PRAISE } from "../utils/managerDialogue";
+import "./PlayerTerminal.css";
+
+const CHANNEL_NAME = "vch-admin-bus";
+const ADMIN_API_URL = "http://localhost:5176";
+
+/* ─── 3-Level Progressive Campaign Configurations ─── */
+const CAMPAIGN_LEVELS = {
+  1: {
+    levelNumber: 1,
+    title: "LEVEL 1 // OUTER LOBBY & TELLERS GATE",
+    shortName: "Level 1: Tellers Gate",
+    subtitle: "Floor 01 · Teller Security Perimeter",
+    rules: 12,
+    startSeconds: 900, // 15:00 minutes
+    drillSpeedMultiplier: 1.0,
+    wantedStars: 2,
+    bonusSeconds: 15,
+    minLength: 8,
+    minUpper: 2,
+    digitSumTarget: 25,
+    primeCountReq: 1,
+    vowelCountReq: 2,
+    color: "#48D5D0",
+    promotionRank: "ACTING DEPUTY VAULT OFFICER",
+    nextLevelLocation: "LEVEL 2: EXECUTIVE CASH CORRIDORS",
+  },
+  2: {
+    levelNumber: 2,
+    title: "LEVEL 2 // EXECUTIVE CASH CORRIDORS",
+    shortName: "Level 2: Cash Corridor",
+    subtitle: "Floor 02 · Safety Deposit Airlocks",
+    rules: 22,
+    startSeconds: 720, // 12:00 minutes (Faster urgency!)
+    drillSpeedMultiplier: 1.5,
+    wantedStars: 4,
+    bonusSeconds: 12,
+    minLength: 11,
+    minUpper: 4,
+    digitSumTarget: 32,
+    primeCountReq: 2,
+    vowelCountReq: 3,
+    color: "#FFD166",
+    promotionRank: "CHIEF TITANIUM VAULT CUSTODIAN",
+    nextLevelLocation: "FINAL LEVEL 3: TITANIUM DEEP VAULT",
+  },
+  3: {
+    levelNumber: 3,
+    title: "FINAL LEVEL 3 // TITANIUM DEEP VAULT",
+    shortName: "Level 3: Deep Vault",
+    subtitle: "Sub-Level · Master Titanium Chamber",
+    rules: 35,
+    startSeconds: 600, // 10:00 minutes (Maximum overdrive speed!)
+    drillSpeedMultiplier: 2.0,
+    wantedStars: 6,
+    bonusSeconds: 10,
+    minLength: 14,
+    minUpper: 5,
+    digitSumTarget: 40,
+    primeCountReq: 3,
+    vowelCountReq: 5,
+    color: "#F84391",
+    promotionRank: "HONORARY BANK DIRECTOR",
+    nextLevelLocation: null,
+  },
+};
+
+/* ─── Session Randomizer ─── */
+function createSessionData() {
+  const sponsors = ["daemon", "vercetti", "malibu", "ocean_drive", "ammu_nation"];
+  const elements = [
+    { sym: "Au", name: "Gold (Atomic #79)" },
+    { sym: "Ag", name: "Silver (Atomic #47)" },
+    { sym: "Fe", name: "Iron (Atomic #26)" },
+    { sym: "Kr", name: "Krypton (Atomic #36)" },
+    { sym: "Xe", name: "Xenon (Atomic #54)" },
+  ];
+  const geos = [
+    { country: "Japan", capital: "tokyo" },
+    { country: "France", capital: "paris" },
+    { country: "Egypt", capital: "cairo" },
+    { country: "Italy", capital: "rome" },
+    { country: "Brazil", capital: "brasilia" },
+  ];
+  const romans = [
+    { num: 35, roman: "XXXV" },
+    { num: 49, roman: "XLIX" },
+    { num: 74, roman: "LXXIV" },
+    { num: 95, roman: "XCV" },
+  ];
+  const swatches = [
+    { hex: "#FFF", css: "#ffffff", name: "Pure Vault White" },
+    { hex: "#ACE", css: "#aaccee", name: "Vice Ice Blue" },
+    { hex: "#FAB", css: "#ffaabb", name: "Flamingo Pink" },
+    { hex: "#DAD", css: "#ddaadd", name: "Orchid Neon" },
+  ];
+
+  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let captcha = "";
+  for (let i = 0; i < 5; i++) {
+    captcha += letters[Math.floor(Math.random() * letters.length)];
+  }
+
+  return {
+    sponsor: sponsors[Math.floor(Math.random() * sponsors.length)],
+    element: elements[Math.floor(Math.random() * elements.length)],
+    geo: geos[Math.floor(Math.random() * geos.length)],
+    romanTarget: romans[Math.floor(Math.random() * romans.length)],
+    swatch: swatches[Math.floor(Math.random() * swatches.length)],
+    captcha,
+  };
+}
+
+function getDigitSum(pw) {
+  return (pw.match(/\d/g) || []).reduce((acc, d) => acc + Number(d), 0);
+}
+
+/* ─── Build Full 35-Rule Security Suite ─── */
+function buildAll35Rules(session, cfg) {
+  return [
+    {
+      id: 1,
+      text: `Master key must contain at least ${cfg.minLength} characters`,
+      badge: (pw) => `${[...pw].length}/${cfg.minLength}`,
+      hint: `Type at least ${cfg.minLength} characters to meet minimum cipher length.`,
+      check: (pw) => [...pw].length >= cfg.minLength,
+    },
+    {
+      id: 2,
+      text: "Include at least one numerical vault digit (0-9)",
+      badge: () => "Digit",
+      hint: "Add any number from 0 to 9.",
+      check: (pw) => /\d/.test(pw),
+    },
+    {
+      id: 3,
+      text: `Include at least ${cfg.minUpper} uppercase letters`,
+      badge: (pw) => `${(pw.match(/[A-Z]/g) || []).length}/${cfg.minUpper}`,
+      hint: `Insert ${cfg.minUpper} or more capital letters.`,
+      check: (pw) => (pw.match(/[A-Z]/g) || []).length >= cfg.minUpper,
+    },
+    {
+      id: 4,
+      text: "Include at least one special security symbol (!@#$%^&*)",
+      badge: () => "Symbol",
+      hint: "Use punctuation or symbols like ! @ # $ % & *",
+      check: (pw) => /[^a-zA-Z0-9\s]/.test(pw),
+    },
+    {
+      id: 5,
+      text: `The vault digits must mathematically sum up to exactly ${cfg.digitSumTarget}`,
+      badge: (pw) => `Sum: ${getDigitSum(pw)}/${cfg.digitSumTarget}`,
+      hint: (pw) => `Current sum is ${getDigitSum(pw)}. Target is ${cfg.digitSumTarget}.`,
+      check: (pw) => getDigitSum(pw) === cfg.digitSumTarget,
+    },
+    {
+      id: 6,
+      text: "Include the name of any month in lowercase (e.g., may, june)",
+      badge: () => "Month",
+      hint: "Types: january, february, march, april, may, june, etc.",
+      check: (pw) => /january|february|march|april|may|june|july|august|september|october|november|december/i.test(pw),
+    },
+    {
+      id: 7,
+      text: `Include target Roman numeral: ${session.romanTarget.roman} (${session.romanTarget.num})`,
+      badge: () => session.romanTarget.roman,
+      hint: `Type "${session.romanTarget.roman}" in uppercase.`,
+      check: (pw) => pw.includes(session.romanTarget.roman),
+    },
+    {
+      id: 8,
+      text: `Include our bank security syndicate code: "${session.sponsor}"`,
+      badge: () => "Syndicate",
+      hint: `Type "${session.sponsor}" in your password.`,
+      check: (pw) => pw.toLowerCase().includes(session.sponsor),
+    },
+    {
+      id: 9,
+      text: `Authorize with the 5-letter biometric captcha: [${session.captcha}]`,
+      isCaptcha: true,
+      badge: () => session.captcha,
+      hint: `Enter "${session.captcha}" in exact uppercase letters.`,
+      check: (pw) => pw.includes(session.captcha),
+    },
+    {
+      id: 10,
+      text: `Include at least ${cfg.primeCountReq} prime digit${cfg.primeCountReq > 1 ? "s" : ""} (2, 3, 5, 7)`,
+      badge: (pw) => `${(pw.match(/[2357]/g) || []).length}/${cfg.primeCountReq}`,
+      hint: `Prime digits are 2, 3, 5, 7. Insert at least ${cfg.primeCountReq}.`,
+      check: (pw) => (pw.match(/[2357]/g) || []).length >= cfg.primeCountReq,
+    },
+    {
+      id: 11,
+      text: `Include the chemical element symbol for ${session.element.name}`,
+      badge: () => session.element.sym,
+      hint: `Chemical symbol for ${session.element.name} is "${session.element.sym}".`,
+      check: (pw) => pw.includes(session.element.sym),
+    },
+    {
+      id: 12,
+      text: 'Include the vault emergency master clearance word: "KEY"',
+      badge: () => "KEY",
+      hint: 'Type "KEY" in uppercase letters.',
+      check: (pw) => pw.includes("KEY"),
+    },
+    {
+      id: 13,
+      text: "Include the current fest year (2026) in Roman numerals: MMXXVI",
+      badge: () => "MMXXVI",
+      hint: "Type MMXXVI.",
+      check: (pw) => pw.includes("MMXXVI"),
+    },
+    {
+      id: 14,
+      text: 'Include our coastal getaway boulevard: "OCEAN"',
+      badge: () => "OCEAN",
+      hint: 'Type "OCEAN" in your password.',
+      check: (pw) => /ocean/i.test(pw),
+    },
+    {
+      id: 15,
+      text: 'Station our twin vault patrol surveillance code: "00"',
+      badge: () => "00",
+      hint: 'Type two consecutive zeros "00" in your password.',
+      check: (pw) => pw.includes("00"),
+    },
+    {
+      id: 16,
+      text: `Include the capital city code of ${session.geo.country}`,
+      badge: () => session.geo.capital,
+      hint: `Capital of ${session.geo.country} is "${session.geo.capital}".`,
+      check: (pw) => pw.toLowerCase().includes(session.geo.capital),
+    },
+    {
+      id: 17,
+      text: `Include at least ${cfg.vowelCountReq} uppercase English vowels (A, E, I, O, U)`,
+      badge: (pw) => `${(pw.match(/[AEIOU]/g) || []).length}/${cfg.vowelCountReq}`,
+      hint: `Uppercase vowels are A, E, I, O, U. Need ${cfg.vowelCountReq}.`,
+      check: (pw) => (pw.match(/[AEIOU]/g) || []).length >= cfg.vowelCountReq,
+    },
+    {
+      id: 18,
+      text: 'Include the binary representation of decimal 2: "10"',
+      badge: () => "10",
+      hint: 'The number 2 in binary is "10".',
+      check: (pw) => pw.includes("10"),
+    },
+    {
+      id: 19,
+      text: 'Include algebraic chess notation for Queen or Knight checkmate ("Q#" or "N#")',
+      badge: () => "Q# / N#",
+      hint: 'Type "Q#" for Queen mate or "N#" for Knight mate.',
+      check: (pw) => pw.includes("Q#") || pw.includes("N#"),
+    },
+    {
+      id: 20,
+      text: 'Include a 4-letter English palindrome (e.g., "noon", "deed")',
+      badge: () => "Palindrome",
+      hint: 'Examples: "noon", "deed", "peep", "anna", "otto".',
+      check: (pw) => /noon|deed|peep|anna|otto|toot|elle/i.test(pw),
+    },
+    {
+      id: 21,
+      text: 'Thermal drill overheating! Inject vault coolant formula: "H2O"',
+      badge: () => "H2O",
+      hint: 'Type "H2O" with capital H, number 2, and capital O.',
+      check: (pw) => pw.includes("H2O"),
+    },
+    {
+      id: 22,
+      text: `Include 3-character uppercase hex code for vault color swatch`,
+      isSwatch: true,
+      swatchColor: session.swatch.css,
+      badge: () => session.swatch.hex,
+      hint: `Color swatch hex code is "${session.swatch.hex}".`,
+      check: (pw) => pw.includes(session.swatch.hex),
+    },
+    {
+      id: 23,
+      text: "Include the name of any noble gas (e.g., neon, argon, krypton)",
+      badge: () => "Noble Gas",
+      hint: "Types: helium, neon, argon, krypton, xenon, radon.",
+      check: (pw) => /helium|neon|argon|krypton|xenon|radon/i.test(pw),
+    },
+    {
+      id: 24,
+      text: "Enclose encryption parameters with both opening and closing square brackets: [ ]",
+      badge: () => "[ ]",
+      hint: 'Include both "[" and "]".',
+      check: (pw) => pw.includes("[") && pw.includes("]"),
+    },
+    {
+      id: 25,
+      text: "Include a major world currency symbol ($ € £ ¥ ₹)",
+      badge: () => "Currency",
+      hint: 'Include a currency symbol like "$" (Shift + 4), "€", "£", "¥", or "₹".',
+      check: (pw) => /[$€£¥₹]/.test(pw),
+    },
+    {
+      id: 26,
+      text: 'Include an uppercase boolean logic gate ("NAND", "NOR", or "XOR")',
+      badge: () => "Logic Gate",
+      hint: 'Type "NAND", "NOR", or "XOR".',
+      check: (pw) => pw.includes("NAND") || pw.includes("NOR") || pw.includes("XOR"),
+    },
+    {
+      id: 27,
+      text: 'Include Vice City synthwave chord notation: "Am" or "Em"',
+      badge: () => "Chord",
+      hint: 'Type "Am" or "Em".',
+      check: (pw) => pw.includes("Am") || pw.includes("Em"),
+    },
+    {
+      id: 28,
+      text: 'Include the largest planet in our solar system: "jupiter"',
+      badge: () => "Astronomy",
+      hint: 'Largest planet is "jupiter".',
+      check: (pw) => pw.toLowerCase().includes("jupiter"),
+    },
+    {
+      id: 29,
+      text: 'Include the 2-letter uppercase HTTP 200 status word: "OK"',
+      badge: () => "HTTP Status",
+      hint: 'Type "OK".',
+      check: (pw) => pw.includes("OK"),
+    },
+    {
+      id: 30,
+      text: 'Include the universal 3-letter DNA start codon: "ATG"',
+      badge: () => "Genetics",
+      hint: 'Type "ATG" in uppercase.',
+      check: (pw) => pw.includes("ATG"),
+    },
+    {
+      id: 31,
+      text: 'Seal the security archive with file extension: ".enc"',
+      badge: () => ".enc",
+      hint: 'Type ".enc" (period, e, n, c).',
+      check: (pw) => pw.includes(".enc"),
+    },
+    {
+      id: 32,
+      text: 'Include both addition and equality math operators: "+" and "="',
+      badge: () => "Operators",
+      hint: 'Include both "+" and "=".',
+      check: (pw) => pw.includes("+") && pw.includes("="),
+    },
+    {
+      id: 33,
+      text: "Prohibited: Master key must not contain any whitespace characters",
+      badge: () => "No Spaces",
+      hint: "Remove all space characters.",
+      check: (pw) => !/\s/.test(pw),
+    },
+    {
+      id: 34,
+      text: "Symmetry protocol: First and last characters of master key must be identical",
+      badge: (pw) => (pw.length >= 2 ? `${pw[0]} … ${pw[pw.length - 1]}` : "Match"),
+      hint: "Make the very first character and last character the same character.",
+      check: (pw) => {
+        const c = [...pw];
+        return c.length >= 2 && c[0] === c[c.length - 1];
+      },
+    },
+    {
+      id: 35,
+      text: "Parity check: Total character count must be an even number",
+      badge: (pw) => `Len: ${[...pw].length}`,
+      hint: "Add or remove one character so the length is an even number.",
+      check: (pw) => [...pw].length > 0 && [...pw].length % 2 === 0,
+    },
+  ];
+}
+
+/* ─── GTA Wanted Stars Component ─── */
+function GtaWantedStars({ wantedCount }) {
+  return (
+    <div className="gta-wanted-container" title={`VCPD Threat Level: ${wantedCount} Stars`}>
+      <span className="wanted-label">WANTED LEVEL:</span>
+      <div className="wanted-stars-row">
+        {[1, 2, 3, 4, 5, 6].map((idx) => {
+          const isLit = idx <= wantedCount;
+          return (
+            <span
+              key={idx}
+              className={`gta-star ${isLit ? "star-active" : "star-hollow"} ${
+                isLit && wantedCount >= 4 ? "star-flash" : ""
+              }`}
+            >
+              ★
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function PlayerTerminal({ frozen: parentFrozen }) {
+  /* Screens: 'lobby' | 'cutscene' | 'briefing' | 'game' | 'story_intermission_1' | 'story_intermission_2' | 'mission_failed' | 'end' */
+  const [screen, setScreen] = useState("lobby");
+
+  /* Player Registration & Session Details */
+  const [playerId] = useState(() => localStorage.getItem("vch_player_id") || "P_" + Math.random().toString(36).substring(2, 8));
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem("vch_player_name") || "");
+  const [playerAlias, setPlayerAlias] = useState(() => localStorage.getItem("vch_player_alias") || "Terminal #01");
+  const [playerCollege, setPlayerCollege] = useState(() => localStorage.getItem("vch_player_college") || "");
+  const [isRegistered, setIsRegistered] = useState(() => Boolean(localStorage.getItem("vch_registered")));
+
+  /* Lockout & Security Freeze State */
+  const [isLockedBreach, setIsLockedBreach] = useState(() => localStorage.getItem("vch_locked_breach") === "true");
+  const [breachReason, setBreachReason] = useState(() => localStorage.getItem("vch_breach_reason") || "");
+
+  /* 3-Level 45-Minute Progressive Campaign State */
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [levelScores, setLevelScores] = useState({ 1: 0, 2: 0, 3: 0 });
+  const [levelTimes, setLevelTimes] = useState({ 1: 0, 2: 0, 3: 0 });
+  const [totalCampaignSeconds, setTotalCampaignSeconds] = useState(0);
+
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showPassword, setShowPassword] = useState(true);
+
+  /* Video & Manager Avatar Assets */
+  const [managerImgSrc] = useState("/images/manager.png");
+  const videoRef = useRef(null);
+
+  /* Game Session */
+  const [password, setPassword] = useState("");
+  const [unlockedCount, setUnlockedCount] = useState(1);
+  const [timeLeft, setTimeLeft] = useState(900); // 15:00 minutes
+  const [survivedSeconds, setSurvivedSeconds] = useState(0);
+  const [revealedHints, setRevealedHints] = useState(() => new Set());
+  const [bonusFloat, setBonusFloat] = useState(null);
+  const [lastPraise, setLastPraise] = useState(null);
+
+  const [sessionData, setSessionData] = useState(() => createSessionData());
+
+  /* Stable Refs */
+  const passwordRef = useRef(password);
+  passwordRef.current = password;
+
+  const unlockedCountRef = useRef(unlockedCount);
+  unlockedCountRef.current = unlockedCount;
+
+  const timeLeftRef = useRef(timeLeft);
+  timeLeftRef.current = timeLeft;
+
+  const survivedSecondsRef = useRef(survivedSeconds);
+  survivedSecondsRef.current = survivedSeconds;
+
+  const inputRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const cfg = CAMPAIGN_LEVELS[currentLevel] || CAMPAIGN_LEVELS[1];
+  const allRules = useMemo(() => buildAll35Rules(sessionData, cfg), [sessionData, cfg]);
+  const activeRulesList = useMemo(() => allRules.slice(0, cfg.rules), [allRules, cfg]);
+
+  /* ── Report Player Status to Standalone Admin Server (Port 5176) ── */
+  const reportToAdmin = useCallback(async (overrides = {}) => {
+    const payload = {
+      id: playerId,
+      name: playerName || "Anonymous Agent",
+      alias: playerAlias || "Station",
+      college: playerCollege || "Vice City Bank",
+      status: isLockedBreach ? "BREACH_LOCKED" : screen === "game" ? `LEVEL_${currentLevel}_ACTIVE` : screen.toUpperCase(),
+      currentLevel,
+      rulesCleared: unlockedCount - 1,
+      timeLeft: timeLeftRef.current,
+      isBreached: isLockedBreach,
+      ...overrides,
+    };
+
+    // 1. Post to Port 5176 Admin Server
+    try {
+      await fetch(`${ADMIN_API_URL}/api/player/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch (_) {
+      // Admin server might be running elsewhere or offline
+    }
+
+    // 2. Also broadcast to BroadcastChannel for local tab synchronization
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        const bus = new BroadcastChannel(CHANNEL_NAME);
+        bus.postMessage({ type: "playerUpdate", ...payload });
+        bus.close();
+      }
+    } catch (_) {}
+  }, [playerId, playerName, playerAlias, playerCollege, isLockedBreach, screen, currentLevel, unlockedCount]);
+
+  /* ── Start Fullscreen Mode ── */
+  const requestFullscreenSafe = () => {
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen && !document.fullscreenElement) {
+        el.requestFullscreen().catch(() => {});
+      }
+    } catch (_) {}
+  };
+
+  /* ── Release Fullscreen Mode ── */
+  const exitFullscreenSafe = () => {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch (_) {}
+  };
+
+  /* ── Launch Story Mode from Lobby ── */
+  const launchStoryMode = useCallback(() => {
+    SoundEngine.init();
+    SoundEngine.playClick();
+    SoundEngine.playWantedStar();
+    requestFullscreenSafe();
+    setScreen("cutscene");
+    setCurrentLevel(1);
+    reportToAdmin({ status: "STORY_CUTSCENE", currentLevel: 1 });
+  }, [reportToAdmin]);
+
+  /* ── Listen for Admin Commands (via Polling Port 5176 & BroadcastChannel) ── */
+  useEffect(() => {
+    const checkAdminCommands = async () => {
+      try {
+        const res = await fetch(`${ADMIN_API_URL}/api/state`);
+        const data = await res.json();
+        const cmd = data?.gameState?.activeCommand;
+
+        if (cmd) {
+          const cmdTime = cmd.timestamp;
+          const lastProcessed = Number(sessionStorage.getItem("vch_last_admin_cmd") || 0);
+
+          if (cmdTime > lastProcessed) {
+            sessionStorage.setItem("vch_last_admin_cmd", String(cmdTime));
+
+            if (cmd.action === "START_STORY_MODE") {
+              if (screen === "lobby") {
+                launchStoryMode();
+              }
+            } else if (cmd.action === "UNFREEZE_PLAYER") {
+              if (!cmd.playerId || cmd.playerId === playerId) {
+                setIsLockedBreach(false);
+                localStorage.removeItem("vch_locked_breach");
+                localStorage.removeItem("vch_breach_reason");
+                if (screen === "mission_failed") {
+                  setScreen("game");
+                  setTimeLeft(cfg.startSeconds);
+                  timeLeftRef.current = cfg.startSeconds;
+                }
+              }
+            } else if (cmd.action === "RESET_TO_LOBBY") {
+              clearInterval(timerRef.current);
+              setScreen("lobby");
+              setIsLockedBreach(false);
+              localStorage.removeItem("vch_locked_breach");
+              exitFullscreenSafe();
+            } else if (cmd.action === "TRIGGER_SIREN") {
+              SoundEngine.playSiren();
+            }
+          }
+        }
+      } catch (_) {}
+    };
+
+    const interval = setInterval(checkAdminCommands, 1000);
+    return () => clearInterval(interval);
+  }, [screen, launchStoryMode, playerId, cfg.startSeconds]);
+
+  /* ── Anti-Cheat: Fullscreen & Tab Switch Watcher ── */
+  useEffect(() => {
+    if (screen !== "game" || isLockedBreach) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && screen === "game") {
+        setIsLockedBreach(true);
+        setBreachReason("UNAUTHORIZED TAB SWITCH DETECTED");
+        localStorage.setItem("vch_locked_breach", "true");
+        localStorage.setItem("vch_breach_reason", "UNAUTHORIZED TAB SWITCH DETECTED");
+        SoundEngine.playAlert();
+        reportToAdmin({ isBreached: true, status: "LOCKED_TAB_SWITCH" });
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && screen === "game") {
+        setIsLockedBreach(true);
+        setBreachReason("FULLSCREEN DEPARTURE DETECTED");
+        localStorage.setItem("vch_locked_breach", "true");
+        localStorage.setItem("vch_breach_reason", "FULLSCREEN DEPARTURE DETECTED");
+        SoundEngine.playAlert();
+        reportToAdmin({ isBreached: true, status: "LOCKED_FULLSCREEN_EXIT" });
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, [screen, isLockedBreach, reportToAdmin]);
+
+  /* ── Time Adjustment & Feedback ── */
+  const triggerTimeBonus = useCallback((delta) => {
+    setTimeLeft((prev) => {
+      const next = Math.max(0, prev + delta);
+      timeLeftRef.current = next;
+      return next;
+    });
+    setBonusFloat(`+${delta}s`);
+    setTimeout(() => setBonusFloat(null), 1800);
+  }, []);
+
+  /* ── Level Finished Handler ── */
+  const handleLevelFinished = useCallback(
+    (won, finalPw, finalUnlocked) => {
+      clearInterval(timerRef.current);
+      if (soundEnabled) SoundEngine.stopDrone();
+
+      if (!won) {
+        // Mission Failed!
+        if (soundEnabled) SoundEngine.playMissionFailed();
+        setIsLockedBreach(true);
+        setBreachReason("THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000");
+        localStorage.setItem("vch_locked_breach", "true");
+        localStorage.setItem("vch_breach_reason", "THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000");
+        setScreen("mission_failed");
+        reportToAdmin({ status: "LOCKED_FAILED", isBreached: true });
+        return;
+      }
+
+      // Level Cleared Successfully!
+      if (soundEnabled) {
+        SoundEngine.playSuccess();
+        try {
+          confetti({
+            particleCount: 130,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ["#F84391", "#48D5D0", "#FFD166", "#FFF2E3"],
+          });
+        } catch (_) {}
+      }
+
+      const levelScore = Math.round(
+        survivedSecondsRef.current * 15 + cfg.rules * 160 + timeLeftRef.current * 20
+      );
+
+      setLevelScores((prev) => ({ ...prev, [currentLevel]: levelScore }));
+      setLevelTimes((prev) => ({ ...prev, [currentLevel]: survivedSecondsRef.current }));
+
+      // Story Intermission Transitions
+      if (currentLevel === 1) {
+        setScreen("story_intermission_1");
+        reportToAdmin({ status: "CLEARED_LEVEL_1", currentLevel: 2 });
+      } else if (currentLevel === 2) {
+        setScreen("story_intermission_2");
+        reportToAdmin({ status: "CLEARED_LEVEL_2", currentLevel: 3 });
+      } else {
+        // Grand Victory!
+        exitFullscreenSafe();
+        setScreen("end");
+        reportToAdmin({ status: "GRAND_WON" });
+      }
+    },
+    [cfg, currentLevel, soundEnabled, reportToAdmin]
+  );
+
+  /* ── Input Change & Progressive Unlock ── */
+  const handleInputChange = (e) => {
+    if (isLockedBreach) return;
+    const newPw = e.target.value;
+    setPassword(newPw);
+    if (soundEnabled) SoundEngine.playKeyType();
+
+    let curUnlocked = unlockedCount;
+    while (curUnlocked <= cfg.rules) {
+      const activeRules = activeRulesList.slice(0, curUnlocked);
+      const allPassed = activeRules.every((r) => r.check(newPw));
+
+      if (allPassed) {
+        if (curUnlocked === cfg.rules) {
+          setUnlockedCount(curUnlocked);
+          handleLevelFinished(true, newPw, curUnlocked);
+          return;
+        }
+        curUnlocked += 1;
+        setUnlockedCount(curUnlocked);
+        triggerTimeBonus(cfg.bonusSeconds);
+
+        if (soundEnabled) {
+          SoundEngine.playRuleClear();
+          SoundEngine.playRadioChirp();
+        }
+
+        const praise = MANAGER_PRAISE[Math.floor(Math.random() * MANAGER_PRAISE.length)];
+        setLastPraise(praise);
+        setTimeout(() => setLastPraise(null), 3500);
+      } else {
+        break;
+      }
+    }
+  };
+
+  /* ── Cutscene Completion ── */
+  const handleCutsceneDone = () => {
+    if (videoRef.current) videoRef.current.pause();
+    if (soundEnabled) SoundEngine.playClick();
+    setScreen("briefing");
+    reportToAdmin({ status: "BRIEFING" });
+  };
+
+  /* ── Start Active Defense on Current Level ── */
+  const handleStartActiveDefense = (levelToStart) => {
+    SoundEngine.init();
+    if (soundEnabled) {
+      SoundEngine.playClick();
+      SoundEngine.playWantedStar();
+    }
+
+    const targetCfg = CAMPAIGN_LEVELS[levelToStart];
+    setCurrentLevel(levelToStart);
+    setSessionData(createSessionData());
+    setPassword("");
+    setUnlockedCount(1);
+    setTimeLeft(targetCfg.startSeconds);
+    timeLeftRef.current = targetCfg.startSeconds;
+    setSurvivedSeconds(0);
+    survivedSecondsRef.current = 0;
+    setRevealedHints(new Set());
+    setLastPraise(null);
+    setScreen("game");
+
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 150);
+
+    reportToAdmin({
+      status: `LEVEL_${levelToStart}_ACTIVE`,
+      currentLevel: levelToStart,
+      rulesCleared: 0,
+    });
+  };
+
+  /* ── Timer Countdown Effect (Active Defense Only!) ── */
+  useEffect(() => {
+    if (screen !== "game" || isLockedBreach || parentFrozen) {
+      clearInterval(timerRef.current);
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      if (timeLeftRef.current <= 1) {
+        clearInterval(timerRef.current);
+        handleLevelFinished(false, passwordRef.current, unlockedCountRef.current);
+        setTimeLeft(0);
+        return;
+      }
+
+      if (timeLeftRef.current <= 11 && soundEnabled) {
+        SoundEngine.playTick();
+      }
+
+      setTimeLeft((prev) => {
+        const next = Math.max(0, prev - 1);
+        timeLeftRef.current = next;
+        return next;
+      });
+
+      setSurvivedSeconds((s) => {
+        const next = s + 1;
+        survivedSecondsRef.current = next;
+        return next;
+      });
+
+      setTotalCampaignSeconds((s) => s + 1);
+    }, 1000);
+
+    return () => clearInterval(timerRef.current);
+  }, [screen, isLockedBreach, parentFrozen, soundEnabled, handleLevelFinished]);
+
+  /* ── Manager Dialogue Computation ── */
+  const displayedRules = useMemo(() => activeRulesList.slice(0, unlockedCount), [activeRulesList, unlockedCount]);
+  const activeFailing = useMemo(
+    () => [...displayedRules].reverse().find((r) => !r.check(password)),
+    [displayedRules, password]
+  );
+  const currentDirective = useMemo(
+    () => getManagerDirective(activeFailing?.id, password, cfg),
+    [activeFailing, password, cfg]
+  );
+
+  /* Typewriter Effect with retro GBA text blips */
+  const [typedSpeech, setTypedSpeech] = useState("");
+  useEffect(() => {
+    let i = 0;
+    const fullText = currentDirective.speech;
+    setTypedSpeech("");
+
+    const interval = setInterval(() => {
+      if (i < fullText.length) {
+        setTypedSpeech(fullText.slice(0, i + 1));
+        if (soundEnabled && i % 3 === 0) SoundEngine.playTextBlip();
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 24);
+
+    return () => clearInterval(interval);
+  }, [currentDirective.speech, soundEnabled]);
+
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
+  /* ── Lobby Registration Submit ── */
+  const handleRegisterLobby = (e) => {
+    e.preventDefault();
+    if (!playerName.trim()) return;
+    localStorage.setItem("vch_player_id", playerId);
+    localStorage.setItem("vch_player_name", playerName);
+    localStorage.setItem("vch_player_alias", playerAlias);
+    localStorage.setItem("vch_player_college", playerCollege);
+    localStorage.setItem("vch_registered", "true");
+    setIsRegistered(true);
+
+    if (soundEnabled) SoundEngine.playClick();
+    reportToAdmin({ status: "IN_LOBBY" });
+  };
+
+  /* ══════════════════════════════════════════════════
+     RENDER INTERFACE
+     ══════════════════════════════════════════════════ */
+  return (
+    <main className={`terminal-root ${isLockedBreach ? "breach-locked" : ""}`}>
+
+      {/* ── SCREEN 1: WAITING LOBBY (Main Association Background & Clutter-Free) ── */}
+      {screen === "lobby" && (
+        <section className="lobby-fullscreen-stage">
+          {/* Main Association Website Sunset Background Layers */}
+          <div className="lobby-bg-viewport" aria-hidden="true">
+            <img
+              src="/images/vice-hero.jpg"
+              alt="DAEMON Vice City Sunset"
+              className="lobby-bg-img"
+            />
+            <div className="lobby-bg-overlay-warm" />
+            <div className="lobby-bg-overlay-vignette" />
+            <div className="lobby-bg-sunflare" />
+            <div className="lobby-bg-grain" />
+          </div>
+
+          <div className="lobby-card">
+            <div className="lobby-badge">🚔 VCPD CENTRAL BANK DISPATCH · DAEMON '26</div>
+            <h1 className="vice-display-lg lobby-title">EL BANCO CORRUPTO GRANDE</h1>
+            <p className="lobby-subtitle">CENTRAL VAULT DEFENSE PROTOCOL · CSE ASSOCIATION</p>
+
+            {!isRegistered ? (
+              /* Registration Form */
+              <form onSubmit={handleRegisterLobby} className="lobby-reg-form">
+                <div className="form-group">
+                  <label className="form-label">YOUR FULL NAME / AGENT NAME</label>
+                  <input
+                    type="text"
+                    required
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    placeholder="e.g. Lance Vance"
+                    className="lobby-input"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group flex-1">
+                    <label className="form-label">STATION / TERMINAL ALIAS</label>
+                    <input
+                      type="text"
+                      value={playerAlias}
+                      onChange={(e) => setPlayerAlias(e.target.value)}
+                      placeholder="e.g. Terminal #04"
+                      className="lobby-input"
+                    />
+                  </div>
+                  <div className="form-group flex-1">
+                    <label className="form-label">COLLEGE / TEAM NAME</label>
+                    <input
+                      type="text"
+                      value={playerCollege}
+                      onChange={(e) => setPlayerCollege(e.target.value)}
+                      placeholder="e.g. Cyber Squad"
+                      className="lobby-input"
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="vice-btn primary-btn lobby-submit-btn">
+                  ENTER CENTRAL WAITING LOUNGE ➔
+                </button>
+              </form>
+            ) : (
+              /* Waiting Lounge View */
+              <div className="lobby-waiting-view">
+                <div className="vault-rotary-lock" title="Central Vault Combination Dial">
+                  <div className="vault-dial-ring">
+                    <div className="vault-dial-tick tick-0"></div>
+                    <div className="vault-dial-tick tick-20"></div>
+                    <div className="vault-dial-tick tick-40"></div>
+                    <div className="vault-dial-tick tick-60"></div>
+                    <div className="vault-dial-tick tick-80"></div>
+                  </div>
+                  <div className="vault-wheel-spinner">
+                    <div className="vault-spoke spoke-vert"></div>
+                    <div className="vault-spoke spoke-horiz"></div>
+                    <div className="vault-spoke spoke-diag1"></div>
+                    <div className="vault-spoke spoke-diag2"></div>
+                    <div className="vault-center-hub">
+                      <div className="vault-hub-laser"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="waiting-status-box">
+                  <div className="waiting-pulse-dot"></div>
+                  <span className="waiting-status-text">
+                    TERMINAL CONNECTED: <strong>{playerName}</strong> ({playerAlias})
+                  </span>
+                </div>
+
+                <p className="waiting-dispatch-msg">
+                  STANDBY IN THE BANK LOBBY. AWAITING CENTRAL DISPATCH (PORT 5176) TO LAUNCH STORY MODE.
+                </p>
+
+                <div className="lobby-practice-action">
+                  <button
+                    type="button"
+                    className="lobby-back-btn"
+                    onClick={() => {
+                      if (soundEnabled) SoundEngine.playClick();
+                      setIsRegistered(false);
+                      reportToAdmin({ status: "NAME_ENTRY" });
+                    }}
+                    title="Return to name & terminal registration page"
+                  >
+                    ⮌ BACK TO AGENT REGISTRATION
+                  </button>
+
+                  <button
+                    type="button"
+                    className="solo-start-btn"
+                    onClick={launchStoryMode}
+                    title="Click for solo testing or offline demo"
+                  >
+                    ▶ [SOLO TEST: LAUNCH STORY MODE DIRECTLY]
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── SCREEN 2: TOMMY VERCETTI CUTSCENE VIDEO ── */}
+      {screen === "cutscene" && (
+        <section className="cutscene-fullscreen-stage">
+          <div className="video-player-frame">
+            <video
+              ref={videoRef}
+              src="/video/heist_intro.mp4"
+              autoPlay
+              playsInline
+              onEnded={handleCutsceneDone}
+              className="heist-cutscene-video"
+            />
+            <div className="cutscene-controls-overlay">
+              <span className="cutscene-tag">🎬 TRANSMISSION // LIVE INFILTRATION</span>
+              <button
+                type="button"
+                className="vice-btn primary-btn skip-cutscene-btn"
+                onClick={handleCutsceneDone}
+              >
+                PROCEED TO SECURITY LOCKER ROOM ➔
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── SCREEN 3: LOCKER ROOM BRIEFING & MANAGER GBA BOX ── */}
+      {screen === "briefing" && (
+        <section className="locker-briefing-stage">
+          <div className="locker-briefing-card">
+            <div className="locker-scene-header">
+              <span className="scene-badge">🚨 EMERGENCY AIRLOCK // SUB-LEVEL</span>
+              <h2 className="vice-display-lg scene-title">{cfg.title}</h2>
+              <p className="scene-sub">Vercetti's gang has infiltrated the outer perimeter!</p>
+            </div>
+
+            {/* Pokémon GBA Interactive Box */}
+            <div className="gba-interactive-wrapper briefing-gba">
+              <div className="gba-manager-slide-container slide-in">
+                <div className="manager-portrait-frame speaking">
+                  <img src={managerImgSrc} alt="Bank Manager Gordon Bennett" className="manager-portrait-img" />
+                </div>
+              </div>
+
+              <div className="gba-dialogue-box">
+                <div className="gba-nameplate">
+                  <span>👔 MANAGER GORDON BENNETT</span>
+                  <span className="gba-mood-chip urgent">PANICKED</span>
+                </div>
+                <div className="gba-text-content">
+                  <p className="gba-typewriter-text">
+                    "ASSISTANT! Tommy Vercetti and his crew just blasted through the lobby! Tommy will take about 10 to 15 minutes to breach the inner blast gates! You must set an unbreakable cipher on this terminal immediately! Every suggestion you make, I will verify the security protocols!"
+                  </p>
+                </div>
+                <div className="gba-prompt-arrow blink">▼</div>
+              </div>
+            </div>
+
+            <div className="action-row center-actions">
+              <button
+                type="button"
+                className="vice-btn primary-btn large-cta"
+                onClick={() => handleStartActiveDefense(1)}
+              >
+                ENGAGE LEVEL 1 CIPHER CONSOLE ➔
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── SCREEN 4: ACTIVE PASSWORD DEFENSE GAME (Clean, Locker Background & Wanted Stars) ── */}
+      {screen === "game" && (
+        <section className="vault-game-stage">
+          <div className="vault-game-inner">
+
+            {/* Top HUD: Level Title, Timer & Classic GTA Wanted Stars */}
+            <div className="game-hud-bar">
+              <div className="hud-level-info">
+                <span className="hud-level-tag">{cfg.title}</span>
+                <span className="hud-layer-tag">Layer {unlockedCount} of {cfg.rules}</span>
+              </div>
+
+              {/* Classic GTA Wanted Star Level */}
+              <GtaWantedStars wantedCount={cfg.wantedStars} />
+
+              {/* Countdown Timer */}
+              <div className="hud-timer-badge">
+                <span className="timer-icon">⏱</span>
+                <span className="timer-digits">{formatTime(timeLeft)}</span>
+                {bonusFloat && <span className="bonus-float-tag">{bonusFloat}</span>}
+              </div>
+            </div>
+
+            {/* Tommy Vercetti Drill Threat Gauge */}
+            <div className="threat-gauge-box">
+              <div className="threat-label-row">
+                <span className="drill-text">⚠️ TOMMY VERCETTI THERMAL DRILL BREACH:</span>
+                <span className="drill-velocity-badge">SPEED: {cfg.drillSpeedMultiplier.toFixed(1)}x</span>
+                <span className="drill-pct">
+                  {Math.min(
+                    100,
+                    Math.round(((cfg.startSeconds - Math.min(cfg.startSeconds, timeLeft)) / cfg.startSeconds) * 100)
+                  )}%
+                </span>
+              </div>
+              <div className="threat-meter-track">
+                <div
+                  className="threat-meter-fill"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.round(((cfg.startSeconds - Math.min(cfg.startSeconds, timeLeft)) / cfg.startSeconds) * 100)
+                    )}%`,
+                    backgroundColor: cfg.color,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Pokémon GBA Conversation Box with Manager Sliding from Left */}
+            <div className="gba-interactive-wrapper">
+              <div className="gba-manager-slide-container slide-in">
+                <div className="manager-portrait-frame speaking">
+                  <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
+                </div>
+              </div>
+
+              <div className="gba-dialogue-box in-game-gba">
+                <div className="gba-nameplate">
+                  <span>👔 MANAGER GORDON BENNETT</span>
+                  <span className={`gba-mood-chip ${currentDirective.mood}`}>
+                    {currentDirective.mood.toUpperCase()}
+                  </span>
+                </div>
+
+                <div className="gba-text-content">
+                  {lastPraise && <div className="gba-praise-banner">✨ {lastPraise}</div>}
+                  <div className="gba-directive-headline">{currentDirective.headline}</div>
+                  <p className="gba-typewriter-text">"{typedSpeech}"</p>
+                </div>
+
+                <div className="gba-prompt-arrow blink">▼</div>
+              </div>
+            </div>
+
+            {/* Master Input Box */}
+            <div className="master-input-box">
+              <div className={`input-container ${password.length > 0 && activeFailing ? "input-failing" : ""}`}>
+                <input
+                  ref={inputRef}
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={handleInputChange}
+                  placeholder={`Suggest password for ${cfg.shortName}...`}
+                  className="master-password-field"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  disabled={isLockedBreach}
+                />
+
+                <div className="input-adornments">
+                  <span className="char-count-badge">{[...password].length} CHARS</span>
+                  <button
+                    type="button"
+                    className="toggle-vis-btn"
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? "👁" : "🔒"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Active Rules List */}
+            <div className="rules-scroll-area">
+              {displayedRules.map((rule) => {
+                const passed = rule.check(password);
+                const isHinted = revealedHints.has(rule.id);
+                return (
+                  <div key={rule.id} className={`rule-card ${passed ? "passed" : "failing"}`}>
+                    <div className="rule-card-header">
+                      <div className="rule-title-group">
+                        <span className="rule-status-icon">{passed ? "✓" : "✕"}</span>
+                        <span className="rule-title">
+                          <strong>LAYER {rule.id}:</strong> {rule.text}
+                        </span>
+                      </div>
+
+                      {rule.isSwatch ? (
+                        <span className="swatch-sample-chip" style={{ backgroundColor: rule.swatchColor }} />
+                      ) : (
+                        <span className="rule-state-badge">{rule.badge(password)}</span>
+                      )}
+                    </div>
+
+                    {isHinted && (
+                      <div className="rule-hint-drawer visible">
+                        💡 MANAGER INTEL: {typeof rule.hint === "function" ? rule.hint(password) : rule.hint}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="game-footer-actions">
+              <button
+                type="button"
+                className="cancel-btn"
+                onClick={() => {
+                  setIsLockedBreach(true);
+                  setBreachReason("MISSION ABORTED BY AGENT");
+                  setScreen("mission_failed");
+                  reportToAdmin({ status: "ABORTED", isBreached: true });
+                }}
+              >
+                ABORT MISSION
+              </button>
+
+              <button
+                type="button"
+                className="hint-btn"
+                onClick={() => {
+                  if (activeFailing && !revealedHints.has(activeFailing.id)) {
+                    setRevealedHints((prev) => new Set([...prev, activeFailing.id]));
+                    triggerTimeBonus(-15);
+                    if (soundEnabled) SoundEngine.playHintUsed();
+                  }
+                }}
+              >
+                ASK MANAGER FOR HINT (-15s)
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── SCREEN 5: STORY INTERMISSION 1 (Tommy Didn't Accept Defeat) ── */}
+      {screen === "story_intermission_1" && (
+        <section className="intermission-fullscreen-stage">
+          <div className="intermission-card">
+            <div className="intermission-newspaper-header">
+              <span className="newspaper-date">🌴 THREE DAYS LATER IN VICE CITY... 🌴</span>
+              <h2 className="vice-display-lg newspaper-headline">
+                TOMMY VERCETTI REFUSED TO ACCEPT DEFEAT!
+              </h2>
+            </div>
+
+            <div className="intermission-story-box">
+              <p>
+                Word on Ocean Beach is Tommy Vercetti trashed the Malibu Club in a blind fury after being repelled at the Tellers Gate! He refused to accept defeat! He regrouped his syndicate, acquired high-yield thermal drills, and is storming the Executive Cash Corridors right now!
+              </p>
+            </div>
+
+            <div className="gba-interactive-wrapper briefing-gba">
+              <div className="gba-manager-slide-container slide-in">
+                <div className="manager-portrait-frame speaking">
+                  <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
+                </div>
+              </div>
+
+              <div className="gba-dialogue-box">
+                <div className="gba-nameplate">
+                  <span>👔 MANAGER GORDON BENNETT</span>
+                  <span className="gba-mood-chip urgent">ALARMED</span>
+                </div>
+                <div className="gba-text-content">
+                  <p className="gba-typewriter-text">
+                    "ROOKIE! HE DIDN'T ACCEPT HIS LOSS! He's drilling twice as fast—we need to make the password STRONGER, and FASTER than before! Move to Level 2 Executive Corridors NOW!"
+                  </p>
+                </div>
+                <div className="gba-prompt-arrow blink">▼</div>
+              </div>
+            </div>
+
+            <div className="action-row center-actions">
+              <button
+                type="button"
+                className="vice-btn primary-btn large-cta"
+                onClick={() => handleStartActiveDefense(2)}
+              >
+                ENGAGE LEVEL 2 DEFENSE (FASTER DRILL) ➔
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── SCREEN 6: STORY INTERMISSION 2 (Final Siege) ── */}
+      {screen === "story_intermission_2" && (
+        <section className="intermission-fullscreen-stage">
+          <div className="intermission-card">
+            <div className="intermission-newspaper-header">
+              <span className="newspaper-date">🌴 ONE WEEK LATER... STARFISH ISLAND 🌴</span>
+              <h2 className="vice-display-lg newspaper-headline">
+                THE FINAL SIEGE: VERCETTI'S ALL-OUT ASSAULT ON THE DEEP VAULT!
+              </h2>
+            </div>
+
+            <div className="intermission-story-box">
+              <p>
+                Furious after two failed attempts, Tommy Vercetti deployed an industrial laser drill directly into the Sub-Level Titanium Deep Vault! This is his last, most desperate heist attempt!
+              </p>
+            </div>
+
+            <div className="gba-interactive-wrapper briefing-gba">
+              <div className="gba-manager-slide-container slide-in">
+                <div className="manager-portrait-frame speaking">
+                  <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
+                </div>
+              </div>
+
+              <div className="gba-dialogue-box">
+                <div className="gba-nameplate">
+                  <span>👔 MANAGER GORDON BENNETT</span>
+                  <span className="gba-mood-chip urgent">DESPERATE</span>
+                </div>
+                <div className="gba-text-content">
+                  <p className="gba-typewriter-text">
+                    "THIS IS HIS FINAL STAND, ASSISTANT! All 35 security layers must be locked simultaneously—and FASTER than ever! If you fail, the bank's entire gold reserve is his! SECURE THE TITANIUM VAULT!"
+                  </p>
+                </div>
+                <div className="gba-prompt-arrow blink">▼</div>
+              </div>
+            </div>
+
+            <div className="action-row center-actions">
+              <button
+                type="button"
+                className="vice-btn primary-btn large-cta"
+                onClick={() => handleStartActiveDefense(3)}
+              >
+                DEPLOY LEVEL 3 MAXIMUM CIPHER ➔
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── SCREEN 7: CLASSIC GTA VICE CITY MISSION FAILED (Locked until Admin Unfreezes) ── */}
+      {screen === "mission_failed" && (
+        <section className="mission-failed-fullscreen-stage">
+          <div className="failed-inner-box">
+            <h1 className="vice-display-lg failed-title">MISSION FAILED</h1>
+            <p className="failed-reason">{breachReason}</p>
+
+            <div className="failed-lockout-notice">
+              <span className="lockout-badge">🔒 TERMINAL LOCKED DOWN</span>
+              <p className="lockout-text">
+                Your station has been locked by Central Security. You cannot proceed or refresh. Await Central Dispatch / Admin authorization from Port 5176 to unfreeze your terminal.
+              </p>
+            </div>
+
+            <div className="solo-dev-unfreeze">
+              <button
+                type="button"
+                className="dev-override-btn"
+                onClick={() => {
+                  setIsLockedBreach(false);
+                  localStorage.removeItem("vch_locked_breach");
+                  localStorage.removeItem("vch_breach_reason");
+                  setScreen("lobby");
+                  exitFullscreenSafe();
+                }}
+              >
+                [OVERRIDE: RETURN TO LOBBY]
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── SCREEN 8: GRAND CHAMPION FINALE ── */}
+      {screen === "end" && (
+        <section className="grand-victory-fullscreen-stage">
+          <div className="victory-card">
+            <span className="trophy-badge">🏆</span>
+            <h1 className="vice-display-lg victory-title">MISSION PASSED!</h1>
+            <div className="respect-plus-badge">RESPECT +</div>
+
+            <p className="victory-speech">
+              Manager Bennett: <em>"UNBELIEVABLE! You defended all 3 floors across 45 minutes of intense siege! The Titanium Vault is permanently clamped shut, and VCPD SWAT arrested Vercetti's crew! By order of the Board, you are hereby appointed HONORARY BANK DIRECTOR!"</em>
+            </p>
+
+            <div className="action-row center-actions">
+              <button
+                type="button"
+                className="vice-btn primary-btn"
+                onClick={() => {
+                  setScreen("lobby");
+                  exitFullscreenSafe();
+                }}
+              >
+                RETURN TO LOBBY ➔
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+    </main>
+  );
+}

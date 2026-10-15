@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
+  <defs>
+    <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#45355F" />
+      <stop offset="100%" stop-color="#26182F" />
+    </linearGradient>
+    <linearGradient id="suitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2A1B38" />
+      <stop offset="100%" stop-color="#150B20" />
+    </linearGradient>
+    <linearGradient id="tieGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F84391" />
+      <stop offset="100%" stop-color="#FF6AAE" />
+    </linearGradient>
+    <linearGradient id="skinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD6BA" />
+      <stop offset="100%" stop-color="#F4B896" />
+    </linearGradient>
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#F84391" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Circular Portal Halo -->
+  <circle cx="200" cy="240" r="170" fill="url(#bgGlow)" stroke="#F84391" stroke-width="4" filter="url(#neonGlow)"/>
+  
+  <!-- Subtle Palm Tree Silhouette in backdrop -->
+  <path d="M 120 280 Q 140 200 200 160 Q 140 180 110 200 Z" fill="#F84391" opacity="0.15"/>
+  <path d="M 280 280 Q 260 200 200 160 Q 260 180 290 200 Z" fill="#48D5D0" opacity="0.15"/>
+
+  <!-- Body / Shoulders (1980s Padded Suit) -->
+  <path d="M 70 480 L 100 340 L 160 300 L 240 300 L 300 340 L 330 480 Z" fill="url(#suitGrad)" stroke="#48D5D0" stroke-width="2"/>
+  
+  <!-- White Dress Shirt Collar -->
+  <polygon points="160,300 240,300 220,360 180,360" fill="#FFF2E3"/>
+  <polygon points="170,300 200,340 160,325" fill="#FFFFFF"/>
+  <polygon points="230,300 200,340 240,325" fill="#FFFFFF"/>
+
+  <!-- Hot-Pink Vice City Silk Tie -->
+  <polygon points="194,340 206,340 214,460 200,480 186,460" fill="url(#tieGrad)" stroke="#26182F" stroke-width="1.5"/>
+
+  <!-- Gold Lapel Pin: El Banco Corrupto -->
+  <circle cx="135" cy="360" r="8" fill="#FFD166" stroke="#26182F" stroke-width="1"/>
+  <text x="135" y="364" font-family="sans-serif" font-weight="900" font-size="9" fill="#26182F" text-anchor="middle">$</text>
+
+  <!-- Neck -->
+  <rect x="175" y="240" width="50" height="70" rx="8" fill="url(#skinGrad)"/>
+
+  <!-- Head Shape -->
+  <ellipse cx="200" cy="210" rx="65" ry="75" fill="url(#skinGrad)" stroke="#45355F" stroke-width="2"/>
+
+  <!-- Hair (Slicked Back 80s Style) -->
+  <path d="M 130 180 C 130 110, 270 110, 270 180 C 270 160, 250 140, 200 140 C 150 140, 130 160, 130 180 Z" fill="#3D261A"/>
+  <path d="M 135 175 Q 200 130 265 175 Q 200 150 135 175 Z" fill="#5A3A29"/>
+
+  <!-- Ears -->
+  <ellipse cx="132" cy="215" rx="10" ry="16" fill="url(#skinGrad)"/>
+  <ellipse cx="268" cy="215" rx="10" ry="16" fill="url(#skinGrad)"/>
+
+  <!-- Eyes (Worried / Panicked Expression) -->
+  <ellipse cx="175" cy="200" rx="12" ry="10" fill="#FFFFFF" stroke="#3D261A" stroke-width="2"/>
+  <circle cx="177" cy="200" r="5" fill="#26182F"/>
+  <circle cx="179" cy="198" r="1.5" fill="#FFFFFF"/>
+
+  <ellipse cx="225" cy="200" rx="12" ry="10" fill="#FFFFFF" stroke="#3D261A" stroke-width="2"/>
+  <circle cx="223" cy="200" r="5" fill="#26182F"/>
+  <circle cx="225" cy="198" r="1.5" fill="#FFFFFF"/>
+
+  <!-- Eyebrows (Arched / Stressed) -->
+  <path d="M 160 186 Q 175 178 190 188" stroke="#3D261A" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path d="M 210 188 Q 225 178 240 186" stroke="#3D261A" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Nose -->
+  <path d="M 200 198 L 195 224 L 206 224" stroke="#D99B77" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- 1980s Mustache (Gordon Bennett Trademark) -->
+  <path d="M 168 238 Q 200 230 200 240 Q 200 230 232 238 Q 200 252 168 238 Z" fill="#3D261A"/>
+
+  <!-- Mouth (Open in Urgent Dialogue) -->
+  <ellipse cx="200" cy="254" rx="14" ry="7" fill="#8B263E" stroke="#3D261A" stroke-width="1.5"/>
+  <path d="M 190 252 Q 200 255 210 252" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+
+  <!-- Panic Sweat Droplets (Cartoon Retro Stress) -->
+  <path d="M 252 170 Q 260 178 254 186 Q 248 186 248 178 Z" fill="#48D5D0" opacity="0.9" filter="url(#neonGlow)"/>
+  <path d="M 142 180 Q 148 186 144 192 Q 138 192 138 186 Z" fill="#48D5D0" opacity="0.8"/>
+
+  <!-- Headset / Walkie-Talkie Mic -->
+  <path d="M 134 210 Q 120 230 145 258 Q 175 270 188 262" stroke="#48D5D0" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <circle cx="188" cy="262" r="5" fill="#F84391" stroke="#FFFFFF" stroke-width="1.5"/>
+</svg>
