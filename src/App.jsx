@@ -11,8 +11,9 @@ import { useState, useEffect, useCallback } from "react";
 import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import CyberBackground from "./components/CyberBackground";
 import DaemonLogo from "./components/DaemonLogo";
-import PlayerTerminal  from "./pages/PlayerTerminal";
-import SoundEngine     from "./utils/soundEngine";
+import PlayerTerminal from "./pages/PlayerTerminal";
+import AdminCommand from "./pages/AdminCommand";
+import SoundEngine from "./utils/soundEngine";
 import "./App.css";
 
 const ADMIN_PORTAL_URL = "http://localhost:5176/";
@@ -78,9 +79,10 @@ function Shell() {
         </div>
       </nav>
 
-      {/* Main Page: Defaults to PlayerTerminal with Waiting Lobby */}
+      {/* Main Page: Defaults to PlayerTerminal with Waiting Lobby, or /admin for Admin Console */}
       <div className="app-content">
         <Routes>
+          <Route path="/admin" element={<AdminCommand />} />
           <Route path="*" element={<PlayerTerminal />} />
         </Routes>
       </div>

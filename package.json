@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "admin": "node admin_server/server.cjs",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
