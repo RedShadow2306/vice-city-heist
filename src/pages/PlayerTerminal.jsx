@@ -31,6 +31,7 @@ import confetti from "canvas-confetti";
 import SoundEngine from "../utils/soundEngine";
 import { getManagerDirective, MANAGER_PRAISE } from "../utils/managerDialogue";
 import { getAssetUrl } from "../utils/assetPath";
+import { syncPlayerToSupabase, fetchGameStateFromSupabase } from "../utils/supabaseClient";
 import "./PlayerTerminal.css";
 
 const CHANNEL_NAME = "vch-admin-bus";
@@ -529,13 +530,14 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* Player Registration & Session Details */
   const [playerId] = useState(() => localStorage.getItem("vch_player_id") || "P_" + Math.random().toString(36).substring(2, 8));
   const [playerName, setPlayerName] = useState(() => localStorage.getItem("vch_player_name") || "");
-  const [playerAlias, setPlayerAlias] = useState(() => localStorage.getItem("vch_player_alias") || "Terminal #01");
+  const [playerAlias, setPlayerAlias] = useState(() => localStorage.getItem("vch_player_alias") || "");
   const [playerCollege, setPlayerCollege] = useState(() => localStorage.getItem("vch_player_college") || "");
   const [isRegistered, setIsRegistered] = useState(() => Boolean(localStorage.getItem("vch_registered")));
 
   /* Lockout & Security Freeze State */
   const [isLockedBreach, setIsLockedBreach] = useState(() => localStorage.getItem("vch_locked_breach") === "true");
   const [isEjected, setIsEjected] = useState(() => localStorage.getItem("vch_ejected") === "true");
+  const [isPlayerFrozen, setIsPlayerFrozen] = useState(false);
   const [breachReason, setBreachReason] = useState(() => localStorage.getItem("vch_breach_reason") || "");
 
   const handleEjected = useCallback(() => {
@@ -597,45 +599,91 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const allRules = useMemo(() => buildAll45Rules(sessionData, cfg), [sessionData, cfg]);
   const activeRulesList = useMemo(() => allRules.slice(0, cfg.rules), [allRules, cfg]);
 
-  /* ── Report Player Status to Standalone Admin Server (Port 5176) ── */
+  /* ── Report Player Status to Supabase, Local Bus, & Admin Server ── */
   const reportToAdmin = useCallback(async (overrides = {}) => {
+    // Determine effective name and ensure station always reports
+    let effectiveName = (overrides.name !== undefined ? overrides.name : (playerName || localStorage.getItem("vch_player_name") || ""))?.trim();
+    if (!effectiveName) {
+      effectiveName = (playerAlias || localStorage.getItem("vch_player_alias") || "").trim() || `Station ${playerId.slice(-4)}`;
+    }
+
+    const curUnlocked = overrides.unlockedCount !== undefined ? overrides.unlockedCount : unlockedCountRef.current;
+    const curLevel = overrides.currentLevel !== undefined ? overrides.currentLevel : currentLevel;
+    const curTime = overrides.timeLeft !== undefined ? overrides.timeLeft : timeLeftRef.current;
+    const curBreach = overrides.isBreached !== undefined ? overrides.isBreached : isLockedBreach;
+    const curFrozen = overrides.isFrozen !== undefined ? overrides.isFrozen : (isPlayerFrozen || Boolean(parentFrozen));
+    const curPassword = overrides.currentPassword !== undefined ? overrides.currentPassword : (passwordRef.current || "");
+
+    const calculatedScore = Math.max(0, curUnlocked - 1) * 150 + (curLevel - 1) * 600 + Math.max(0, curTime || 0);
+
     const payload = {
       id: playerId,
-      name: playerName || "Anonymous Agent",
-      alias: playerAlias || "Station",
-      college: playerCollege || "Vice City Bank",
-      status: isLockedBreach ? "BREACH_LOCKED" : screen === "game" ? `LEVEL_${currentLevel}_ACTIVE` : screen.toUpperCase(),
-      currentLevel,
-      rulesCleared: unlockedCount - 1,
-      timeLeft: timeLeftRef.current,
-      isBreached: isLockedBreach,
+      name: effectiveName,
+      alias: (overrides.alias !== undefined ? overrides.alias : (playerAlias || localStorage.getItem("vch_player_alias") || "")) || `Station ${playerId.slice(-4)}`,
+      college: overrides.college !== undefined ? overrides.college : (playerCollege || localStorage.getItem("vch_player_college") || "Vice City"),
+
+      status: curBreach
+        ? "BREACH_LOCKED"
+        : curFrozen
+        ? "FROZEN"
+        : screen === "game"
+        ? `LEVEL_${curLevel}_ACTIVE`
+        : screen.toUpperCase(),
+      currentLevel: curLevel,
+      chapter: curLevel,
+      rulesCleared: Math.max(0, curUnlocked - 1),
+      score: calculatedScore,
+      timeLeft: curTime,
+      isBreached: curBreach,
+      isFrozen: curFrozen,
+      currentPassword: curPassword,
+      password: curPassword,
+      lastSeen: Date.now(),
+      isMock: false,
       ...overrides,
     };
 
-    // 1. Post to Port 5176 Admin Server
-    try {
-      const res = await fetch(`${ADMIN_API_URL}/api/player/update`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (data && data.removed) {
-        handleEjected();
-      }
-    } catch (_) {
-      // Admin server might be running elsewhere or offline
-    }
+    // 1. Sync to Supabase in Cloud (Stores player and live password)
+    syncPlayerToSupabase(payload).catch(() => {});
 
-    // 2. Also broadcast to BroadcastChannel for local tab synchronization
+    // 2. Broadcast to BroadcastChannel (local cross-tab sync)
     try {
       if (typeof BroadcastChannel !== "undefined") {
         const bus = new BroadcastChannel(CHANNEL_NAME);
+        bus.postMessage({ type: "player_update", player: payload });
         bus.postMessage({ type: "playerUpdate", ...payload });
         bus.close();
       }
     } catch (_) {}
-  }, [playerId, playerName, playerAlias, playerCollege, isLockedBreach, screen, currentLevel, unlockedCount, handleEjected]);
+
+    // 3. Cache to localStorage for tab/window sync
+    try {
+      localStorage.setItem("vch_player_state_" + playerId, JSON.stringify(payload));
+      localStorage.setItem("vch_last_heartbeat", String(Date.now()));
+    } catch (_) {}
+
+    // 4. Post to Port 5176 Admin Server (if running)
+    try {
+      fetch(`${ADMIN_API_URL}/api/player/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(res => res.json()).then(data => {
+        if (data && data.removed) {
+          handleEjected();
+        }
+      }).catch(() => {});
+    } catch (_) {}
+  }, [playerId, playerName, playerAlias, playerCollege, isLockedBreach, isPlayerFrozen, parentFrozen, screen, currentLevel, handleEjected]);
+
+  /* ── Periodic Heartbeat: ensures live password and stats update smoothly ── */
+  useEffect(() => {
+    reportToAdmin();
+    const interval = setInterval(() => {
+      reportToAdmin();
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [reportToAdmin]);
 
   /* ── Start Fullscreen Mode ── */
   const requestFullscreenSafe = () => {
@@ -667,12 +715,41 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     reportToAdmin({ status: "STORY_CUTSCENE", currentLevel: 1 });
   }, [reportToAdmin]);
 
-  /* ── Listen for BroadcastChannel events (e.g. Remote Eject, Story Mode, Siren, Reset) ── */
+  /* ── Advance to specific level ── */
+  const advanceFloorByAdmin = useCallback((targetLevel) => {
+    SoundEngine.init();
+    SoundEngine.playSwoosh();
+    SoundEngine.playSuccess();
+    const nextLvl = targetLevel || Math.min(currentLevel + 1, 4);
+    const targetCfg = CAMPAIGN_LEVELS[nextLvl];
+    setCurrentLevel(nextLvl);
+    setSessionData(createSessionData());
+    setPassword("");
+    passwordRef.current = "";
+    setUnlockedCount(1);
+    setTimeLeft(targetCfg.startSeconds);
+    timeLeftRef.current = targetCfg.startSeconds;
+    setSurvivedSeconds(0);
+    survivedSecondsRef.current = 0;
+    setRevealedHints(new Set());
+    setLastPraise(null);
+    setScreen("game");
+    setIsPlayerFrozen(false);
+    setIsLockedBreach(false);
+    reportToAdmin({
+      status: `LEVEL_${nextLvl}_ACTIVE`,
+      currentLevel: nextLvl,
+      rulesCleared: 0,
+      currentPassword: "",
+    });
+  }, [currentLevel, reportToAdmin]);
+
+  /* ── Listen for BroadcastChannel events ── */
   useEffect(() => {
     if (typeof BroadcastChannel === "undefined") return;
     const bus = new BroadcastChannel(CHANNEL_NAME);
     bus.onmessage = (evt) => {
-      const { type, playerId: pid } = evt.data || {};
+      const { type, playerId: pid, frozen: f } = evt.data || {};
       if (type === "remove" && pid === playerId) {
         handleEjected();
       } else if (type === "start_story") {
@@ -687,31 +764,97 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         setScreen("lobby");
         setIsLockedBreach(false);
         setIsEjected(false);
+        setIsPlayerFrozen(false);
         localStorage.removeItem("vch_locked_breach");
         localStorage.removeItem("vch_breach_reason");
         localStorage.removeItem("vch_ejected");
         exitFullscreenSafe();
+      } else if (type === "freeze" && (pid === playerId || f === true)) {
+        setIsPlayerFrozen(true);
+        SoundEngine.init();
+        SoundEngine.playFreeze();
       } else if (type === "unfreeze") {
         if (!pid || pid === playerId) {
+          setIsPlayerFrozen(false);
           setIsLockedBreach(false);
           setIsEjected(false);
           localStorage.removeItem("vch_locked_breach");
           localStorage.removeItem("vch_breach_reason");
           localStorage.removeItem("vch_ejected");
+          SoundEngine.init();
+          SoundEngine.playUnlock();
           if (screen === "mission_failed") {
             setScreen("game");
             setTimeLeft(cfg.startSeconds);
             timeLeftRef.current = cfg.startSeconds;
           }
         }
+      } else if (type === "globalFreeze") {
+        setIsPlayerFrozen(Boolean(f));
+        SoundEngine.init();
+        if (f) SoundEngine.playFreeze();
+        else SoundEngine.playUnlock();
+      } else if (type === "advance" && pid === playerId) {
+        advanceFloorByAdmin();
       }
     };
     return () => bus.close();
-  }, [playerId, handleEjected, screen, launchStoryMode, cfg.startSeconds]);
+  }, [playerId, handleEjected, screen, launchStoryMode, cfg.startSeconds, advanceFloorByAdmin]);
 
-  /* ── Listen for Admin Commands (via Polling Port 5176 & BroadcastChannel) ── */
+  /* ── Listen for Admin Commands (via Supabase & Port 5176) ── */
   useEffect(() => {
     const checkAdminCommands = async () => {
+      // 1. Supabase Cloud Check
+      try {
+        const state = await fetchGameStateFromSupabase();
+        if (state) {
+          if (typeof state.global_freeze === "boolean") {
+            setIsPlayerFrozen(state.global_freeze);
+          }
+          const cmd = state.active_command;
+          if (cmd && cmd.timestamp) {
+            const lastProcessed = Number(sessionStorage.getItem("vch_last_admin_cmd") || 0);
+            if (cmd.timestamp > lastProcessed) {
+              sessionStorage.setItem("vch_last_admin_cmd", String(cmd.timestamp));
+              if (cmd.action === "START_STORY_MODE" && screen === "lobby") {
+                launchStoryMode();
+              } else if (cmd.action === "UNFREEZE_PLAYER" && (!cmd.playerId || cmd.playerId === playerId)) {
+                setIsPlayerFrozen(false);
+                setIsLockedBreach(false);
+                setIsEjected(false);
+                localStorage.removeItem("vch_locked_breach");
+                localStorage.removeItem("vch_breach_reason");
+                localStorage.removeItem("vch_ejected");
+                if (screen === "mission_failed") {
+                  setScreen("game");
+                  setTimeLeft(cfg.startSeconds);
+                  timeLeftRef.current = cfg.startSeconds;
+                }
+              } else if (cmd.action === "FREEZE_PLAYER" && cmd.playerId === playerId) {
+                setIsPlayerFrozen(true);
+              } else if (cmd.action === "ADVANCE_PLAYER" && cmd.playerId === playerId) {
+                advanceFloorByAdmin();
+              } else if (cmd.action === "REMOVE_PLAYER" && cmd.playerId === playerId) {
+                handleEjected();
+              } else if (cmd.action === "RESET_TO_LOBBY") {
+                clearInterval(timerRef.current);
+                setScreen("lobby");
+                setIsLockedBreach(false);
+                setIsEjected(false);
+                setIsPlayerFrozen(false);
+                localStorage.removeItem("vch_locked_breach");
+                localStorage.removeItem("vch_breach_reason");
+                localStorage.removeItem("vch_ejected");
+                exitFullscreenSafe();
+              } else if (cmd.action === "TRIGGER_SIREN") {
+                SoundEngine.playSiren();
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      // 2. Local Port 5176 fallback
       try {
         const res = await fetch(`${ADMIN_API_URL}/api/state`);
         const data = await res.json();
@@ -730,6 +873,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               }
             } else if (cmd.action === "UNFREEZE_PLAYER") {
               if (!cmd.playerId || cmd.playerId === playerId) {
+                setIsPlayerFrozen(false);
                 setIsLockedBreach(false);
                 setIsEjected(false);
                 localStorage.removeItem("vch_locked_breach");
@@ -741,6 +885,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                   timeLeftRef.current = cfg.startSeconds;
                 }
               }
+            } else if (cmd.action === "FREEZE_PLAYER" && cmd.playerId === playerId) {
+              setIsPlayerFrozen(true);
+            } else if (cmd.action === "ADVANCE_PLAYER" && cmd.playerId === playerId) {
+              advanceFloorByAdmin();
             } else if (cmd.action === "REMOVE_PLAYER") {
               if (cmd.playerId === playerId) {
                 handleEjected();
@@ -750,6 +898,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               setScreen("lobby");
               setIsLockedBreach(false);
               setIsEjected(false);
+              setIsPlayerFrozen(false);
               localStorage.removeItem("vch_locked_breach");
               localStorage.removeItem("vch_breach_reason");
               localStorage.removeItem("vch_ejected");
@@ -762,9 +911,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       } catch (_) {}
     };
 
-    const interval = setInterval(checkAdminCommands, 1000);
+    const interval = setInterval(checkAdminCommands, 1200);
     return () => clearInterval(interval);
-  }, [screen, launchStoryMode, playerId, cfg.startSeconds, handleEjected]);
+  }, [screen, launchStoryMode, playerId, cfg.startSeconds, handleEjected, advanceFloorByAdmin]);
 
   /* ── Anti-Cheat: Fullscreen & Tab Switch Watcher ── */
   useEffect(() => {
@@ -880,9 +1029,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   /* ── Input Change & Progressive Unlock ── */
   const handleInputChange = (e) => {
-    if (isLockedBreach) return;
+    if (isLockedBreach || isPlayerFrozen || Boolean(parentFrozen)) return;
     const newPw = e.target.value;
     setPassword(newPw);
+    passwordRef.current = newPw;
     if (soundEnabled) SoundEngine.playKeyType();
 
     let curUnlocked = unlockedCount;
@@ -893,6 +1043,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       if (allPassed) {
         if (curUnlocked === cfg.rules) {
           setUnlockedCount(curUnlocked);
+          reportToAdmin({ currentPassword: newPw, password: newPw, unlockedCount: curUnlocked });
           handleLevelFinished(true, newPw, curUnlocked);
           return;
         }
@@ -912,6 +1063,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         break;
       }
     }
+
+    // Save live password to Supabase and BroadcastChannel in real-time
+    reportToAdmin({ currentPassword: newPw, password: newPw, unlockedCount: curUnlocked });
   };
 
   /* ── Cutscene Completion ── */
@@ -934,6 +1088,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     setCurrentLevel(levelToStart);
     setSessionData(createSessionData());
     setPassword("");
+    passwordRef.current = "";
     setUnlockedCount(1);
     setTimeLeft(targetCfg.startSeconds);
     timeLeftRef.current = targetCfg.startSeconds;
@@ -942,6 +1097,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     setRevealedHints(new Set());
     setLastPraise(null);
     setScreen("game");
+    setIsPlayerFrozen(false);
+    setIsLockedBreach(false);
 
     setTimeout(() => {
       inputRef.current?.focus();
@@ -951,12 +1108,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       status: `LEVEL_${levelToStart}_ACTIVE`,
       currentLevel: levelToStart,
       rulesCleared: 0,
+      currentPassword: "",
     });
   };
 
   /* ── Timer Countdown Effect (Active Defense Only!) ── */
   useEffect(() => {
-    if (screen !== "game" || isLockedBreach || parentFrozen) {
+    if (screen !== "game" || isLockedBreach || parentFrozen || isPlayerFrozen) {
       clearInterval(timerRef.current);
       return;
     }
@@ -989,7 +1147,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [screen, isLockedBreach, parentFrozen, soundEnabled, handleLevelFinished]);
+  }, [screen, isLockedBreach, parentFrozen, isPlayerFrozen, soundEnabled, handleLevelFinished]);
 
   /* ── Manager Dialogue Computation ── */
   const displayedRules = useMemo(() => activeRulesList.slice(0, unlockedCount), [activeRulesList, unlockedCount]);
@@ -1028,20 +1186,91 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
+  /* Slot characters for the retro CRT screen display [ _ _ _ _ _ _ ] */
+  const slotChars = useMemo(() => {
+    const chars = [...password];
+    const slots = [];
+    for (let i = 0; i < Math.max(6, chars.length); i++) {
+      if (i < chars.length) {
+        slots.push(showPassword ? chars[i] : "●");
+      } else {
+        slots.push("_");
+      }
+    }
+    return slots;
+  }, [password, showPassword]);
+
+  /* On-Screen Numeric Keypad Press */
+  const handleKeypadPress = useCallback((char) => {
+    if (isLockedBreach || isPlayerFrozen || Boolean(parentFrozen)) return;
+    const newPw = password + char;
+    handleInputChange({ target: { value: newPw } });
+    inputRef.current?.focus();
+  }, [password, isLockedBreach, isPlayerFrozen, parentFrozen, handleInputChange]);
+
+  /* Global Keyboard Shortcuts for Game Screen */
+  useEffect(() => {
+    if (screen !== "game") return;
+
+    const handleKeyDown = (e) => {
+      if (e.target && e.target !== inputRef.current && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) {
+        return;
+      }
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const allPassed = displayedRules.length >= cfg.rules && displayedRules.every((r) => r.check(passwordRef.current));
+        if (allPassed) {
+          handleLevelFinished(true, passwordRef.current, unlockedCountRef.current);
+        } else {
+          if (soundEnabled) SoundEngine.playDenied();
+          inputRef.current?.focus();
+        }
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setIsLockedBreach(true);
+        setBreachReason("MISSION ABORTED BY AGENT");
+        setScreen("mission_failed");
+        reportToAdmin({ status: "ABORTED", isBreached: true });
+      } else {
+        if (document.activeElement !== inputRef.current && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          inputRef.current?.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [screen, displayedRules, cfg.rules, handleLevelFinished, soundEnabled, reportToAdmin]);
+
   /* ── Lobby Registration Submit ── */
   const handleRegisterLobby = (e) => {
     e.preventDefault();
-    if (!playerName.trim()) return;
+    const trimmedName = playerName.trim();
+    if (!trimmedName) return;
+    const finalAlias = (playerAlias || "").trim() || `Station ${playerId.slice(-4)}`;
+    const finalCollege = (playerCollege || "").trim();
+
     localStorage.setItem("vch_player_id", playerId);
-    localStorage.setItem("vch_player_name", playerName);
-    localStorage.setItem("vch_player_alias", playerAlias);
-    localStorage.setItem("vch_player_college", playerCollege);
+    localStorage.setItem("vch_player_name", trimmedName);
+    localStorage.setItem("vch_player_alias", finalAlias);
+    localStorage.setItem("vch_player_college", finalCollege);
     localStorage.setItem("vch_registered", "true");
+    setPlayerName(trimmedName);
+    setPlayerAlias(finalAlias);
+    setPlayerCollege(finalCollege);
     setIsRegistered(true);
 
     if (soundEnabled) SoundEngine.playClick();
-    reportToAdmin({ status: "IN_LOBBY" });
+    reportToAdmin({
+      status: "IN_LOBBY",
+      isRegistered: true,
+      name: trimmedName,
+      alias: finalAlias,
+      college: finalCollege,
+    });
   };
+
 
   /* ══════════════════════════════════════════════════
      RENDER INTERFACE
@@ -1245,148 +1474,263 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         </section>
       )}
 
-      {/* ── SCREEN 4: ACTIVE PASSWORD DEFENSE GAME (Clean, Locker Background & Wanted Stars) ── */}
+      {/* ── SCREEN 4: ACTIVE PASSWORD DEFENSE GAME (Full Setup: Vault Background + Zoomed-In CRT + Attached Rules Panel + Manager Bubble) ── */}
       {screen === "game" && (
         <section className="vault-game-stage">
-          <div className="vault-game-inner">
+          {/* Ambient overlays */}
+          <div className="vault-screen-vignette" aria-hidden="true" />
+          <div className="vault-screen-scanlines" aria-hidden="true" />
 
-            {/* Top HUD: Level Title, Timer & Classic GTA Wanted Stars */}
-            <div className="game-hud-bar">
-              <div className="hud-level-info">
-                <span className="hud-level-tag">{cfg.title}</span>
-                <span className="hud-layer-tag">Layer {unlockedCount} of {cfg.rules}</span>
+          {/* 1. TOP HUD (Objective, Breach Progress, Wanted Stars, Neon Timer) */}
+          <header className="vault-top-hud">
+            {/* Top-Left: Objective & Tommy Drill Breach */}
+            <div className="hud-top-left">
+              <div className="hud-objective-title">
+                <span className="hud-diamond-icon">◇</span>
+                <span className="hud-level-title">{cfg.title}</span>
               </div>
+              <div className="hud-layer-subtitle">Layer {unlockedCount} of {cfg.rules}</div>
 
-              {/* Classic GTA Wanted Star Level */}
-              <GtaWantedStars wantedCount={cfg.wantedStars} />
-
-              {/* Countdown Timer */}
-              <div className="hud-timer-badge">
-                <span className="timer-icon">⏱</span>
-                <span className="timer-digits">{formatTime(timeLeft)}</span>
-                {bonusFloat && <span className="bonus-float-tag">{bonusFloat}</span>}
-              </div>
-            </div>
-
-            {/* Tommy Vercetti Drill Threat Gauge */}
-            <div className="threat-gauge-box">
-              <div className="threat-label-row">
-                <span className="drill-text">⚠️ TOMMY VERCETTI THERMAL DRILL BREACH:</span>
-                <span className="drill-velocity-badge">SPEED: {cfg.drillSpeedMultiplier.toFixed(1)}x</span>
-                <span className="drill-pct">
-                  {Math.min(
-                    100,
-                    Math.round(((cfg.startSeconds - Math.min(cfg.startSeconds, timeLeft)) / cfg.startSeconds) * 100)
-                  )}%
-                </span>
-              </div>
-              <div className="threat-meter-track">
-                <div
-                  className="threat-meter-fill"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      Math.round(((cfg.startSeconds - Math.min(cfg.startSeconds, timeLeft)) / cfg.startSeconds) * 100)
-                    )}%`,
-                    backgroundColor: cfg.color,
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Pokémon GBA Conversation Box with Manager Sliding from Left */}
-            <div className="gba-interactive-wrapper">
-              <div className="gba-manager-slide-container slide-in">
-                <div className="manager-portrait-frame speaking">
-                  <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
-                </div>
-              </div>
-
-              <div className="gba-dialogue-box in-game-gba">
-                <div className="gba-nameplate">
-                  <span>👔 MANAGER GORDON BENNETT</span>
-                  <span className={`gba-mood-chip ${currentDirective.mood}`}>
-                    {currentDirective.mood.toUpperCase()}
+              {/* Tommy Vercetti Thermal Drill Breach Bar */}
+              <div className="hud-drill-bar-box">
+                <div className="hud-drill-label-row">
+                  <span className="hud-drill-warning-text">
+                    ⚠️ TOMMY VERCETTI THERMAL DRILL BREACH: {Math.min(100, Math.round(((cfg.startSeconds - Math.min(cfg.startSeconds, timeLeft)) / cfg.startSeconds) * 100))}%
                   </span>
+                  <span className="hud-drill-speed-text">SPEED: {cfg.drillSpeedMultiplier.toFixed(1)}x</span>
                 </div>
-
-                <div className="gba-text-content">
-                  {lastPraise && <div className="gba-praise-banner">✨ {lastPraise}</div>}
-                  <div className="gba-directive-headline">{currentDirective.headline}</div>
-                  <p className="gba-typewriter-text">"{typedSpeech}"</p>
-                </div>
-
-                <div className="gba-prompt-arrow blink">▼</div>
-              </div>
-            </div>
-
-            {/* Master Input Box */}
-            <div className="master-input-box">
-              <div className={`input-container ${password.length > 0 && activeFailing ? "input-failing" : ""}`}>
-                <input
-                  ref={inputRef}
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={handleInputChange}
-                  placeholder={`Suggest password for ${cfg.shortName}...`}
-                  className="master-password-field"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                  disabled={isLockedBreach}
-                />
-
-                <div className="input-adornments">
-                  <span className="char-count-badge">{[...password].length} CHARS</span>
-                  <button
-                    type="button"
-                    className="toggle-vis-btn"
-                    onClick={() => setShowPassword((v) => !v)}
-                  >
-                    {showPassword ? "👁" : "🔒"}
-                  </button>
+                <div className="hud-drill-track">
+                  <div
+                    className="hud-drill-fill"
+                    style={{
+                      width: `${Math.min(100, Math.round(((cfg.startSeconds - Math.min(cfg.startSeconds, timeLeft)) / cfg.startSeconds) * 100))}%`,
+                    }}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Active Rules List */}
-            <div className="rules-scroll-area">
-              {displayedRules.map((rule) => {
-                const passed = rule.check(password);
-                const isHinted = revealedHints.has(rule.id);
-                return (
-                  <div key={rule.id} className={`rule-card ${passed ? "passed" : "failing"}`}>
-                    <div className="rule-card-header">
-                      <div className="rule-title-group">
-                        <span className="rule-status-icon">{passed ? "✓" : "✕"}</span>
-                        <span className="rule-title">
-                          <strong>LAYER {rule.id}:</strong> {rule.text}
-                        </span>
+            {/* Top-Center: Wanted Stars */}
+            <div className="hud-top-center">
+              <span className="hud-wanted-label">WANTED LEVEL</span>
+              <GtaWantedStars wantedCount={cfg.wantedStars} />
+            </div>
+
+            {/* Top-Right: Digital Timer with Neon Amber Box */}
+            <div className="hud-top-right">
+              <div className="hud-neon-timer-box">
+                <span className="hud-timer-clock-icon">⏱</span>
+                <span className="hud-timer-numbers">{formatTime(timeLeft)}</span>
+                {bonusFloat && <span className="hud-bonus-tag">{bonusFloat}</span>}
+              </div>
+            </div>
+          </header>
+
+          {/* 2. CENTER STAGE: ZOOMED-IN CRT MONITOR + ATTACHED NEON RULES PANEL */}
+          <div className="vault-center-unit">
+            {/* CRT Computer Terminal Monitor */}
+            <div className="crt-monitor-cabinet" onClick={() => inputRef.current?.focus()}>
+              <div className="crt-screen-bezel">
+                <div className="crt-screen-glass">
+                  <div className="crt-scanline-lines" aria-hidden="true" />
+                  <div className="crt-inner-display">
+                    {/* Header */}
+                    <div className="crt-prompt-text">CREATE NEW STRONG PASSWORD:</div>
+
+                    {/* Bracketed Slot Row */}
+                    <div className="crt-password-slots-row">
+                      <span className="crt-bracket-label">PASSWORD:</span>
+                      <div className="crt-slots-container">
+                        <span className="crt-bracket">[</span>
+                        <div className="crt-chars-wrapper">
+                          {slotChars.map((ch, idx) => (
+                            <span
+                              key={idx}
+                              className={`crt-char-cell ${ch !== "_" ? "char-entered" : "char-underscore"}`}
+                            >
+                              {ch}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="crt-bracket">]</span>
                       </div>
-
-                      {rule.isSwatch ? (
-                        <span className="swatch-sample-chip" style={{ backgroundColor: rule.swatchColor }} />
-                      ) : (
-                        <span className="rule-state-badge">{rule.badge(password)}</span>
-                      )}
                     </div>
 
-                    {isHinted && (
-                      <div className="rule-hint-drawer visible">
-                        💡 MANAGER INTEL: {typeof rule.hint === "function" ? rule.hint(password) : rule.hint}
+                    {/* Active Input Box & On-Screen Numeric Keypad Row */}
+                    <div className="crt-interactive-row">
+                      <div className={`crt-input-box ${password.length > 0 && activeFailing ? "input-failing-glow" : ""}`}>
+                        <input
+                          ref={inputRef}
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={handleInputChange}
+                          className="crt-real-input"
+                          placeholder={
+                            isPlayerFrozen || Boolean(parentFrozen)
+                              ? "❄️ TERMINAL FROZEN..."
+                              : ""
+                          }
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck="false"
+                          disabled={isLockedBreach || isPlayerFrozen || Boolean(parentFrozen)}
+                        />
+                        <span className="crt-blinking-cursor">█</span>
                       </div>
-                    )}
+
+                      {/* On-Screen Keypad Grid */}
+                      <div className="crt-keypad-grid" aria-label="Numeric keypad">
+                        {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "+", "-"].map((k) => (
+                          <button
+                            key={k}
+                            type="button"
+                            className="crt-keypad-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleKeypadPress(k);
+                            }}
+                          >
+                            {k}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Status Pill */}
+                    <div className="crt-status-row">
+                      <span className={`crt-status-pill ${activeFailing ? "status-pending" : "status-cleared"}`}>
+                        {activeFailing ? "PROTOCOL PENDING" : "VAULT ACCESS GRANTED"}
+                      </span>
+                      <span className="crt-char-count">{[...password].length} CHARACTERS</span>
+                    </div>
                   </div>
-                );
-              })}
+                </div>
+              </div>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="game-footer-actions">
+            {/* Attached Illuminated Neon Frame Panel: PASSWORD RULES */}
+            <div className="neon-rules-panel">
+              <div className="neon-rules-inner">
+                <div className="neon-rules-header">
+                  <h2 className="neon-rules-title">PASSWORD RULES:</h2>
+                  <span className="neon-rules-sparkle" aria-hidden="true">✦</span>
+                </div>
+
+                <div className="neon-rules-scroll">
+                  {displayedRules.map((rule) => {
+                    const passed = rule.check(password);
+                    const isHinted = revealedHints.has(rule.id);
+                    const isFailingCurrent = activeFailing?.id === rule.id;
+
+                    return (
+                      <div
+                        key={rule.id}
+                        className={`neon-rule-row ${passed ? "rule-passed" : "rule-failing"} ${isFailingCurrent ? "rule-current-failing" : ""}`}
+                        onClick={() => {
+                          if (!revealedHints.has(rule.id)) {
+                            setRevealedHints((prev) => new Set([...prev, rule.id]));
+                            triggerTimeBonus(-15);
+                            if (soundEnabled) SoundEngine.playHintUsed();
+                          }
+                        }}
+                        title="Click to reveal Manager Intel (-15s)"
+                      >
+                        <div className="neon-rule-content">
+                          <span className="neon-bullet">{passed ? "✓" : "•"}</span>
+                          <span className="neon-rule-text">{rule.text.toUpperCase()}</span>
+                          {rule.isSwatch ? (
+                            <span className="neon-swatch" style={{ backgroundColor: rule.swatchColor }} />
+                          ) : (
+                            <span className="neon-badge">{rule.badge(password)}</span>
+                          )}
+                        </div>
+
+                        {isHinted && (
+                          <div className="neon-hint-drawer">
+                            💡 MANAGER INTEL: {typeof rule.hint === "function" ? rule.hint(password) : rule.hint}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. BOTTOM-LEFT: MANAGER GORDON BENNETT & COMIC SPEECH BUBBLE */}
+          <div className="vault-manager-corner">
+            {/* Comic Speech Bubble */}
+            <div className="manager-comic-bubble">
+              <div className="bubble-header-row">
+                <span className="bubble-speaker-tag">👔 MANAGER BENNETT</span>
+                <span className={`bubble-mood-tag ${currentDirective.mood}`}>
+                  {currentDirective.mood.toUpperCase()}
+                </span>
+              </div>
+
+              {lastPraise && (
+                <div className="bubble-praise-banner">✨ {lastPraise}</div>
+              )}
+
+              <p className="bubble-speech-text">
+                "{typedSpeech || "Quick! Enter a new, secure password before Tommy breaches the vault!"}"
+              </p>
+
+              {/* Speech bubble tail pointing towards the manager */}
+              <div className="bubble-tail" />
+            </div>
+
+            {/* Manager Bennett Bust */}
+            <div className="manager-bust-container">
+              <img
+                src={managerImgSrc}
+                alt="Bank Manager Gordon Bennett"
+                className="manager-bust-image"
+              />
+            </div>
+          </div>
+
+          {/* 4. BOTTOM FOOTER BAR: KEYBINDS & ACTIONS */}
+          <footer className="vault-game-footer">
+            <div className="footer-keys-group">
               <button
                 type="button"
-                className="cancel-btn"
+                className="footer-keybind-btn primary-submit"
+                onClick={() => {
+                  const allPassed = displayedRules.length >= cfg.rules && displayedRules.every((r) => r.check(passwordRef.current));
+                  if (allPassed) {
+                    handleLevelFinished(true, passwordRef.current, unlockedCountRef.current);
+                  } else {
+                    if (soundEnabled) SoundEngine.playDenied();
+                    inputRef.current?.focus();
+                  }
+                }}
+                title="Submit Password [Enter]"
+              >
+                <span className="keycap">[ENTER]</span>
+                <span className="key-action">SUBMIT</span>
+              </button>
+
+              <button
+                type="button"
+                className="footer-keybind-btn cancel-btn"
+                onClick={() => {
+                  setIsLockedBreach(true);
+                  setBreachReason("MISSION ABORTED BY AGENT");
+                  setScreen("mission_failed");
+                  reportToAdmin({ status: "ABORTED", isBreached: true });
+                }}
+                title="Cancel Session [Esc]"
+              >
+                <span className="keycap">[ESC]</span>
+                <span className="key-action">CANCEL</span>
+              </button>
+
+              <button
+                type="button"
+                className="footer-plain-btn abort-btn"
                 onClick={() => {
                   setIsLockedBreach(true);
                   setBreachReason("MISSION ABORTED BY AGENT");
@@ -1396,10 +1740,12 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               >
                 ABORT MISSION
               </button>
+            </div>
 
+            <div className="footer-hints-group">
               <button
                 type="button"
-                className="hint-btn"
+                className="footer-plain-btn hint-link-btn"
                 onClick={() => {
                   if (activeFailing && !revealedHints.has(activeFailing.id)) {
                     setRevealedHints((prev) => new Set([...prev, activeFailing.id]));
@@ -1407,11 +1753,32 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                     if (soundEnabled) SoundEngine.playHintUsed();
                   }
                 }}
+                title="Ask Manager for Hint (-15s penalty)"
               >
                 ASK MANAGER FOR HINT (-15s)
               </button>
+
+              <span className="footer-legend-tag">0-9 KEYPAD TO ENTER</span>
+
+              <button
+                type="button"
+                className="footer-toggle-btn"
+                onClick={() => setShowPassword((v) => !v)}
+                title="Toggle Password Visibility"
+              >
+                {showPassword ? "👁 VISIBLE" : "🔒 MASKED"}
+              </button>
+
+              <button
+                type="button"
+                className="footer-toggle-btn"
+                onClick={() => setSoundEnabled((v) => !v)}
+                title="Toggle Audio Effects"
+              >
+                {soundEnabled ? "🔊 SFX ON" : "🔇 MUTED"}
+              </button>
             </div>
-          </div>
+          </footer>
         </section>
       )}
 

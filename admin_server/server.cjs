@@ -26,7 +26,7 @@ let gameState = {
   announcement: null,
 };
 
-let players = {}; // { [playerId]: { id, name, alias, college, status, currentLevel, rulesCleared, timeLeft, isBreached, lastSeen } }
+let players = {}; // { [playerId]: { id, name, alias, college, status, currentLevel, rulesCleared, timeLeft, isBreached, isFrozen, currentPassword, lastSeen } }
 let removedPlayers = new Set(); // Track ejected player IDs
 
 // Helper to send JSON responses with CORS headers
@@ -40,11 +40,11 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
-// Clean up stale players (not seen for > 15 seconds)
+// Clean up stale players (not seen for > 35 seconds)
 setInterval(() => {
   const now = Date.now();
   for (const id in players) {
-    if (now - players[id].lastSeen > 25000) {
+    if (now - players[id].lastSeen > 35000) {
       players[id].status = 'DISCONNECTED';
     }
   }
@@ -90,8 +90,11 @@ const server = http.createServer((req, res) => {
           status: 'IN_LOBBY',
           currentLevel: 1,
           rulesCleared: 0,
-          timeLeft: 900,
+          score: 0,
+          timeLeft: 600,
           isBreached: false,
+          isFrozen: false,
+          currentPassword: data.currentPassword || '',
           lastSeen: Date.now(),
         };
         sendJson(res, 200, { success: true, player: players[id], gameState });
@@ -102,7 +105,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 3. POST /api/player/update - Heartbeat & progress report
+  // 3. POST /api/player/update - Heartbeat & progress report (including live password)
   if (req.method === 'POST' && url.pathname === '/api/player/update') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
@@ -117,6 +120,7 @@ const server = http.createServer((req, res) => {
           players[data.id] = {
             ...players[data.id],
             ...data,
+            currentPassword: data.currentPassword !== undefined ? data.currentPassword : (data.password !== undefined ? data.password : players[data.id].currentPassword),
             lastSeen: Date.now(),
           };
           sendJson(res, 200, { success: true, gameState });
@@ -124,6 +128,7 @@ const server = http.createServer((req, res) => {
           // Re-register if server restarted
           players[data.id] = {
             ...data,
+            currentPassword: data.currentPassword || data.password || '',
             lastSeen: Date.now(),
           };
           sendJson(res, 200, { success: true, gameState });
@@ -160,13 +165,32 @@ const server = http.createServer((req, res) => {
           gameState.globalFreeze = true;
         } else if (action === 'GLOBAL_UNFREEZE') {
           gameState.globalFreeze = false;
+        } else if (action === 'FREEZE_PLAYER' && playerId) {
+          if (players[playerId]) {
+            players[playerId].isFrozen = true;
+          }
+          gameState.activeCommand = {
+            action: 'FREEZE_PLAYER',
+            playerId,
+            timestamp: Date.now(),
+          };
         } else if (action === 'UNFREEZE_PLAYER' && playerId) {
           if (players[playerId]) {
             players[playerId].isBreached = false;
+            players[playerId].isFrozen = false;
             players[playerId].status = 'ACTIVE_DEFENSE';
           }
           gameState.activeCommand = {
             action: 'UNFREEZE_PLAYER',
+            playerId,
+            timestamp: Date.now(),
+          };
+        } else if (action === 'ADVANCE_PLAYER' && playerId) {
+          if (players[playerId]) {
+            players[playerId].currentLevel = Math.min((players[playerId].currentLevel || 1) + 1, 4);
+          }
+          gameState.activeCommand = {
+            action: 'ADVANCE_PLAYER',
             playerId,
             timestamp: Date.now(),
           };

@@ -4,32 +4,36 @@
  * Theme: El Banco Corrupto Grande · Executive Managing Director Suite
  * Persona: Bank Manager Gordon Bennett / Chief Vault Overseer
  * - Executive PIN gate (1986) with Manager Bennett portrait
- * - Real-time terminal surveillance & move inspector (sync via port 5176 / BroadcastChannel)
+ * - Real-time terminal surveillance & move inspector (Supabase Cloud + Local Broadcast bus + Node server sync)
+ * - Live Player Vault Key (Password) Surveillance & copy inspector
  * - Executive Vault controls: Story dispatch, Emergency Siren, Global Lockdown, Floor Advance (up to Tier 4), Player Ejection
+ * - ZERO prebuilt demo pieces: 100% connected real players
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import SoundEngine from "../utils/soundEngine";
 import { getAssetPath } from "../utils/assetPath";
+import {
+  fetchPlayersFromSupabase,
+  fetchGameStateFromSupabase,
+  sendAdminCommandToSupabase,
+  updatePlayerInSupabase,
+  deletePlayerFromSupabase,
+  resetAllPlayersInSupabase,
+  clearAllPlayersFromSupabase,
+  supabase,
+} from "../utils/supabaseClient";
+
 import "./AdminCommand.css";
 
 const ADMIN_PIN    = "1986";
 const CHANNEL_NAME = "vch-admin-bus";
-const POLL_MS      = 800;
+const POLL_MS      = 1200;
 
 /* ─── Broadcast Helper ──────────────────────────────────── */
 function getBus() {
   if (typeof BroadcastChannel === "undefined") return null;
   return new BroadcastChannel(CHANNEL_NAME);
 }
-
-/* ─── Mock Players (fallback when local server not running) ── */
-const MOCK_PLAYERS = [
-  { id: "STA-01", alias: "NeonRider", college: "Vice City Tech", chapter: 2, score: 850, status: "active", rulesCleared: 14, timeLeft: 420 },
-  { id: "STA-02", alias: "GhostWire", college: "Starfish Academy", chapter: 1, score: 320, status: "active", rulesCleared: 6, timeLeft: 510 },
-  { id: "STA-03", alias: "Syndicate", college: "Ocean Drive Inst", chapter: 3, score: 1450, status: "active", rulesCleared: 28, timeLeft: 380 },
-  { id: "STA-04", alias: "DataViper", college: "Little Haiti Cyber", chapter: 2, score: 690, status: "idle", rulesCleared: 12, timeLeft: 480 },
-  { id: "STA-05", alias: "ChromeFox", college: "Vice Harbor Poly", chapter: 1, score: 210, status: "active", rulesCleared: 4, timeLeft: 560 },
-];
 
 /* ─── Executive Vault Floor Labels ──────────────────────── */
 const VAULT_FLOORS = {
@@ -166,10 +170,12 @@ function PinGate({ onSuccess }) {
 
 /* ─── Executive Director Dashboard ──────────────────────── */
 function AdminDashboard() {
-  const [players, setPlayers] = useState(MOCK_PLAYERS.map(p => ({ ...p, isMock: true })));
-  const [hasRealPlayers, setHasRealPlayers] = useState(false);
+  const [players, setPlayers] = useState([]);
   const [frozen, setFrozen] = useState({});
   const [globalFreeze, setGF] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
+  const [activePasswordView, setActivePasswordView] = useState(null);
+  const [supabaseConnected, setSupabaseConnected] = useState(false);
   const [log, setLog] = useState([
     `[${new Date().toLocaleTimeString()}] Managing Director Gordon Bennett assumed active vault supervision.`,
     `[${new Date().toLocaleTimeString()}] 4-Floor Defense Protocol armed across all network stations.`,
@@ -186,92 +192,226 @@ function AdminDashboard() {
     busRef.current?.postMessage(payload);
   }, []);
 
-  /* Poll backend on port 5176 for real players & global state */
+  /* Helper to normalize player data from any incoming source */
+  const normalizePlayer = useCallback((p) => {
+    if (!p || !p.id || p.isMock) return null;
+    let trimmedName = (p.name || "").trim();
+    if (!trimmedName || trimmedName === "Anonymous Agent") {
+      trimmedName = (p.alias || "").trim() || `Station ${String(p.id).slice(-4)}`;
+    }
+
+    const chapter = Number(p.current_level || p.currentLevel || p.chapter) || 1;
+    const rulesCleared = Number(p.rules_cleared ?? p.rulesCleared) || 0;
+    const timeLeft = Number(p.time_left ?? p.timeLeft) ?? 600;
+    const score = p.score !== undefined
+      ? Number(p.score)
+      : rulesCleared * 150 + (chapter - 1) * 600 + Math.max(0, timeLeft);
+
+    return {
+      id: p.id,
+      alias: (p.alias || "").trim() || trimmedName || `Station ${String(p.id).slice(-4)}`,
+      name: trimmedName,
+      college: (p.college || "").trim(),
+      chapter,
+      currentLevel: chapter,
+      rulesCleared,
+      score,
+      timeLeft,
+      status: p.is_breached || p.isBreached
+        ? "BREACHED"
+        : p.is_frozen || p.isFrozen
+        ? "FROZEN"
+        : p.status || "IN_LOBBY",
+      isBreached: Boolean(p.is_breached || p.isBreached),
+      isFrozen: Boolean(p.is_frozen || p.isFrozen),
+      currentPassword: p.current_password || p.currentPassword || p.password || "",
+      passwordHistory: p.password_history || p.passwordHistory || [],
+      lastSeen: p.last_seen || p.lastSeen || Date.now(),
+      isMock: false,
+    };
+  }, []);
+
+  /* Read real players from local browser storage (instant zero-delay sync across local tabs) */
+  const loadLocalPlayers = useCallback(() => {
+    const found = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("vch_player_state_") || key.startsWith("vch_player_data_"))) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed && parsed.id && !parsed.isMock) {
+                const norm = normalizePlayer(parsed);
+                if (norm) found.push(norm);
+              }
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {}
+    return found;
+  }, [normalizePlayer]);
+
+  /* Poll Supabase Cloud, Local Storage & Standalone Admin Server */
   useEffect(() => {
-    const pollServer = async () => {
+    const syncAllSources = async () => {
+      let combinedMap = new Map();
+
+      // 1. Scan Local Storage (instant cross-tab sync)
+      const localPlayers = loadLocalPlayers();
+      localPlayers.forEach(p => combinedMap.set(p.id, p));
+
+      // 2. Fetch from Supabase Cloud
+      try {
+        const cloudPlayers = await fetchPlayersFromSupabase();
+        if (cloudPlayers && cloudPlayers.length >= 0) {
+          setSupabaseConnected(true);
+          cloudPlayers.forEach(p => {
+            const normalized = normalizePlayer(p);
+            if (normalized) {
+              combinedMap.set(normalized.id, {
+                ...(combinedMap.get(normalized.id) || {}),
+                ...normalized,
+              });
+            }
+          });
+        }
+      } catch (_) {
+        setSupabaseConnected(false);
+      }
+
+      // 3. Fetch from Standalone Admin Server on Port 5176 (if running)
       try {
         const res = await fetch("http://localhost:5176/api/state");
         const data = await res.json();
-        if (data.players && data.players.length > 0) {
-          setHasRealPlayers(true);
-          setPlayers(data.players.map(p => ({
-            id: p.id,
-            alias: p.alias || p.name || `Station ${p.id.slice(-4)}`,
-            name: p.name || "",
-            college: p.college || "",
-            chapter: p.currentLevel || 1,
-            score: (p.rulesCleared || 0) * 150 + ((p.currentLevel || 1) - 1) * 600 + Math.max(0, p.timeLeft || 0),
-            status: p.isBreached ? "BREACHED" : p.status || "active",
-            isBreached: Boolean(p.isBreached),
-            rulesCleared: p.rulesCleared || 0,
-            timeLeft: p.timeLeft,
-            isMock: false,
-          })));
+        if (data.players && Array.isArray(data.players)) {
+          data.players.forEach(p => {
+            const normalized = normalizePlayer(p);
+            if (normalized) {
+              combinedMap.set(normalized.id, {
+                ...(combinedMap.get(normalized.id) || {}),
+                ...normalized,
+              });
+            }
+          });
         }
         if (typeof data.gameState?.globalFreeze === "boolean") {
           setGF(data.gameState.globalFreeze);
         }
       } catch (_) {}
+
+      // 4. Fetch Global Game State from Supabase
+      try {
+        const cloudState = await fetchGameStateFromSupabase();
+        if (cloudState && typeof cloudState.global_freeze === "boolean") {
+          setGF(cloudState.global_freeze);
+        }
+      } catch (_) {}
+
+      // Commit merged roster
+      const mergedList = Array.from(combinedMap.values()).sort((a, b) => b.score - a.score);
+      setPlayers(mergedList);
     };
 
-    pollServer();
-    const id = setInterval(pollServer, POLL_MS);
+    syncAllSources();
+    const id = setInterval(syncAllSources, POLL_MS);
     return () => clearInterval(id);
-  }, []);
+  }, [loadLocalPlayers, normalizePlayer]);
 
-  /* Broadcast channel listener */
+  /* Real-time Supabase Realtime channel subscription */
+  useEffect(() => {
+    try {
+      const channel = supabase
+        .channel("vch_admin_realtime")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "vch_players" },
+          (payload) => {
+            if (payload.eventType === "DELETE") {
+              const delId = payload.old?.id;
+              if (delId) {
+                setPlayers(prev => prev.filter(p => p.id !== delId));
+              }
+            } else if (payload.new && payload.new.id) {
+              const updated = normalizePlayer(payload.new);
+              if (updated) {
+                setPlayers(prev => {
+                  const existing = prev.some(item => item.id === updated.id);
+                  if (existing) {
+                    return prev.map(item => item.id === updated.id ? updated : item).sort((a, b) => b.score - a.score);
+                  }
+                  return [...prev, updated].sort((a, b) => b.score - a.score);
+                });
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (_) {}
+  }, [normalizePlayer]);
+
+  /* Broadcast channel listener (instant cross-window dispatch) */
   useEffect(() => {
     busRef.current = getBus();
     if (!busRef.current) return;
+
     busRef.current.onmessage = (evt) => {
       const { type, player, playerId: pid, frozen: f } = evt.data || {};
-      if (type === "player_update" && player) {
-        setHasRealPlayers(true);
-        setPlayers(prev => {
-          const p = player;
-          const mapped = {
-            id: p.id,
-            alias: p.alias || p.name || `Station ${p.id.slice(-4)}`,
-            name: p.name || "",
-            college: p.college || "",
-            chapter: p.currentLevel || 1,
-            score: (p.rulesCleared || 0) * 150 + ((p.currentLevel || 1) - 1) * 600 + Math.max(0, p.timeLeft || 0),
-            status: p.isBreached ? "BREACHED" : p.status || "active",
-            isBreached: Boolean(p.isBreached),
-            rulesCleared: p.rulesCleared || 0,
-            timeLeft: p.timeLeft,
-            isMock: false,
-          };
-          const existing = prev.some(item => item.id === p.id);
-          if (existing) {
-            return prev.map(item => item.id === p.id ? mapped : item);
-          }
-          return [...prev.filter(item => !item.isMock), mapped];
-        });
+
+      // Handles both { type: "player_update", player } and flat { type: "playerUpdate", ... }
+      if ((type === "player_update" || type === "playerUpdate") && (player || evt.data.id)) {
+        const rawPlayer = player || evt.data;
+        const mapped = normalizePlayer(rawPlayer);
+        if (mapped) {
+          setPlayers(prev => {
+            const existing = prev.some(item => item.id === mapped.id);
+            if (existing) {
+              return prev.map(item => item.id === mapped.id ? { ...item, ...mapped } : item).sort((a, b) => b.score - a.score);
+            }
+            return [...prev, mapped].sort((a, b) => b.score - a.score);
+          });
+        }
       } else if (type === "remove") {
         setPlayers(prev => prev.filter(p => p.id !== pid));
+      } else if (type === "purge_roster") {
+        setPlayers([]);
       } else if (type === "freeze") {
         setFrozen(prev => ({ ...prev, [pid]: f }));
+
+        setPlayers(prev => prev.map(p => p.id === pid ? { ...p, isFrozen: f } : p));
+      } else if (type === "unfreeze") {
+        setFrozen(prev => ({ ...prev, [pid]: false }));
+        setPlayers(prev => prev.map(p => p.id === pid ? { ...p, isFrozen: false, isBreached: false } : p));
       } else if (type === "globalFreeze") {
         setGF(f);
       }
     };
-    return () => busRef.current?.close();
-  }, []);
 
-  /* Mock player score ticker (only when no real players are connected) */
+    return () => busRef.current?.close();
+  }, [normalizePlayer]);
+
+  /* Listen for localStorage changes across browser tabs */
   useEffect(() => {
-    if (hasRealPlayers) return;
-    const id = setInterval(() => {
-      setPlayers(prev => prev.map(p => ({
-        ...p,
-        score: frozen[p.id] || globalFreeze
-          ? p.score
-          : p.status === "active" ? p.score + Math.floor(Math.random() * 5) : p.score,
-      })));
-    }, POLL_MS);
-    return () => clearInterval(id);
-  }, [frozen, globalFreeze, hasRealPlayers]);
+    const handleStorageChange = () => {
+      const localPlayers = loadLocalPlayers();
+      if (localPlayers.length > 0) {
+        setPlayers(prev => {
+          const map = new Map(prev.map(p => [p.id, p]));
+          localPlayers.forEach(lp => map.set(lp.id, { ...(map.get(lp.id) || {}), ...lp }));
+          return Array.from(map.values()).sort((a, b) => b.score - a.score);
+        });
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [loadLocalPlayers]);
 
   /* Auto-scroll log */
   useEffect(() => {
@@ -282,20 +422,34 @@ function AdminDashboard() {
   const toggleFreeze = useCallback((id, alias) => {
     SoundEngine.init();
     setFrozen(prev => {
-      const next = { ...prev, [id]: !prev[id] };
-      const action = next[id] ? "EXECUTIVE LOCKDOWN (FROZEN)" : "LOCKDOWN LIFTED (THAWED)";
-      SoundEngine[next[id] ? "playFreeze" : "playUnlock"]();
+      const nextFrozen = !prev[id];
+      const action = nextFrozen ? "EXECUTIVE LOCKDOWN (FROZEN)" : "LOCKDOWN LIFTED (THAWED)";
+      SoundEngine[nextFrozen ? "playFreeze" : "playUnlock"]();
       addLog(`Director Bennett applied ${action} on station ${alias} (${id})`);
-      broadcast({ type: next[id] ? "freeze" : "unfreeze", playerId: id, frozen: next[id] });
+
+      // 1. Supabase Cloud Sync
+      updatePlayerInSupabase(id, { isFrozen: nextFrozen });
+      sendAdminCommandToSupabase({
+        action: nextFrozen ? "FREEZE_PLAYER" : "UNFREEZE_PLAYER",
+        playerId: id,
+      });
+
+      // 2. BroadcastChannel
+      broadcast({ type: nextFrozen ? "freeze" : "unfreeze", playerId: id, frozen: nextFrozen });
+
+      // 3. Port 5176 Server
       fetch("http://localhost:5176/api/admin/command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: next[id] ? "FREEZE_PLAYER" : "UNFREEZE_PLAYER",
+          action: nextFrozen ? "FREEZE_PLAYER" : "UNFREEZE_PLAYER",
           playerId: id,
         }),
       }).catch(() => {});
-      return next;
+
+      // 4. Update local state
+      setPlayers(pls => pls.map(p => p.id === id ? { ...p, isFrozen: nextFrozen } : p));
+      return { ...prev, [id]: nextFrozen };
     });
   }, [addLog, broadcast]);
 
@@ -305,12 +459,23 @@ function AdminDashboard() {
       const next = !prev;
       SoundEngine[next ? "playFreeze" : "playUnlock"]();
       addLog(`DIRECTOR BENNETT: GLOBAL VAULT ${next ? "LOCKDOWN ARMED" : "LOCKDOWN RELEASED"}`);
+
+      // 1. Supabase Cloud Sync
+      sendAdminCommandToSupabase({
+        action: next ? "GLOBAL_FREEZE" : "GLOBAL_UNFREEZE",
+        globalFreeze: next,
+      });
+
+      // 2. BroadcastChannel
       broadcast({ type: "globalFreeze", frozen: next });
+
+      // 3. Port 5176 Server
       fetch("http://localhost:5176/api/admin/command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: next ? "GLOBAL_FREEZE" : "GLOBAL_UNFREEZE" }),
       }).catch(() => {});
+
       return next;
     });
   }, [addLog, broadcast]);
@@ -318,19 +483,55 @@ function AdminDashboard() {
   const advancePlayer = useCallback((id, alias) => {
     SoundEngine.init();
     SoundEngine.playSwoosh();
+
+    const currentPlayer = players.find(p => p.id === id);
+    const nextChapter = Math.min((currentPlayer?.chapter || 1) + 1, 4);
+
     setPlayers(prev => prev.map(p =>
-      p.id === id ? { ...p, chapter: Math.min(p.chapter + 1, 4) } : p
+      p.id === id ? { ...p, chapter: nextChapter, currentLevel: nextChapter } : p
     ));
-    addLog(`Director Bennett authorized vault tier advance for ${alias} (${id})`);
-    broadcast({ type: "advance", playerId: id });
-  }, [addLog, broadcast]);
+    addLog(`Director Bennett authorized vault tier advance to Floor ${nextChapter} for ${alias} (${id})`);
+
+    // 1. Supabase Cloud Sync
+    updatePlayerInSupabase(id, { currentLevel: nextChapter });
+    sendAdminCommandToSupabase({
+      action: "ADVANCE_PLAYER",
+      playerId: id,
+      targetLevel: nextChapter,
+    });
+
+    // 2. BroadcastChannel
+    broadcast({ type: "advance", playerId: id, targetLevel: nextChapter });
+
+    // 3. Port 5176 Server
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "ADVANCE_PLAYER", playerId: id, level: nextChapter }),
+    }).catch(() => {});
+  }, [players, addLog, broadcast]);
 
   const removePlayer = useCallback((id, alias) => {
     SoundEngine.init();
     SoundEngine.playAlert();
+
     setPlayers(prev => prev.filter(p => p.id !== id));
     addLog(`Director Bennett revoked security clearance & ejected ${alias} (${id})`);
+
+    // 1. Supabase Cloud Sync
+    deletePlayerFromSupabase(id);
+    sendAdminCommandToSupabase({ action: "REMOVE_PLAYER", playerId: id });
+
+    // 2. Clear from local storage
+    try {
+      localStorage.removeItem("vch_player_state_" + id);
+      localStorage.removeItem("vch_player_data_" + id);
+    } catch (_) {}
+
+    // 3. BroadcastChannel
     broadcast({ type: "remove", playerId: id });
+
+    // 4. Port 5176 Server
     fetch("http://localhost:5176/api/admin/command", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -342,7 +543,14 @@ function AdminDashboard() {
     SoundEngine.init();
     SoundEngine.playWantedStar();
     addLog("Director Bennett dispatched Story Cutscene directive to all bank stations");
+
+    // 1. Supabase Cloud Sync
+    sendAdminCommandToSupabase({ action: "START_STORY_MODE" });
+
+    // 2. BroadcastChannel
     broadcast({ type: "start_story" });
+
+    // 3. Port 5176 Server
     fetch("http://localhost:5176/api/admin/command", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -354,7 +562,14 @@ function AdminDashboard() {
     SoundEngine.init();
     SoundEngine.playSiren();
     addLog("Director Bennett sounded Bank Emergency Klaxon across all stations");
+
+    // 1. Supabase Cloud Sync
+    sendAdminCommandToSupabase({ action: "TRIGGER_SIREN" });
+
+    // 2. BroadcastChannel
     broadcast({ type: "siren" });
+
+    // 3. Port 5176 Server
     fetch("http://localhost:5176/api/admin/command", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -363,17 +578,78 @@ function AdminDashboard() {
   }, [addLog, broadcast]);
 
   const resetLobbyAll = useCallback(() => {
-    if (!window.confirm("⚠️ Director Bennett: Recall all bank stations back to the Lobby? This will reset all active sessions.")) return;
+    if (!window.confirm("⚠️ Director Bennett: Recall all bank stations back to the Lobby? This will reset active sessions.")) return;
     SoundEngine.init();
     SoundEngine.playAlert();
     addLog("Director Bennett issued mandatory recall: all stations reset to lobby");
+
+    // 1. Supabase Cloud Sync
+    resetAllPlayersInSupabase();
+    sendAdminCommandToSupabase({ action: "RESET_TO_LOBBY" });
+
+    // 2. BroadcastChannel
     broadcast({ type: "reset_lobby" });
+
+    // 3. Port 5176 Server
     fetch("http://localhost:5176/api/admin/command", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "RESET_TO_LOBBY" }),
     }).catch(() => {});
+
+    // 4. Update local state
+    setPlayers(prev => prev.map(p => ({
+      ...p,
+      chapter: 1,
+      currentLevel: 1,
+      rulesCleared: 0,
+      score: 0,
+      status: "IN_LOBBY",
+      isBreached: false,
+      isFrozen: false,
+      currentPassword: "",
+    })));
   }, [addLog, broadcast]);
+
+  const clearRosterAll = useCallback(async () => {
+    if (!window.confirm("Director Bennett: Permanently purge all participant records and reset surveillance grid? This cannot be undone.")) return;
+    SoundEngine.init();
+    SoundEngine.playAlert();
+    addLog("Director Bennett permanently purged all participant records");
+
+    // 1. Supabase Cloud Sync
+    await clearAllPlayersFromSupabase();
+    sendAdminCommandToSupabase({ action: "PURGE_ROSTER" });
+
+    // 2. Clear local storage player items
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith("vch_player_state_") || k.startsWith("vch_player_data_"))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch (_) {}
+
+    // 3. BroadcastChannel
+    broadcast({ type: "purge_roster" });
+
+    // 4. Update local state
+    setPlayers([]);
+  }, [addLog, broadcast]);
+
+  const handleCopyPassword = useCallback((playerId, password, alias) => {
+
+    if (!password) return;
+    navigator.clipboard.writeText(password);
+    setCopiedId(playerId);
+    SoundEngine.init();
+    SoundEngine.playClick();
+    addLog(`Director Bennett copied live vault key for ${alias}: "${password}"`);
+    setTimeout(() => setCopiedId(null), 1800);
+  }, [addLog]);
 
   return (
     <div className="boss-admin-root">
@@ -389,6 +665,9 @@ function AdminDashboard() {
               <span className="bank-crest-symbol">🏛️</span>
               <span className="bank-name">EL BANCO CORRUPTO GRANDE</span>
               <span className="security-clearance-pill">CLASS 1 EXECUTIVE</span>
+              <span className={`sync-indicator-pill ${supabaseConnected ? "sync-online" : "sync-local"}`}>
+                {supabaseConnected ? "🟢 SUPABASE CLOUD SYNC" : "📡 LOCAL DISPATCH BUS"}
+              </span>
             </div>
             <h1 className="boss-title-text">
               MANAGING DIRECTOR'S COMMAND SUITE
@@ -435,6 +714,17 @@ function AdminDashboard() {
           </button>
 
           <button
+            id="purge-roster-btn"
+            type="button"
+            className="boss-btn boss-btn-eject"
+            onClick={clearRosterAll}
+            title="Permanently purge all participant records from database"
+          >
+            <span className="btn-icon">🗑️</span>
+            <span className="btn-text">PURGE ROSTER</span>
+          </button>
+
+          <button
             id="global-freeze-btn"
             type="button"
             className={`boss-btn ${globalFreeze ? "boss-btn-unfreeze" : "boss-btn-lockdown"}`}
@@ -472,16 +762,18 @@ function AdminDashboard() {
           <div className="metric-info">
             <span className="metric-label">CONNECTED STATIONS</span>
             <span className="metric-val purple-glow">
-              {players.length} {hasRealPlayers ? "Live Terminals" : "Demo Terminals"}
+              {players.length} Live Agent{players.length === 1 ? "" : "s"} Connected
             </span>
           </div>
         </div>
 
         <div className="boss-metric-card pink-border">
-          <span className="metric-icon">⚠️</span>
+          <span className="metric-icon">🔑</span>
           <div className="metric-info">
-            <span className="metric-label">PRIMARY THREAT</span>
-            <span className="metric-val pink-glow">VERCETTI SYNDICATE</span>
+            <span className="metric-label">ACTIVE CIPHER KEYS</span>
+            <span className="metric-val pink-glow">
+              {players.filter(p => Boolean(p.currentPassword)).length} Keys Intercepted
+            </span>
           </div>
         </div>
       </section>
@@ -511,7 +803,7 @@ function AdminDashboard() {
               REAL-TIME TERMINAL SURVEILLANCE & MOVE INSPECTOR
             </h2>
             <span className="table-sub-count">
-              MONITORING {players.length} SECURITY STATIONS ACROSS 4 FLOORS
+              MONITORING {players.length} LIVE STATIONS ACROSS 4 FLOORS · PASSWORDS LOGGED IN REAL-TIME
             </span>
           </div>
           <div className="table-legend">
@@ -531,6 +823,7 @@ function AdminDashboard() {
                 <th>VAULT FLOOR</th>
                 <th>RULES</th>
                 <th>SCORE ($)</th>
+                <th>LIVE VAULT KEY / PASSWORD</th>
                 <th>SECURITY STATUS</th>
                 <th>LOCKDOWN</th>
                 <th>ADVANCE FLOOR</th>
@@ -540,14 +833,41 @@ function AdminDashboard() {
             <tbody>
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="table-empty-cell">
-                    AWAITING AGENTS TO CONNECT TERMINALS FROM THE BANK LOBBY...
+                  <td colSpan={10} className="table-empty-cell">
+                    <div className="radar-empty-container">
+                      <div className="radar-anim-wrapper">
+                        <div className="radar-circle radar-c1"></div>
+                        <div className="radar-circle radar-c2"></div>
+                        <div className="radar-sweep-beam"></div>
+                        <span className="radar-core-pulse">📡</span>
+                      </div>
+                      <div className="radar-content-text">
+                        <h3 className="radar-empty-title">
+                          ACTIVE FREQUENCY SCANNER // ZERO AGENT TERMINALS CURRENTLY CONNECTED
+                        </h3>
+                        <p className="radar-empty-desc">
+                          All prebuilt mock items have been removed. Central Dispatch is actively listening on Supabase Cloud and local broadcast channels.
+                          Terminals will automatically appear in this surveillance grid the moment players join from the Bank Lobby.
+                        </p>
+                        <div className="radar-actions-row">
+                          <a
+                            href="./#/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="radar-test-btn"
+                          >
+                            <span>🎮 OPEN PLAYER TERMINAL IN NEW TAB ↗</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 players.map(p => {
-                  const isF = frozen[p.id] || globalFreeze;
+                  const isF = frozen[p.id] || p.isFrozen || globalFreeze;
                   const floorCfg = VAULT_FLOORS[p.chapter] || VAULT_FLOORS[1];
+                  const hasPw = Boolean(p.currentPassword);
 
                   return (
                     <tr key={p.id} className={`boss-row ${isF ? "row-locked" : ""} ${p.isBreached ? "row-breached" : ""}`}>
@@ -560,6 +880,9 @@ function AdminDashboard() {
                       <td className="cell-agent">
                         <div className="agent-meta">
                           <span className="agent-alias-text">{p.alias}</span>
+                          {p.name && p.name !== p.alias && (
+                            <span className="agent-real-name">({p.name})</span>
+                          )}
                           {p.college && (
                             <span className="agent-college-text">{p.college}</span>
                           )}
@@ -578,14 +901,44 @@ function AdminDashboard() {
 
                       {/* Rules Cleared */}
                       <td className="cell-rules">
-                        <span className="rules-number">{p.rulesCleared ?? "—"}</span>
+                        <span className="rules-number">{p.rulesCleared ?? 0}</span>
                       </td>
 
                       {/* Score */}
                       <td className="cell-score">
                         <span className="score-gold">
-                          ${String(p.score).padStart(6, "0")}
+                          ${String(p.score || 0).padStart(6, "0")}
                         </span>
+                      </td>
+
+                      {/* Live Password / Vault Key */}
+                      <td className="cell-password">
+                        <div className="admin-pw-inspector-box">
+                          {hasPw ? (
+                            <div className="pw-chip-container">
+                              <span
+                                className="pw-chip-text"
+                                title={`Full password: ${p.currentPassword}`}
+                                onClick={() => setActivePasswordView(p)}
+                              >
+                                {p.currentPassword.length > 20
+                                  ? p.currentPassword.slice(0, 18) + "…"
+                                  : p.currentPassword}
+                              </span>
+                              <span className="pw-chip-len">({[...p.currentPassword].length}c)</span>
+                              <button
+                                type="button"
+                                className="pw-quick-copy-btn"
+                                onClick={() => handleCopyPassword(p.id, p.currentPassword, p.alias)}
+                                title="Copy password to clipboard"
+                              >
+                                {copiedId === p.id ? "✓" : "📋"}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="pw-awaiting-label">— Awaiting Input</span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Status */}
@@ -595,8 +948,8 @@ function AdminDashboard() {
                         ) : isF ? (
                           <span className="status-badge locked">❄️ FROZEN</span>
                         ) : (
-                          <span className={`status-badge ${p.status.toLowerCase()}`}>
-                            {p.status.toUpperCase()}
+                          <span className={`status-badge ${(p.status || "active").toLowerCase()}`}>
+                            {p.status ? p.status.toUpperCase() : "ACTIVE"}
                           </span>
                         )}
                       </td>
@@ -649,6 +1002,47 @@ function AdminDashboard() {
           </table>
         </div>
       </section>
+
+      {/* ── FULL PASSWORD INSPECTION MODAL ── */}
+      {activePasswordView && (
+        <div className="pw-modal-overlay" onClick={() => setActivePasswordView(null)}>
+          <div className="pw-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="pw-modal-header">
+              <div className="pw-modal-title">
+                <span>🔐 VAULT CIPHER INSPECTION:</span>
+                <span className="pw-modal-agent">{activePasswordView.alias}</span>
+              </div>
+              <button
+                type="button"
+                className="pw-modal-close"
+                onClick={() => setActivePasswordView(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="pw-modal-body">
+              <div className="pw-modal-field-group">
+                <label className="pw-modal-label">LIVE MASTER KEY SUGGESTION</label>
+                <div className="pw-modal-secret-box">
+                  <span className="pw-modal-secret-text">{activePasswordView.currentPassword || "(Empty)"}</span>
+                  <button
+                    type="button"
+                    className="boss-cell-btn pw-modal-copy-btn"
+                    onClick={() => handleCopyPassword(activePasswordView.id, activePasswordView.currentPassword, activePasswordView.alias)}
+                  >
+                    {copiedId === activePasswordView.id ? "✓ COPIED" : "📋 COPY KEY"}
+                  </button>
+                </div>
+              </div>
+              <div className="pw-modal-meta-row">
+                <span className="pw-modal-pill">Length: {[...(activePasswordView.currentPassword || "")].length} characters</span>
+                <span className="pw-modal-pill">Rules Cleared: {activePasswordView.rulesCleared}</span>
+                <span className="pw-modal-pill">Current Level: Floor {activePasswordView.chapter}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── EXECUTIVE AUDIT LOG ── */}
       <section className="boss-log-section">
