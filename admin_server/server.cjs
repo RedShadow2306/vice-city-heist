@@ -27,6 +27,8 @@ let gameState = {
 };
 
 let players = {}; // { [playerId]: { id, name, alias, college, status, currentLevel, rulesCleared, timeLeft, isBreached, isFrozen, currentPassword, lastSeen } }
+let ejectedPlayers = {}; // { [playerId]: { id, name, alias, college, reason, time, level, score, rulesCleared } }
+let securityViolations = []; // [ { id, playerId, alias, name, college, type, reason, level, timestamp, formattedTime, eliminated } ]
 let removedPlayers = new Set(); // Track ejected player IDs
 
 // Helper to send JSON responses with CORS headers
@@ -69,6 +71,42 @@ const server = http.createServer((req, res) => {
     sendJson(res, 200, {
       gameState,
       players: Object.values(players),
+      ejectedPlayers: Object.values(ejectedPlayers),
+      securityViolations,
+    });
+    return;
+  }
+
+  // 1b. POST /api/player/violation - Anti-Cheat Security Violation
+  if (req.method === 'POST' && url.pathname === '/api/player/violation') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const v = JSON.parse(body);
+        securityViolations.unshift(v);
+        if (securityViolations.length > 100) securityViolations.pop();
+
+        if (v.eliminated && v.playerId) {
+          const p = players[v.playerId] || {};
+          ejectedPlayers[v.playerId] = {
+            id: v.playerId,
+            name: v.name || p.name || 'Anonymous Agent',
+            alias: v.alias || p.alias || `Station ${v.playerId.slice(-4)}`,
+            college: v.college || p.college || 'Vice City Division',
+            reason: v.reason || 'Eliminated due to security breach',
+            time: v.formattedTime || new Date().toLocaleTimeString(),
+            level: v.level || p.currentLevel || 1,
+            score: p.score || 0,
+            rulesCleared: p.rulesCleared || 0,
+          };
+          removedPlayers.add(v.playerId);
+          delete players[v.playerId];
+        }
+        sendJson(res, 200, { success: true });
+      } catch (err) {
+        sendJson(res, 400, { error: 'Invalid JSON' });
+      }
     });
     return;
   }
@@ -196,6 +234,33 @@ const server = http.createServer((req, res) => {
           };
         } else if (action === 'REMOVE_PLAYER' && playerId) {
           removedPlayers.add(playerId);
+          const p = players[playerId] || {};
+          ejectedPlayers[playerId] = {
+            id: playerId,
+            name: p.name || data.name || 'Anonymous Agent',
+            alias: p.alias || data.alias || `Station ${playerId.slice(-4)}`,
+            college: p.college || data.college || 'Vice City Division',
+            reason: data.reason || 'Clearance revoked by Chief Director Bennett',
+            time: new Date().toLocaleTimeString(),
+            level: p.currentLevel || 1,
+            score: p.score || 0,
+            rulesCleared: p.rulesCleared || 0,
+          };
+          securityViolations.unshift({
+            id: 'VIO_' + Date.now(),
+            playerId,
+            alias: ejectedPlayers[playerId].alias,
+            name: ejectedPlayers[playerId].name,
+            college: ejectedPlayers[playerId].college,
+            type: 'ADMIN_EJECT',
+            reason: 'Security clearance manually revoked by Chief Director Bennett',
+            level: ejectedPlayers[playerId].level,
+            timestamp: Date.now(),
+            formattedTime: new Date().toLocaleTimeString(),
+            eliminated: true,
+          });
+          if (securityViolations.length > 100) securityViolations.pop();
+
           if (players[playerId]) {
             delete players[playerId];
           }
@@ -206,6 +271,7 @@ const server = http.createServer((req, res) => {
           };
         } else if (action === 'RESET_TO_LOBBY') {
           removedPlayers.clear();
+          ejectedPlayers = {};
           gameState.activeCommand = {
             action: 'RESET_TO_LOBBY',
             timestamp: Date.now(),
@@ -217,7 +283,13 @@ const server = http.createServer((req, res) => {
             players[id].isBreached = false;
           }
         } else if (action === 'RESET_TO_NAME_INPUT') {
-          removedPlayers.clear();
+          if (data.target === 'ejected') {
+            removedPlayers.clear();
+            ejectedPlayers = {};
+          } else if (playerId) {
+            removedPlayers.delete(playerId);
+            delete ejectedPlayers[playerId];
+          }
           gameState.activeCommand = {
             action: 'RESET_TO_NAME_INPUT',
             playerId: playerId || null,

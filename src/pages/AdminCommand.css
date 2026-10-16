@@ -1512,3 +1512,404 @@
   border-radius: 12px;
 }
 
+/* ================================================================
+   10. CASH PRIZE CHAMPIONSHIP TIEBREAKER & LEADERBOARD
+================================================================ */
+.tiebreaker-section {
+  background: var(--boss-surface-card);
+  border: 2px solid var(--boss-gold);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 32px;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.6),
+    0 0 35px rgba(255, 215, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.tiebreaker-section::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--boss-pink), var(--boss-gold), var(--boss-cyan));
+}
+
+.tiebreaker-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.tiebreaker-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tiebreaker-crown-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.7));
+}
+
+.tiebreaker-main-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--boss-gold-light);
+  margin-bottom: 4px;
+}
+
+.tiebreaker-sub-directive {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 242, 227, 0.7);
+  letter-spacing: 0.05em;
+}
+
+.tiebreaker-copy-btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, #FFD700 0%, #C59B27 100%);
+  color: #070A13;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.35);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tiebreaker-copy-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+}
+
+.tiebreaker-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tiebreaker-table th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 215, 0, 0.85);
+  background: rgba(7, 10, 19, 0.8);
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.tiebreaker-table td {
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.tiebreaker-row-winner {
+  background: rgba(255, 215, 0, 0.08);
+  box-shadow: inset 3px 0 0 var(--boss-gold);
+}
+
+.tiebreaker-row-runnerup {
+  background: rgba(184, 164, 236, 0.05);
+  box-shadow: inset 3px 0 0 #B8A4EC;
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.rank-badge.rank-1 {
+  background: rgba(255, 215, 0, 0.2);
+  color: var(--boss-gold-light);
+  border: 1px solid var(--boss-gold);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.rank-badge.rank-2 {
+  background: rgba(200, 200, 220, 0.2);
+  color: #E6E6FA;
+  border: 1px solid #C0C0D8;
+}
+
+.rank-badge.rank-3 {
+  background: rgba(205, 127, 50, 0.2);
+  color: #FFB380;
+  border: 1px solid #CD7F32;
+}
+
+.rank-badge.rank-standard {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 242, 227, 0.7);
+}
+
+.cash-prize-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 900;
+  color: #070A13;
+  background: var(--boss-gold);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  letter-spacing: 0.05em;
+}
+
+.clearance-time-highlight {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--boss-gold);
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.completion-clock-time {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--boss-cyan);
+}
+
+.floor-times-summary {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255, 242, 227, 0.6);
+  margin-top: 4px;
+}
+
+/* ================================================================
+   11. EJECTED & DISQUALIFIED TERMINALS ROSTER
+================================================================ */
+.ejected-roster-section {
+  background: var(--boss-surface-card);
+  border: 1px solid rgba(255, 75, 75, 0.4);
+  border-radius: 16px;
+  padding: 22px 26px;
+  margin-bottom: 32px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 75, 75, 0.2);
+}
+
+.ejected-roster-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 75, 75, 0.2);
+}
+
+.ejected-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ejected-main-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #FF8585;
+}
+
+.ejected-restore-all-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: rgba(72, 213, 208, 0.15);
+  border: 1px solid var(--boss-cyan);
+  color: var(--boss-cyan);
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ejected-restore-all-btn:hover {
+  background: var(--boss-cyan);
+  color: #070A13;
+}
+
+.ejected-reason-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #FF8585;
+  background: rgba(255, 75, 75, 0.12);
+  border: 1px solid rgba(255, 75, 75, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.ejected-restore-single-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--boss-gold);
+  color: var(--boss-gold);
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ejected-restore-single-btn:hover {
+  background: var(--boss-gold);
+  color: #070A13;
+}
+
+/* ================================================================
+   12. BLACK BOX AUDIT LOG: ILLEGAL ACTIONS & SECURITY VIOLATIONS
+================================================================ */
+.audit-log-section {
+  background: var(--boss-surface-card);
+  border: 1px solid rgba(248, 67, 145, 0.35);
+  border-radius: 16px;
+  padding: 22px 26px;
+  margin-bottom: 32px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+}
+
+.audit-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(248, 67, 145, 0.2);
+}
+
+.audit-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.audit-main-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--boss-pink);
+}
+
+.audit-filters-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.audit-filter-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 242, 227, 0.7);
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.audit-filter-btn.active {
+  background: rgba(248, 67, 145, 0.2);
+  border-color: var(--boss-pink);
+  color: var(--boss-pink);
+}
+
+.audit-clear-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 242, 227, 0.5);
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.audit-clear-btn:hover {
+  background: rgba(255, 75, 75, 0.2);
+  color: #FF8585;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.audit-table th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(7, 10, 19, 0.6);
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.audit-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+}
+
+.audit-badge-critical {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  color: #FF4B4B;
+  background: rgba(255, 75, 75, 0.15);
+  border: 1px solid rgba(255, 75, 75, 0.4);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.audit-badge-warning {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--boss-gold);
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+

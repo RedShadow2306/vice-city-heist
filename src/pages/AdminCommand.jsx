@@ -174,6 +174,7 @@ function AdminDashboard() {
   const [frozen, setFrozen] = useState({});
   const [globalFreeze, setGF] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [copiedTiebreaker, setCopiedTiebreaker] = useState(false);
   const [activePasswordView, setActivePasswordView] = useState(null);
   const [supabaseConnected, setSupabaseConnected] = useState(false);
   const [ejectedStations, setEjectedStations] = useState(() => {
@@ -183,6 +184,14 @@ function AdminDashboard() {
       return [];
     }
   });
+  const [securityViolations, setSecurityViolations] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("vch_admin_violations") || "[]");
+    } catch (_) {
+      return [];
+    }
+  });
+  const [violationFilter, setViolationFilter] = useState("ALL");
   const [log, setLog] = useState([
     `[${new Date().toLocaleTimeString()}] Managing Director Gordon Bennett assumed active vault supervision.`,
     `[${new Date().toLocaleTimeString()}] 4-Floor Defense Protocol armed across all network stations.`,
@@ -231,6 +240,15 @@ function AdminDashboard() {
         : p.status || "IN_LOBBY",
       isBreached: Boolean(p.is_breached || p.isBreached),
       isFrozen: Boolean(p.is_frozen || p.isFrozen),
+      isEjected: Boolean(p.is_ejected || p.isEjected || p.status === "EJECTED" || p.status?.startsWith("DISQUALIFIED")),
+      ejectReason: p.eject_reason || p.ejectReason || p.breachReason || p.reason || "",
+      violations: p.violations || (p.lastViolation ? [p.lastViolation] : []),
+      completedAt: p.completedAt || p.completed_at || "",
+      completedTimestamp: Number(p.completedTimestamp || p.completed_timestamp || 0),
+      totalClearanceSeconds: Number(p.totalClearanceSeconds || p.total_clearance_seconds || 0),
+      clearanceFormatted: p.clearanceFormatted || p.clearance_formatted || "",
+      levelTimes: p.levelTimes || p.level_times || {},
+      isGrandWinner: Boolean(p.isGrandWinner || p.is_grand_winner || p.status === "GRAND_VICTORY" || (chapter >= 4 && rulesCleared >= 45)),
       currentPassword: p.current_password || p.currentPassword || p.password || "",
       passwordHistory: p.password_history || p.passwordHistory || [],
       lastSeen: p.last_seen || p.lastSeen || Date.now(),
@@ -304,6 +322,24 @@ function AdminDashboard() {
             }
           });
         }
+        if (data.ejectedPlayers && Array.isArray(data.ejectedPlayers)) {
+          setEjectedStations(prev => {
+            const map = new Map(prev.map(s => [s.id, s]));
+            data.ejectedPlayers.forEach(ep => map.set(ep.id, ep));
+            const merged = Array.from(map.values()).slice(0, 50);
+            try { localStorage.setItem("vch_ejected_stations", JSON.stringify(merged)); } catch (_) {}
+            return merged;
+          });
+        }
+        if (data.securityViolations && Array.isArray(data.securityViolations)) {
+          setSecurityViolations(prev => {
+            const map = new Map(prev.map(v => [v.id, v]));
+            data.securityViolations.forEach(sv => map.set(sv.id, sv));
+            const merged = Array.from(map.values()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 100);
+            try { localStorage.setItem("vch_admin_violations", JSON.stringify(merged)); } catch (_) {}
+            return merged;
+          });
+        }
         if (typeof data.gameState?.globalFreeze === "boolean") {
           setGF(data.gameState.globalFreeze);
         }
@@ -317,15 +353,49 @@ function AdminDashboard() {
         }
       } catch (_) {}
 
-      // Commit merged roster
-      const mergedList = Array.from(combinedMap.values()).sort((a, b) => b.score - a.score);
-      setPlayers(mergedList);
+      // Commit merged roster - STRICTLY EXCLUDE EJECTED PARTICIPANTS FROM ACTIVE GRID
+      const rawList = Array.from(combinedMap.values());
+      const ejectedIdSet = new Set(ejectedStations.map(s => s.id));
+
+      const activeList = [];
+      const newlyDetectedEjected = [];
+
+      for (const p of rawList) {
+        if (ejectedIdSet.has(p.id) || p.isEjected || p.status === "EJECTED" || p.status?.startsWith("DISQUALIFIED")) {
+          if (!ejectedIdSet.has(p.id)) {
+            newlyDetectedEjected.push({
+              id: p.id,
+              alias: p.alias,
+              name: p.name,
+              college: p.college,
+              reason: p.ejectReason || p.breachReason || "Security Violation / Disqualified",
+              time: new Date().toLocaleTimeString(),
+              level: p.currentLevel,
+              score: p.score,
+              rulesCleared: p.rulesCleared,
+            });
+          }
+        } else {
+          activeList.push(p);
+        }
+      }
+
+      if (newlyDetectedEjected.length > 0) {
+        setEjectedStations(prev => {
+          const updated = [...newlyDetectedEjected, ...prev].slice(0, 50);
+          try { localStorage.setItem("vch_ejected_stations", JSON.stringify(updated)); } catch (_) {}
+          return updated;
+        });
+      }
+
+      activeList.sort((a, b) => b.score - a.score);
+      setPlayers(activeList);
     };
 
     syncAllSources();
     const id = setInterval(syncAllSources, POLL_MS);
     return () => clearInterval(id);
-  }, [loadLocalPlayers, normalizePlayer]);
+  }, [loadLocalPlayers, normalizePlayer, ejectedStations]);
 
   /* Real-time Supabase Realtime channel subscription */
   useEffect(() => {
@@ -522,17 +592,52 @@ function AdminDashboard() {
     SoundEngine.init();
     SoundEngine.playAlert();
 
+    const target = players.find(p => p.id === id);
+
     setPlayers(prev => prev.filter(p => p.id !== id));
     setEjectedStations(prev => {
-      const updated = [{ id, alias, time: new Date().toLocaleTimeString() }, ...prev.filter(s => s.id !== id)];
-      localStorage.setItem("vch_ejected_stations", JSON.stringify(updated.slice(0, 20)));
-      return updated.slice(0, 20);
+      const updated = [
+        {
+          id,
+          alias: target?.alias || alias,
+          name: target?.name || "",
+          college: target?.college || "",
+          reason: "Security clearance revoked by Director Bennett",
+          time: new Date().toLocaleTimeString(),
+          level: target?.currentLevel || 1,
+          score: target?.score || 0,
+          rulesCleared: target?.rulesCleared || 0,
+        },
+        ...prev.filter(s => s.id !== id)
+      ];
+      try { localStorage.setItem("vch_ejected_stations", JSON.stringify(updated.slice(0, 50))); } catch (_) {}
+      return updated.slice(0, 50);
     });
+
+    const ejectViolation = {
+      id: "VIO_" + Date.now(),
+      playerId: id,
+      alias: target?.alias || alias,
+      name: target?.name || "",
+      college: target?.college || "",
+      type: "ADMIN_EJECT",
+      reason: "Security clearance manually revoked by Chief Director Bennett",
+      level: target?.currentLevel || 1,
+      timestamp: Date.now(),
+      formattedTime: new Date().toLocaleTimeString(),
+      eliminated: true,
+    };
+    setSecurityViolations(prev => {
+      const next = [ejectViolation, ...prev].slice(0, 100);
+      try { localStorage.setItem("vch_admin_violations", JSON.stringify(next)); } catch (_) {}
+      return next;
+    });
+
     addLog(`Director Bennett revoked security clearance & ejected ${alias} (${id})`);
 
     // 1. Supabase Cloud Sync
     deletePlayerFromSupabase(id);
-    sendAdminCommandToSupabase({ action: "REMOVE_PLAYER", playerId: id });
+    sendAdminCommandToSupabase({ action: "REMOVE_PLAYER", playerId: id, reason: "Revoked by Director Bennett" });
 
     // 2. Clear from local storage
     try {
@@ -547,9 +652,9 @@ function AdminDashboard() {
     fetch("http://localhost:5176/api/admin/command", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "REMOVE_PLAYER", playerId: id }),
+      body: JSON.stringify({ action: "REMOVE_PLAYER", playerId: id, reason: "Revoked by Director Bennett" }),
     }).catch(() => {});
-  }, [addLog, broadcast]);
+  }, [players, addLog, broadcast]);
 
   const sendEjectedToNameInput = useCallback(() => {
     SoundEngine.init();
@@ -570,7 +675,7 @@ function AdminDashboard() {
     }).catch(() => {});
 
     setEjectedStations([]);
-    localStorage.removeItem("vch_ejected_stations");
+    try { localStorage.removeItem("vch_ejected_stations"); } catch (_) {}
   }, [addLog, broadcast]);
 
   const sendPlayerToNameInput = useCallback((id, alias) => {
@@ -581,7 +686,7 @@ function AdminDashboard() {
     setPlayers(prev => prev.filter(p => p.id !== id));
     setEjectedStations(prev => {
       const updated = prev.filter(s => s.id !== id);
-      localStorage.setItem("vch_ejected_stations", JSON.stringify(updated));
+      try { localStorage.setItem("vch_ejected_stations", JSON.stringify(updated)); } catch (_) {}
       return updated;
     });
 
@@ -605,6 +710,61 @@ function AdminDashboard() {
       body: JSON.stringify({ action: "RESET_TO_NAME_INPUT", playerId: id }),
     }).catch(() => {});
   }, [addLog, broadcast]);
+
+  /* ── Official Championship Tiebreaker Rankings ── */
+  const tiebreakerRankings = useMemo(() => {
+    const list = [...players];
+    return list.sort((a, b) => {
+      // 1. Level 4 Cleared / Grand Victory (Priority 1)
+      const aWon = a.isGrandWinner || a.status === "GRAND_VICTORY" || (a.currentLevel >= 4 && a.rulesCleared >= 45);
+      const bWon = b.isGrandWinner || b.status === "GRAND_VICTORY" || (b.currentLevel >= 4 && b.rulesCleared >= 45);
+      if (aWon && !bWon) return -1;
+      if (!aWon && bWon) return 1;
+
+      // Both cleared Level 4: TIEBREAKER IS FASTEST CLEARANCE TIME
+      if (aWon && bWon) {
+        const aSec = a.totalClearanceSeconds || 999999;
+        const bSec = b.totalClearanceSeconds || 999999;
+        if (aSec !== bSec) return aSec - bSec;
+        const aTs = a.completedTimestamp || 9999999999999;
+        const bTs = b.completedTimestamp || 9999999999999;
+        if (aTs !== bTs) return aTs - bTs;
+        return b.score - a.score;
+      }
+
+      // Neither cleared Level 4: sort by highest level, then most rules, then score
+      if (b.currentLevel !== a.currentLevel) return b.currentLevel - a.currentLevel;
+      if (b.rulesCleared !== a.rulesCleared) return b.rulesCleared - a.rulesCleared;
+      return b.score - a.score;
+    });
+  }, [players]);
+
+  const copyTiebreakerReport = useCallback(() => {
+    if (tiebreakerRankings.length === 0) return;
+    const header = `🏆 EL BANCO CORRUPTO GRANDE // OFFICIAL CASH PRIZE TIEBREAKER REPORT\nTimestamp: ${new Date().toLocaleString()}\n` +
+      `================================================================================\n`;
+    const rows = tiebreakerRankings.map((p, idx) => {
+      const medal = idx === 0 ? "🥇 [1ST PLACE - CASH PRIZE WINNER]" : idx === 1 ? "🥈 [2ND PLACE]" : idx === 2 ? "🥉 [3RD PLACE]" : `   [#${idx + 1}]`;
+      const timeStr = p.clearanceFormatted || (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "In Progress");
+      const finishStr = p.completedAt ? `Finished at: ${p.completedAt}` : `Level: ${p.currentLevel} (Rules: ${p.rulesCleared})`;
+      return `${medal} ${p.alias} (${p.name || "Agent"}) - ${p.college || "Vice City"}\n   Clearance Time: ${timeStr} | Score: $${p.score.toLocaleString()} | ${finishStr}`;
+    }).join("\n\n");
+
+    const fullReport = header + rows;
+    navigator.clipboard.writeText(fullReport).then(() => {
+      setCopiedTiebreaker(true);
+      setTimeout(() => setCopiedTiebreaker(false), 2500);
+      SoundEngine.init();
+      SoundEngine.playUnlock();
+    }).catch(() => {});
+  }, [tiebreakerRankings]);
+
+  const filteredViolations = useMemo(() => {
+    if (violationFilter === "ELIMINATIONS") return securityViolations.filter(v => v.eliminated);
+    if (violationFilter === "FULLSCREEN") return securityViolations.filter(v => v.type === "FULLSCREEN_ESCAPE");
+    if (violationFilter === "TAB_SWITCH") return securityViolations.filter(v => v.type === "TAB_SWITCH");
+    return securityViolations;
+  }, [securityViolations, violationFilter]);
 
   const startStoryAll = useCallback(() => {
     SoundEngine.init();
@@ -874,26 +1034,112 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── EJECTED STATIONS ALERT BANNER ── */}
-      {ejectedStations.length > 0 && (
-        <section className="ejected-banner">
-          <div className="ejected-banner-info">
-            <span className="ejected-icon">🚫</span>
-            <span className="ejected-title">EJECTED PLAYERS ({ejectedStations.length}):</span>
-            <span className="ejected-list">
-              {ejectedStations.map(s => `${s.alias} (${s.time})`).join(" · ")}
-            </span>
+      {/* ── CASH PRIZE CHAMPIONSHIP TIEBREAKER & LEADERBOARD ── */}
+      <section className="tiebreaker-section">
+        <div className="tiebreaker-header-bar">
+          <div className="tiebreaker-title-wrap">
+            <span className="tiebreaker-crown-icon">👑</span>
+            <div>
+              <h2 className="tiebreaker-main-title">
+                OFFICIAL CASH PRIZE CHAMPIONSHIP PODIUM & TIEBREAKER
+              </h2>
+              <p className="tiebreaker-sub-directive">
+                Tiebreaker Protocol: Ranked by (1) Final Level 4 Clearance, (2) Total Rules Cleared, (3) Lowest Total Clearance Time, (4) Earliest Wall-Clock Finish Timestamp.
+              </p>
+            </div>
           </div>
           <button
             type="button"
-            className="ejected-banner-restore-btn"
-            onClick={sendEjectedToNameInput}
-            title="Dispatch command to return all ejected players back to the Name Input registration page"
+            className="tiebreaker-copy-btn"
+            onClick={copyTiebreakerReport}
+            title="Copy official winner report and tiebreaker breakdown to clipboard"
           >
-            ↩ SEND ALL EJECTED TO NAME INPUT PAGE
+            <span>📋</span>
+            <span>{copiedTiebreaker ? "REPORT COPIED TO CLIPBOARD!" : "COPY CASH PRIZE PODIUM REPORT"}</span>
           </button>
-        </section>
-      )}
+        </div>
+
+        <div className="boss-table-wrapper">
+          <table className="tiebreaker-table" aria-label="Official Cash Prize Tiebreaker Table">
+            <thead>
+              <tr>
+                <th>PODIUM RANK</th>
+                <th>STATION ALIAS & AGENT</th>
+                <th>COLLEGE / TEAM</th>
+                <th>VAULT STATUS</th>
+                <th>RULES CLEARED</th>
+                <th>TOTAL CLEARANCE TIME</th>
+                <th>OFFICIAL FINISH TIMESTAMP</th>
+                <th>FLOOR BREAKDOWN</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tiebreakerRankings.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: "center", padding: "24px", color: "rgba(255, 242, 227, 0.5)" }}>
+                    No participant clearance records recorded yet. Stations will be automatically evaluated here as they advance through the 4 vault floors.
+                  </td>
+                </tr>
+              ) : (
+                tiebreakerRankings.map((p, idx) => {
+                  const isWinner = idx === 0;
+                  const isRunnerUp = idx === 1;
+                  const isThird = idx === 2;
+                  const isLevel4Cleared = p.isGrandWinner || p.status === "GRAND_VICTORY" || (p.currentLevel >= 4 && p.rulesCleared >= 45);
+
+                  return (
+                    <tr
+                      key={p.id}
+                      className={isWinner ? "tiebreaker-row-winner" : isRunnerUp ? "tiebreaker-row-runnerup" : ""}
+                    >
+                      <td>
+                        <span className={`rank-badge ${isWinner ? "rank-1" : isRunnerUp ? "rank-2" : isThird ? "rank-3" : "rank-standard"}`}>
+                          {isWinner ? "🥇 1ST PLACE" : isRunnerUp ? "🥈 2ND PLACE" : isThird ? "🥉 3RD PLACE" : `#${idx + 1}`}
+                          {isWinner && <span className="cash-prize-tag">💵 CASH PRIZE WINNER</span>}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>{p.alias}</strong>
+                        {p.name && <div style={{ fontSize: "11px", color: "rgba(255, 242, 227, 0.6)" }}>{p.name}</div>}
+                      </td>
+                      <td>{p.college || "Vice City Division"}</td>
+                      <td>
+                        <span className={`cell-status-chip ${isLevel4Cleared ? "status-victory" : "status-active"}`}>
+                          {isLevel4Cleared ? "🏆 LEVEL 4 COMPLETED" : `FLOOR ${p.currentLevel || 1} IN PROGRESS`}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+                          {p.rulesCleared} / {p.currentLevel >= 4 ? 45 : p.currentLevel === 3 ? 32 : p.currentLevel === 2 ? 20 : 10}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="clearance-time-highlight">
+                          {p.clearanceFormatted || (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "--")}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="completion-clock-time">
+                          {p.completedAt || (isLevel4Cleared ? "Recorded" : "--")}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="floor-times-summary">
+                          {p.levelTimes && Object.keys(p.levelTimes).length > 0 ? (
+                            Object.entries(p.levelTimes).map(([lvl, sec]) => `FL.${lvl}: ${sec}s`).join(" · ")
+                          ) : (
+                            "Floor timing active"
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {/* ── LIVE STATION SURVEILLANCE TABLE ── */}
       <section className="boss-table-section">
@@ -1112,6 +1358,186 @@ function AdminDashboard() {
                     </tr>
                   );
                 })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* ── DISQUALIFIED & EJECTED TERMINALS ROSTER ── */}
+      <section className="ejected-roster-section">
+        <div className="ejected-roster-header">
+          <div className="ejected-title-wrap">
+            <span style={{ fontSize: "24px" }}>🚫</span>
+            <div>
+              <h2 className="ejected-main-title">
+                DISQUALIFIED & EJECTED TERMINALS ({ejectedStations.length})
+              </h2>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "rgba(255, 242, 227, 0.6)" }}>
+                Terminals eliminated due to fullscreen exits, tab switches, or security clearance revocation.
+              </span>
+            </div>
+          </div>
+          {ejectedStations.length > 0 && (
+            <button
+              type="button"
+              className="ejected-restore-all-btn"
+              onClick={sendEjectedToNameInput}
+              title="Reset all eliminated/ejected stations and return them to the Name Input registration screen"
+            >
+              ↩ RESTORE ALL EJECTED TO NAME INPUT
+            </button>
+          )}
+        </div>
+
+        <div className="boss-table-wrapper">
+          <table className="boss-table" aria-label="Ejected stations table">
+            <thead>
+              <tr>
+                <th>STATION ID & ALIAS</th>
+                <th>AGENT NAME</th>
+                <th>COLLEGE / INSTITUTION</th>
+                <th>DISQUALIFICATION REASON</th>
+                <th>TIME ELIMINATED</th>
+                <th>LAST FLOOR</th>
+                <th>RESTORE CLEARANCE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ejectedStations.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "rgba(255, 242, 227, 0.5)" }}>
+                    No eliminated or ejected terminals. When a player is disqualified or ejected, they will automatically appear here instead of the active surveillance grid.
+                  </td>
+                </tr>
+              ) : (
+                ejectedStations.map((s) => (
+                  <tr key={s.id}>
+                    <td>
+                      <span className="station-id-cell">{s.id.slice(0, 10)}</span>
+                      <div style={{ fontWeight: 800, color: "#FF8585" }}>{s.alias}</div>
+                    </td>
+                    <td>{s.name || "Agent"}</td>
+                    <td>{s.college || "Vice City Division"}</td>
+                    <td>
+                      <span className="ejected-reason-tag">
+                        {s.reason || "Security violation / clearance revoked"}
+                      </span>
+                    </td>
+                    <td style={{ fontFamily: "var(--font-mono)", color: "rgba(255, 242, 227, 0.8)" }}>
+                      {s.time || "--"}
+                    </td>
+                    <td>
+                      <span className="legend-chip fl1" style={{ fontSize: "10px" }}>
+                        FL.{s.level || 1}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="ejected-restore-single-btn"
+                        onClick={() => sendPlayerToNameInput(s.id, s.alias)}
+                        title="Reset this station back to Name Input registration"
+                      >
+                        📝 SEND TO NAME INPUT
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* ── BLACK BOX AUDIT LOG: ILLEGAL ACTIONS & VIOLATIONS ── */}
+      <section className="audit-log-section">
+        <div className="audit-header-bar">
+          <div className="audit-title-wrap">
+            <span style={{ fontSize: "24px" }}>🚨</span>
+            <div>
+              <h2 className="audit-main-title">
+                BLACK BOX AUDIT: ILLEGAL ACTIONS & SECURITY VIOLATIONS ({securityViolations.length})
+              </h2>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "rgba(255, 242, 227, 0.6)" }}>
+                Live tamper detection: Records escaping fullscreen, switching tabs, and devtools inspection attempts.
+              </span>
+            </div>
+          </div>
+          <div className="audit-filters-group">
+            {["ALL", "ELIMINATIONS", "FULLSCREEN", "TAB_SWITCH"].map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`audit-filter-btn ${violationFilter === f ? "active" : ""}`}
+                onClick={() => setViolationFilter(f)}
+              >
+                {f.replace("_", " ")}
+              </button>
+            ))}
+            {securityViolations.length > 0 && (
+              <button
+                type="button"
+                className="audit-clear-btn"
+                onClick={() => {
+                  setSecurityViolations([]);
+                  try { localStorage.removeItem("vch_admin_violations"); } catch (_) {}
+                }}
+                title="Clear current session audit log"
+              >
+                CLEAR LOG
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="boss-table-wrapper">
+          <table className="audit-table" aria-label="Security violation audit table">
+            <thead>
+              <tr>
+                <th>TIMESTAMP</th>
+                <th>TERMINAL ALIAS & AGENT</th>
+                <th>COLLEGE / TEAM</th>
+                <th>VIOLATION CATEGORY</th>
+                <th>SEVERITY</th>
+                <th>FLOOR</th>
+                <th>INCIDENT NARRATIVE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredViolations.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "rgba(255, 242, 227, 0.5)" }}>
+                    Zero security violations recorded. The vault perimeter is fully secure.
+                  </td>
+                </tr>
+              ) : (
+                filteredViolations.map((v) => (
+                  <tr key={v.id}>
+                    <td style={{ fontFamily: "var(--font-mono)", color: "var(--boss-cyan)", whiteSpace: "nowrap" }}>
+                      {v.formattedTime || new Date(v.timestamp).toLocaleTimeString()}
+                    </td>
+                    <td>
+                      <strong>{v.alias}</strong>
+                      {v.name && <div style={{ fontSize: "10px", color: "rgba(255, 242, 227, 0.5)" }}>{v.name}</div>}
+                    </td>
+                    <td>{v.college || "Vice City"}</td>
+                    <td>
+                      <span className={v.eliminated ? "audit-badge-critical" : "audit-badge-warning"}>
+                        {v.type}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontWeight: 800, color: v.eliminated ? "#FF4B4B" : "var(--boss-gold)" }}>
+                        {v.eliminated ? "🚨 ELIMINATED" : "⚠️ FLAGGED"}
+                      </span>
+                    </td>
+                    <td>FL.{v.level || 1}</td>
+                    <td style={{ color: "rgba(255, 242, 227, 0.85)" }}>
+                      {v.reason}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

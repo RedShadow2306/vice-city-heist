@@ -77,7 +77,7 @@ export function getManagerDirective(rule, pw, session, cfg) {
       return {
         mood: "urgent",
         headline: "ROMAN NUMERAL LOCK!",
-        speech: `Quick, look at secondary deadbolt #${session.romanTarget.num}! We need its Roman numeral: "${session.romanTarget.roman}"! Punch it in!`,
+        speech: `Quick, look at secondary deadbolt #${session.romanTarget?.num || 9}! We need its Roman numeral! Work it out and punch it in!`,
       };
 
     case 8:
@@ -105,7 +105,7 @@ export function getManagerDirective(rule, pw, session, cfg) {
       return {
         mood: "urgent",
         headline: "BULLION ELEMENT CODE!",
-        speech: `Our deep deposit holds ${session.element.name}! Insert its chemical element symbol: "${session.element.sym}"!`,
+        speech: `Our deep deposit holds ${session.element?.name || "Gold"}! Insert its chemical element symbol from the periodic table!`,
       };
 
     case 12:
@@ -119,14 +119,14 @@ export function getManagerDirective(rule, pw, session, cfg) {
       return {
         mood: "demanding",
         headline: "FESTIVAL EPOCH YEAR!",
-        speech: "The central server timestamp needs the current fest year (2026) in Roman numerals: type 'MMXXVI'!",
+        speech: "The central server timestamp needs the current fest year (2026) converted into Roman numerals!",
       };
 
     case 14:
       return {
         mood: "urgent",
         headline: "COASTAL ESCAPE ROUTE!",
-        speech: "Listen, the getaway squad is watching Ocean Drive! Include our coastal boulevard keyword 'OCEAN'!",
+        speech: "Listen, the getaway squad is watching our coastal getaway boulevard! Include that coastal boulevard keyword!",
       };
 
     case 15:
@@ -140,7 +140,7 @@ export function getManagerDirective(rule, pw, session, cfg) {
       return {
         mood: "calculating",
         headline: "FOREIGN EXCHANGE ROUTING!",
-        speech: `What's the capital of ${session.geo.country}? Quick, type "${session.geo.capital}" into the routing cipher!`,
+        speech: `What's the capital of ${session.geo?.country || "France"}? Quick, type its capital city into the routing cipher!`,
       };
 
     case 17:
@@ -154,14 +154,14 @@ export function getManagerDirective(rule, pw, session, cfg) {
       return {
         mood: "calculating",
         headline: "BINARY SWITCH CODE!",
-        speech: "Flip the secondary mainframe relay! What's the number 2 in binary? Type '10'!",
+        speech: "Flip the secondary mainframe relay! Convert decimal 2 into binary!",
       };
 
     case 19:
       return {
         mood: "demanding",
         headline: "CHESS GRANDMASTER LOCK!",
-        speech: "The old bank president was obsessed with chess! Type a checkmate notation: 'Q#' or 'N#'!",
+        speech: "The old bank president was obsessed with chess! Type a checkmate notation with Queen or Knight!",
       };
 
     case 20:
@@ -175,14 +175,14 @@ export function getManagerDirective(rule, pw, session, cfg) {
       return {
         mood: "panicked",
         headline: "THE THERMAL DRILL IS OVERHEATING!",
-        speech: "The vault door hinges are glowing red! Inject the vault coolant formula: type 'H2O'!",
+        speech: "The vault door hinges are glowing red! Inject the universal water coolant formula right now!",
       };
 
     case 22:
       return {
         mood: "urgent",
         headline: "EMERGENCY COLOR SWATCH!",
-        speech: `Match the vault strobe sensor! Type the 3-letter hex code "${session.swatch.hex}"!`,
+        speech: "Match the vault strobe sensor! Type the 3-letter hex code for our color swatch!",
       };
 
     case 23:
@@ -210,21 +210,21 @@ export function getManagerDirective(rule, pw, session, cfg) {
       return {
         mood: "demanding",
         headline: "DIGITAL LOGIC GATE!",
-        speech: "Engage the digital gate arrays! Type 'NAND', 'NOR', or 'XOR' in capital letters!",
+        speech: "Engage the digital gate arrays! Enter a universal logic gate in capital letters!",
       };
 
     case 27:
       return {
         mood: "urgent",
         headline: "VICE CITY SYNTH CHORD!",
-        speech: "Tune the acoustic harmonic scanner! Type an 80s synth chord: 'Am' or 'Em'!",
+        speech: "Tune the acoustic harmonic scanner! Enter an 80s sharp synth note!",
       };
 
     case 28:
       return {
         mood: "calculating",
         headline: "SATELLITE ORBIT RELAY!",
-        speech: "The satellite uplink needs planetary alignment! Type the largest planet: 'jupiter'!",
+        speech: "The satellite uplink needs planetary alignment! Type the largest planet in our solar system!",
       };
 
     case 29:
@@ -238,7 +238,7 @@ export function getManagerDirective(rule, pw, session, cfg) {
       return {
         mood: "calculating",
         headline: "DNA BIOMETRIC CODON!",
-        speech: "The vault's genetic scanner is asking for the universal start codon! Type 'ATG'!",
+        speech: "The vault's genetic scanner is asking for the universal biological start codon!",
       };
 
     case 31:

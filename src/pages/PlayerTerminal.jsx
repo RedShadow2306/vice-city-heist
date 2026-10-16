@@ -117,35 +117,183 @@ const CAMPAIGN_LEVELS = {
   },
 };
 
-/* ─── Session Randomizer ─── */
+/* ─── Session Randomizer Pools & Helper ─── */
+let lastSessionCache = null;
+
+function pickNonRepeating(pool, prevItem, keyFn = (x) => x) {
+  if (!pool || pool.length === 0) return null;
+  if (pool.length === 1) return pool[0];
+  const prevKey = prevItem != null ? keyFn(prevItem) : null;
+  const filtered = prevKey != null ? pool.filter((item) => keyFn(item) !== prevKey) : pool;
+  const candidates = filtered.length > 0 ? filtered : pool;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+const MULT_PAIRS = [
+  [6, 7], [7, 6], [7, 8], [8, 7], [6, 9], [9, 6],
+  [8, 9], [9, 8], [7, 7], [8, 8], [9, 9], [6, 8],
+  [8, 6], [7, 9], [9, 7], [12, 3], [11, 4], [12, 4],
+  [11, 5], [12, 5], [11, 6], [7, 5], [8, 5], [9, 5], [6, 6],
+];
+
+const BINARY_OPTIONS = [
+  { dec: 5, bin: "101" },
+  { dec: 6, bin: "110" },
+  { dec: 7, bin: "111" },
+  { dec: 9, bin: "1001" },
+  { dec: 10, bin: "1010" },
+  { dec: 11, bin: "1011" },
+  { dec: 12, bin: "1100" },
+  { dec: 13, bin: "1101" },
+  { dec: 14, bin: "1110" },
+  { dec: 15, bin: "1111" },
+];
+
+const ROMAN_OPTIONS = [
+  { num: 4, roman: "IV" },
+  { num: 9, roman: "IX" },
+  { num: 14, roman: "XIV" },
+  { num: 19, roman: "XIX" },
+  { num: 24, roman: "XXIV" },
+  { num: 29, roman: "XXIX" },
+  { num: 34, roman: "XXXIV" },
+  { num: 39, roman: "XXXIX" },
+  { num: 44, roman: "XLIV" },
+  { num: 49, roman: "XLIX" },
+  { num: 64, roman: "LXIV" },
+  { num: 74, roman: "LXXIV" },
+  { num: 89, roman: "LXXXIX" },
+  { num: 94, roman: "XCIV" },
+];
+
+const ELEMENT_OPTIONS = [
+  { sym: "Au", name: "Gold (Atomic #79)" },
+  { sym: "Ag", name: "Silver (Atomic #47)" },
+  { sym: "Fe", name: "Iron (Atomic #26)" },
+  { sym: "Cu", name: "Copper (Atomic #29)" },
+  { sym: "Pt", name: "Platinum (Atomic #78)" },
+  { sym: "Ti", name: "Titanium (Atomic #22)" },
+  { sym: "Pb", name: "Lead (Atomic #82)" },
+  { sym: "Hg", name: "Mercury (Atomic #80)" },
+  { sym: "Zn", name: "Zinc (Atomic #30)" },
+  { sym: "Ni", name: "Nickel (Atomic #28)" },
+  { sym: "Kr", name: "Krypton (Atomic #36)" },
+  { sym: "Xe", name: "Xenon (Atomic #54)" },
+  { sym: "Ne", name: "Neon (Atomic #10)" },
+  { sym: "He", name: "Helium (Atomic #2)" },
+  { sym: "Na", name: "Sodium (Atomic #11)" },
+  { sym: "Co", name: "Cobalt (Atomic #27)" },
+];
+
+const LANDMARK_OPTIONS = [
+  { prompt: "coastal oceanfront getaway boulevard", code: "OCEAN", label: "Boulevard" },
+  { prompt: "island district of Tommy's luxurious mansion", code: "STARFISH", label: "Mansion Island" },
+  { prompt: "golf club island estate connected by bridges", code: "LEAF", label: "Golf Estate" },
+  { prompt: "abandoned movie studio island district", code: "PRAWN", label: "Studio Island" },
+  { prompt: "north beach commercial district and mall", code: "VICE POINT", label: "District" },
+];
+
+const HOTSPOT_OPTIONS = [
+  { prompt: "legendary beachfront neon nightclub hotspot", word: "MALIBU", label: "Nightclub" },
+  { prompt: "premier automobile dealership showroom", word: "SUNSHINE", label: "Dealership" },
+  { prompt: "waterfront yacht marina harbor club", word: "MARINA", label: "Marina" },
+  { prompt: "downtown rock 'n' roll radio studio", word: "VROCK", label: "Music Studio" },
+];
+
+const WEB_ACRONYM_OPTIONS = [
+  { prompt: "Hypertext Markup Language", ans: "HTML", tag: "Markup" },
+  { prompt: "Cascading Style Sheets", ans: "CSS", tag: "Styles" },
+  { prompt: "JavaScript Object Notation", ans: "JSON", tag: "Data Format" },
+  { prompt: "Hypertext Transfer Protocol", ans: "HTTP", tag: "Web Protocol" },
+  { prompt: "Structured Query Language", ans: "SQL", tag: "Database" },
+];
+
+const SQL_KEYWORD_OPTIONS = [
+  { action: "retrieve and read rows from a table", word: "SELECT" },
+  { action: "insert new rows into a database table", word: "INSERT" },
+  { action: "modify existing records in a database table", word: "UPDATE" },
+  { action: "remove records from a database table", word: "DELETE" },
+];
+
+const NET_PORT_OPTIONS = [
+  { proto: "DNS lookups", port: "53" },
+  { proto: "unencrypted HTTP web traffic", port: "80" },
+  { proto: "secure HTTPS web traffic", port: "443" },
+  { proto: "secure SSH remote shell access", port: "22" },
+  { proto: "FTP control connections", port: "21" },
+  { proto: "SMTP email routing", port: "25" },
+];
+
+const OS_RIDDLES = [
+  { text: '🧩 TECH RIDDLE: "Launched in 1991 by Linus Torvalds with Tux the Penguin as my mascot, I power the majority of cloud servers. Name my 5-letter OS kernel."', ans: "linux" },
+  { text: '🧩 TECH RIDDLE: "Developed at AT&T Bell Labs in 1969 by Ken Thompson and Dennis Ritchie, my philosophical architecture pioneered pipelines and shells. Name my 4-letter OS."', ans: "unix" },
+  { text: '🧩 TECH RIDDLE: "Open-source Unix-like operating system foundation based on FreeBSD and Mach microkernel powering macOS and iOS. What 6-letter name am I?"', ans: "darwin" },
+];
+
+const SCRIPT_EXTS = [
+  { clue: "British comedy troupe Monty Python", ext: ".py", lang: "Python" },
+  { clue: "Netscape's web language created in 10 days by Brendan Eich", ext: ".js", lang: "JavaScript" },
+  { clue: "Microsoft's statically typed superset of JavaScript", ext: ".ts", lang: "TypeScript" },
+  { clue: "Mozilla's memory-safe systems programming language with crab mascot", ext: ".rs", lang: "Rust" },
+  { clue: "Yukihiro Matsumoto's gem-focused object-oriented scripting language", ext: ".rb", lang: "Ruby" },
+];
+
+const CIDR_OPTIONS = [
+  { bits: 24, mask: "255.255.255.0", prefix: "/24" },
+  { bits: 16, mask: "255.255.0.0", prefix: "/16" },
+  { bits: 8, mask: "255.0.0.0", prefix: "/8" },
+  { bits: 30, mask: "255.255.255.252", prefix: "/30" },
+];
+
+const CS_PIONEERS = [
+  { clue: "British mathematician and father of theoretical computer science whose Bombe machine broke Enigma at Bletchley Park", code: "turing", name: "Alan Turing" },
+  { clue: "Victorian mathematician who wrote the world's first algorithm for Charles Babbage's Analytical Engine", code: "lovelace", name: "Ada Lovelace" },
+  { clue: "Father of Information Theory who introduced the digital bit and applied Boolean algebra to circuits", code: "shannon", name: "Claude Shannon" },
+  { clue: "US Navy rear admiral who built the first compiler (A-0) and popularized the computer 'bug' term", code: "hopper", name: "Grace Hopper" },
+];
+
+const SWATCH_OPTIONS = [
+  { hex: "#EFA", css: "#eeffaa", name: "Neon Lime Glow" },
+  { hex: "#ACE", css: "#aaccee", name: "Vice Ice Blue" },
+  { hex: "#FAB", css: "#ffaabb", name: "Flamingo Pink" },
+  { hex: "#DAD", css: "#ddaadd", name: "Orchid Neon" },
+  { hex: "#BEE", css: "#bbeeee", name: "Cyber Aqua" },
+  { hex: "#CAB", css: "#ccaabb", name: "Sunset Mauve" },
+  { hex: "#FAD", css: "#ffaadd", name: "Synth Magenta" },
+];
+
+const SPONSORS = [
+  "diaz_cartel",
+  "ocean_drive",
+  "sunshine",
+  "cuban_gang",
+  "starfish",
+  "avery",
+  "vance_corp",
+  "vercetti_crime",
+];
+
+/* ─── Dynamic Session Randomizer ─── */
 function createSessionData() {
-  const sponsors = ["diaz_cartel", "ocean_drive", "sunshine", "cuban_gang", "starfish", "avery"];
-  const elements = [
-    { sym: "Au", name: "Gold (Atomic #79)" },
-    { sym: "Ag", name: "Silver (Atomic #47)" },
-    { sym: "Fe", name: "Iron (Atomic #26)" },
-    { sym: "Kr", name: "Krypton (Atomic #36)" },
-    { sym: "Xe", name: "Xenon (Atomic #54)" },
-  ];
-  const geos = [
-    { country: "Japan", capital: "tokyo" },
-    { country: "France", capital: "paris" },
-    { country: "Egypt", capital: "cairo" },
-    { country: "Italy", capital: "rome" },
-    { country: "Brazil", capital: "brasilia" },
-  ];
-  const romans = [
-    { num: 35, roman: "XXXV" },
-    { num: 49, roman: "XLIX" },
-    { num: 74, roman: "LXXIV" },
-    { num: 95, roman: "XCV" },
-  ];
-  const swatches = [
-    { hex: "#EFA", css: "#eeffaa", name: "Neon Lime Glow" },
-    { hex: "#ACE", css: "#aaccee", name: "Vice Ice Blue" },
-    { hex: "#FAB", css: "#ffaabb", name: "Flamingo Pink" },
-    { hex: "#DAD", css: "#ddaadd", name: "Orchid Neon" },
-  ];
+  // Generate random non-repeating 2-digit addition
+  let addA, addB, addSum;
+  let attempts = 0;
+  do {
+    addA = Math.floor(Math.random() * 35) + 14; // 14 to 48
+    addB = Math.floor(Math.random() * 37) + 13; // 13 to 49
+    addSum = addA + addB;
+    attempts++;
+  } while (lastSessionCache?.addition?.answer === addSum && attempts < 15);
+  const addition = { num1: addA, num2: addB, answer: addSum };
+
+  // Generate random non-repeating multiplication
+  const multPair = pickNonRepeating(MULT_PAIRS, lastSessionCache?.multiplication?.pair, (p) => `${p[0]}x${p[1]}`);
+  const multiplication = {
+    a: multPair[0],
+    b: multPair[1],
+    product: multPair[0] * multPair[1],
+    pair: `${multPair[0]}x${multPair[1]}`,
+  };
 
   // Letters without 'M' to prevent unintended multi-M collisions with the single M rule
   const letters = "ABCDEFGHJKLNPQRSTUVWXYZ";
@@ -158,21 +306,36 @@ function createSessionData() {
     captcha += nextChar;
   }
 
-  return {
-    sponsor: sponsors[Math.floor(Math.random() * sponsors.length)],
-    element: elements[Math.floor(Math.random() * elements.length)],
-    geo: geos[Math.floor(Math.random() * geos.length)],
-    romanTarget: romans[Math.floor(Math.random() * romans.length)],
-    swatch: swatches[Math.floor(Math.random() * swatches.length)],
+  const session = {
+    addition,
+    multiplication,
+    binaryTarget: pickNonRepeating(BINARY_OPTIONS, lastSessionCache?.binaryTarget, (b) => b.dec),
+    romanTarget: pickNonRepeating(ROMAN_OPTIONS, lastSessionCache?.romanTarget, (r) => r.num),
+    element: pickNonRepeating(ELEMENT_OPTIONS, lastSessionCache?.element, (e) => e.sym),
+    landmark: pickNonRepeating(LANDMARK_OPTIONS, lastSessionCache?.landmark, (l) => l.code),
+    hotspot: pickNonRepeating(HOTSPOT_OPTIONS, lastSessionCache?.hotspot, (h) => h.word),
+    webAcronym: pickNonRepeating(WEB_ACRONYM_OPTIONS, lastSessionCache?.webAcronym, (w) => w.ans),
+    sqlKeyword: pickNonRepeating(SQL_KEYWORD_OPTIONS, lastSessionCache?.sqlKeyword, (s) => s.word),
+    netPort: pickNonRepeating(NET_PORT_OPTIONS, lastSessionCache?.netPort, (n) => n.port),
+    osRiddle: pickNonRepeating(OS_RIDDLES, lastSessionCache?.osRiddle, (o) => o.ans),
+    scriptExt: pickNonRepeating(SCRIPT_EXTS, lastSessionCache?.scriptExt, (s) => s.ext),
+    cidrTarget: pickNonRepeating(CIDR_OPTIONS, lastSessionCache?.cidrTarget, (c) => c.prefix),
+    csPioneer: pickNonRepeating(CS_PIONEERS, lastSessionCache?.csPioneer, (c) => c.code),
+    swatch: pickNonRepeating(SWATCH_OPTIONS, lastSessionCache?.swatch, (s) => s.hex),
+    sponsor: pickNonRepeating(SPONSORS, lastSessionCache?.sponsor),
+    geo: { country: "France", capital: "paris" },
     captcha,
   };
+
+  lastSessionCache = session;
+  return session;
 }
 
 function getDigitSum(pw) {
   return (pw.match(/\d/g) || []).reduce((acc, d) => acc + Number(d), 0);
 }
 
-/* ─── Build Full 45-Rule Security Suite with CSE IT Constraints & Unpredictable Patterns ─── */
+/* ─── Build Full 45-Rule Security Suite with Dynamic Math & Unpredictable Non-Leaking Badges ─── */
 function buildAll45Rules(session, cfg) {
   return [
     /* ════ LEVEL 1: TELLERS GATE (Rules 1 - 10) ════ */
@@ -187,46 +350,44 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 2,
-      text: "Memory buffer quota: Exactly ONE letter 'M' allowed in the master key (case-insensitive)",
-      badge: (pw) => `M: ${(pw.match(/m/gi) || []).length}/1`,
-      hint: "Must contain exactly one 'M' or 'm' across the entire password (no more, no less).",
-      check: (pw) => (pw.match(/m/gi) || []).length === 1,
-      headline: "MEMORY ALLOCATION LIMIT!",
-      managerSpeech: "Listen up, kid! Our mainframe memory buffer will crash with multiple 'M' instances! You need EXACTLY ONE letter 'M' in the entire password!",
+      text: "Uppercase clearance: Master key must contain at least TWO uppercase letters",
+      badge: (pw) => `Upper: ${(pw.match(/[A-Z]/g) || []).length}/2`,
+      hint: "Include at least two capital letters in the cipher.",
+      check: (pw) => (pw.match(/[A-Z]/g) || []).length >= 2,
+      headline: "UPPERCASE CLEARANCE!",
+      managerSpeech: "We need strong encryption entropy! Include at least two capital letters in the cipher!",
     },
     {
       id: 3,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "I am the 3-digit HTTP status code returned when a web server cannot find the requested resource. What number am I?"',
-      badge: (pw) => (/404/.test(pw) ? "404 ✓" : "HTTP ?"),
-      hint: 'HTTP Client Error: Not Found = "404".',
-      check: (pw) => pw.includes("404"),
-      headline: "HTTP RIDDLE!",
-      managerSpeech: "The teller network threw a missing resource error! What is the 3-digit HTTP error for Not Found?! Type it in, rookie!",
+      text: `Include the sum / answer to: ${session.addition.num1} + ${session.addition.num2}`,
+      badge: (pw) => (pw.includes(String(session.addition.answer)) ? `${session.addition.answer} ✓` : "Sum ?"),
+      hint: `${session.addition.num1} + ${session.addition.num2} = ${session.addition.answer}. Type "${session.addition.answer}" into the cipher.`,
+      check: (pw) => pw.includes(String(session.addition.answer)),
+      headline: "ARITHMETIC PRESSURE!",
+      managerSpeech: `Tumbler pressure calculation! What is ${session.addition.num1} plus ${session.addition.num2}? Add the numbers and enter the sum!`,
     },
     {
       id: 4,
-      text: "Anti-repetition protocol: No two identical consecutive characters allowed (e.g., 'aa', '11' are strictly forbidden!)",
-      badge: (pw) => (/(.)\1/i.test(pw) ? "Duplicate Adjacent!" : "Unique Flow"),
+      text: "Anti-repetition protocol: No two identical consecutive characters allowed",
+      badge: (pw) => (/(.)\1/i.test(pw) ? "Duplicate Adjacent!" : "Unique Flow ✓"),
       hint: "Ensure no adjacent matching characters like '00', '11', 'aa'.",
       check: (pw) => !/(.)\1/i.test(pw),
       headline: "REPETITION VULNERABILITY!",
-      managerSpeech: "Red alert! Tommy's automated cracker detects identical consecutive characters! Eliminate all doubled letters or numbers like '00' or 'aa'!",
+      managerSpeech: "Red alert! Tommy's automated cracker detects identical consecutive characters! Eliminate all doubled letters or numbers!",
     },
     {
       id: 5,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "In Boolean algebra and computer logic, I represent truth, affirmative, and binary 1. Type my 4-letter keyword in lowercase."',
-      badge: (pw) => (/true/.test(pw) ? "true ✓" : "Boolean ?"),
-      hint: 'Boolean true keyword: "true".',
-      check: (pw) => /true/.test(pw),
-      headline: "BOOLEAN LOGIC RIDDLE!",
-      managerSpeech: "The vault logic gate demands truth! What's the 4-letter boolean state for binary 1?! Punch in 'true'!",
+      text: 'Include the security clearance keyword: "VAULT"',
+      badge: (pw) => (/vault/i.test(pw) ? "VAULT ✓" : "Keyword ?"),
+      hint: 'Type the word "VAULT" into the cipher.',
+      check: (pw) => /vault/i.test(pw),
+      headline: "VAULT CLEARANCE KEYWORD!",
+      managerSpeech: "Security protocol active! Include the keyword 'VAULT' in your master cipher!",
     },
     {
       id: 6,
-      text: `Include our bank security syndicate code: "${session.sponsor}"`,
-      badge: () => "Syndicate",
+      text: `Include our bank security contractor code: "${session.sponsor}"`,
+      badge: (pw) => (pw.toLowerCase().includes(session.sponsor) ? "Contractor ✓" : "Contractor ?"),
       hint: `Type "${session.sponsor}" in your password.`,
       check: (pw) => pw.toLowerCase().includes(session.sponsor),
       headline: "AUTHORIZE OUR SYNDICATE!",
@@ -234,18 +395,17 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 7,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "Linus Torvalds created me in 2005 to track branches, commits, and merges in software repositories. What 3-letter command tool am I?"',
-      badge: (pw) => (/git/i.test(pw) ? "git ✓" : "VCS ?"),
-      hint: 'Distributed Version Control: "git".',
-      check: (pw) => /git/i.test(pw),
-      headline: "VERSION CONTROL RIDDLE!",
-      managerSpeech: "Linus Torvalds' legendary revision tool! How do developers track code branches? Three letters: G-I-T!",
+      text: `Include the binary equivalent of decimal ${session.binaryTarget.dec}`,
+      badge: (pw) => (pw.includes(session.binaryTarget.bin) ? `${session.binaryTarget.bin} ✓` : "Binary ?"),
+      hint: `Decimal ${session.binaryTarget.dec} in binary is ${session.binaryTarget.bin}. Type "${session.binaryTarget.bin}".`,
+      check: (pw) => pw.includes(session.binaryTarget.bin),
+      headline: "BINARY REGISTER CONVERSION!",
+      managerSpeech: `Digital registers operate in binary! Convert decimal ${session.binaryTarget.dec} into its binary value!`,
     },
     {
       id: 8,
       text: "Quarantine protocol: Master key must not contain any whitespace characters",
-      badge: () => "No Spaces",
+      badge: (pw) => (!/\s/.test(pw) ? "No Spaces ✓" : "Whitespace Detected!"),
       hint: "Remove all space characters.",
       check: (pw) => !/\s/.test(pw),
       headline: "REMOVE ALL WHITESPACE!",
@@ -253,34 +413,32 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 9,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "Convert decimal 5 into a 3-bit binary string (4s place + 1s place). What 3-digit binary string am I?"',
-      badge: (pw) => (/101/.test(pw) ? "101 ✓" : "Binary ?"),
-      hint: 'Decimal 5 in binary is "101".',
-      check: (pw) => pw.includes("101"),
-      headline: "BINARY LOGIC RIDDLE!",
-      managerSpeech: "Quick arithmetic, assistant! What is decimal 5 in 3-bit binary? 4 plus 1 is '101'!",
+      text: `Include the Roman numeral for ${session.romanTarget.num}`,
+      badge: (pw) => (pw.toUpperCase().includes(session.romanTarget.roman) ? `${session.romanTarget.roman} ✓` : "Roman ?"),
+      hint: `${session.romanTarget.num} in Roman numerals is ${session.romanTarget.roman}. Type "${session.romanTarget.roman}".`,
+      check: (pw) => pw.toUpperCase().includes(session.romanTarget.roman),
+      headline: "ROMAN CIPHER CONVERSION!",
+      managerSpeech: `Another Roman tumbler index! What is ${session.romanTarget.num} in Roman numerals? Work it out or click for intel!`,
     },
     {
       id: 10,
       text: "Signal security: Include at least one special security symbol (!@#$%^&*)",
-      badge: (pw) => `Symbols: ${(pw.match(/[^a-zA-Z0-9\s]/g) || []).length}`,
+      badge: (pw) => `Symbols: ${(pw.match(/[^a-zA-Z0-9\s]/g) || []).length}/1`,
       hint: "Include at least one special character (!@#$%^&*).",
       check: (pw) => /[^a-zA-Z0-9\s]/.test(pw),
       headline: "ENCRYPT SECURITY SIGNAL!",
-      managerSpeech: "Our security transmission needs noise shielding! Inject at least one special symbol (!@#$%^&*) into the cipher!",
+      managerSpeech: "Our security transmission needs noise shielding! Inject at least one special symbol into the cipher!",
     },
 
     /* ════ LEVEL 2: EXECUTIVE CASH CORRIDORS (Rules 11 - 20) ════ */
     {
       id: 11,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "In networking folklore, \'There\'s no place like...\' this sacred local loopback hostname. What 9-letter word am I?"',
-      badge: (pw) => (/localhost/i.test(pw) ? "localhost ✓" : "Host ?"),
-      hint: 'Loopback hostname: "localhost".',
+      text: "Include standard networking local loopback hostname (IPv4 127.0.0.1)",
+      badge: (pw) => (/localhost/i.test(pw) ? "localhost ✓" : "Loopback ?"),
+      hint: 'Standard local loopback hostname is "localhost". Type "localhost".',
       check: (pw) => /localhost/i.test(pw),
-      headline: "LOOPBACK SHIELD RIDDLE!",
-      managerSpeech: "There's no place like home! Route incoming packets back to 'localhost'!",
+      headline: "LOOPBACK SHIELD!",
+      managerSpeech: "Route incoming packets back to local loopback! Enter the standard IPv4 loopback hostname!",
     },
     {
       id: 12,
@@ -293,51 +451,48 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 13,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "Short for \'superuser do\', I am the holy Unix terminal command prepended to execute administrative tasks with root authority. What 4-letter command am I?"',
-      badge: (pw) => (/sudo/i.test(pw) ? "sudo ✓" : "Root ?"),
-      hint: 'Linux root privilege command: "sudo".',
-      check: (pw) => /sudo/i.test(pw),
-      headline: "SUPERUSER PRIVILEGE RIDDLE!",
-      managerSpeech: "Elevate your clearance! What is the Linux superuser command? S-U-D-O!",
+      text: `Include the product / answer to: ${session.multiplication.a} × ${session.multiplication.b}`,
+      badge: (pw) => (pw.includes(String(session.multiplication.product)) ? `${session.multiplication.product} ✓` : "Product ?"),
+      hint: `${session.multiplication.a} × ${session.multiplication.b} = ${session.multiplication.product}. Type "${session.multiplication.product}" into the cipher.`,
+      check: (pw) => pw.includes(String(session.multiplication.product)),
+      headline: "BASIC MULTIPLICATION!",
+      managerSpeech: `Tumbler verification! What is ${session.multiplication.a} multiplied by ${session.multiplication.b}? Calculate and enter the product!`,
     },
     {
       id: 14,
-      text: 'Include our coastal getaway boulevard: "OCEAN"',
-      badge: () => "OCEAN",
-      hint: 'Type "OCEAN" in your password.',
-      check: (pw) => /ocean/i.test(pw),
-      headline: "COASTAL CLEARANCE!",
-      managerSpeech: "Dispatch our armored transport along Ocean Drive! Include keyword 'OCEAN'!",
+      text: `Vice City Cartography: Include the name of our ${session.landmark.prompt}`,
+      badge: (pw) => (new RegExp(session.landmark.code, "i").test(pw) ? `${session.landmark.code} ✓` : `${session.landmark.label} ?`),
+      hint: `The landmark name is "${session.landmark.code}". Type "${session.landmark.code}".`,
+      check: (pw) => new RegExp(session.landmark.code, "i").test(pw),
+      headline: "VICE CITY LANDMARK!",
+      managerSpeech: `Check the Vice City street map! What is our ${session.landmark.prompt}? Enter the name!`,
     },
     {
       id: 15,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "I am the LIFO (Last-In, First-Out) data structure of execution call frames, syntax parsing, and browser back history. What 5-letter structure am I?"',
-      badge: (pw) => (/stack/i.test(pw) ? "stack ✓" : "LIFO ?"),
-      hint: 'Last-In First-Out structure: "stack".',
-      check: (pw) => /stack/i.test(pw),
-      headline: "LIFO DATA STRUCTURE RIDDLE!",
-      managerSpeech: "Last-in, first-out! Plates in a cafeteria! What fundamental data structure is that? 'stack'!",
+      text: `Include the standard acronym for ${session.webAcronym.prompt}`,
+      badge: (pw) => (new RegExp(session.webAcronym.ans, "i").test(pw) ? `${session.webAcronym.ans} ✓` : `${session.webAcronym.tag} ?`),
+      hint: `${session.webAcronym.prompt} abbreviation is "${session.webAcronym.ans}". Type "${session.webAcronym.ans}".`,
+      check: (pw) => new RegExp(session.webAcronym.ans, "i").test(pw),
+      headline: "WEB STANDARDS CLEARANCE!",
+      managerSpeech: `Web foundation standard! What is the acronym for ${session.webAcronym.prompt}?`,
     },
     {
       id: 16,
       text: "Parameter encapsulation: Enclose any token inside square brackets: [ ... ]",
-      badge: () => "[ ]",
-      hint: 'Wrap any word or token in square brackets, e.g., "[sudo]" or "[101]".',
+      badge: (pw) => (/\[[a-zA-Z0-9_\-!]+\]/.test(pw) ? "[OK] ✓" : "[ ... ] ?"),
+      hint: 'Wrap any word or token in square brackets, e.g., "[101]" or "[HTML]".',
       check: (pw) => /\[[a-zA-Z0-9_\-!]+\]/.test(pw),
       headline: "ENCAPSULATE PARAMETERS!",
-      managerSpeech: "Security parameters must be bounded! Wrap any token inside square brackets like '[sudo]'!",
+      managerSpeech: "Security parameters must be bounded! Wrap any token inside square brackets like '[101]'!",
     },
     {
       id: 17,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "I am the standard SQL query clause used to extract columns and records from relational database tables. What 6-letter keyword am I?"',
-      badge: (pw) => (/SELECT/i.test(pw) ? "SELECT ✓" : "SQL ?"),
-      hint: 'SQL retrieval statement: "SELECT".',
-      check: (pw) => /SELECT/i.test(pw),
-      headline: "DATABASE QUERY RIDDLE!",
-      managerSpeech: "Query the financial database! What is the primary SQL statement to fetch rows? 'SELECT'!",
+      text: `Include the primary SQL keyword used to ${session.sqlKeyword.action}`,
+      badge: (pw) => (new RegExp(session.sqlKeyword.word, "i").test(pw) ? `${session.sqlKeyword.word} ✓` : "SQL Keyword ?"),
+      hint: `The SQL keyword to ${session.sqlKeyword.action} is "${session.sqlKeyword.word}". Type "${session.sqlKeyword.word}".`,
+      check: (pw) => new RegExp(session.sqlKeyword.word, "i").test(pw),
+      headline: "DATABASE QUERY CLEARANCE!",
+      managerSpeech: `Query the financial database! What is the primary SQL command used to ${session.sqlKeyword.action}?`,
     },
     {
       id: 18,
@@ -350,59 +505,58 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 19,
-      text: 'Include legendary Vice City neon hotspot: "MALIBU"',
-      badge: () => "MALIBU",
-      hint: 'Include nightclub name "MALIBU" (Remember: watch your single "M" rule!).',
-      check: (pw) => /malibu/i.test(pw),
-      headline: "MALIBU NIGHTCLUB CODE!",
-      managerSpeech: "Check the VIP account at the Malibu Club! Include 'MALIBU' (and remember our single 'M' limit)!",
+      text: `Vice City Dossier: Include the name of our ${session.hotspot.prompt}`,
+      badge: (pw) => (new RegExp(session.hotspot.word, "i").test(pw) ? `${session.hotspot.word} ✓` : `${session.hotspot.label} ?`),
+      hint: `The hotspot name is "${session.hotspot.word}". Type "${session.hotspot.word}".`,
+      check: (pw) => new RegExp(session.hotspot.word, "i").test(pw),
+      headline: "VICE CITY DOSSIER!",
+      managerSpeech: `Vice City intelligence file! What is our ${session.hotspot.prompt}? Enter the name!`,
     },
     {
       id: 20,
-      isRiddle: true,
-      text: '🧩 TECH RIDDLE: "I am the standard UDP/TCP networking port reserved for DNS (Domain Name System) query lookups. What 2-digit port am I?"',
-      badge: (pw) => (/53/.test(pw) ? "53 ✓" : "DNS Port ?"),
-      hint: 'Default DNS port: "53".',
-      check: (pw) => /53/.test(pw),
-      headline: "DNS NETWORK PORT RIDDLE!",
-      managerSpeech: "Domain Name System lookup! What is the standard port for DNS queries? '53'!",
+      text: `Include the default network port number for ${session.netPort.proto}`,
+      badge: (pw) => (pw.includes(session.netPort.port) ? `${session.netPort.port} ✓` : "Port ?"),
+      hint: `Default port for ${session.netPort.proto} is ${session.netPort.port}. Type "${session.netPort.port}".`,
+      check: (pw) => pw.includes(session.netPort.port),
+      headline: "NETWORK PROTOCOL PORT!",
+      managerSpeech: `Network communications protocol! What is the numerical port for ${session.netPort.proto}?`,
     },
 
     /* ════ LEVEL 3: TITANIUM DEEP VAULT (Rules 21 - 32) ════ */
     {
       id: 21,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "Launched in 1991 by Linus Torvalds with Tux the Penguin as my mascot, I power the majority of cloud servers. Name my 5-letter OS kernel."',
-      badge: (pw) => (/linux/i.test(pw) ? "linux ✓" : "Kernel ?"),
-      hint: 'Penguin OS kernel: "linux".',
-      check: (pw) => /linux/i.test(pw),
+      text: session.osRiddle.text,
+      badge: (pw) => (new RegExp(session.osRiddle.ans, "i").test(pw) ? `${session.osRiddle.ans} ✓` : "Kernel ?"),
+      hint: `OS kernel name: "${session.osRiddle.ans}".`,
+      check: (pw) => new RegExp(session.osRiddle.ans, "i").test(pw),
       headline: "OS KERNEL RIDDLE!",
-      managerSpeech: "Tux the penguin! What operating system powers the cloud servers? 'linux'!",
+      managerSpeech: "Operating systems foundation! What operating system kernel matches that description? Think, assistant!",
     },
     {
       id: 22,
-      text: 'Thermal drill overheating! Inject vault coolant formula: "H2O"',
-      badge: () => "H2O",
-      hint: 'Type "H2O" with capital H, number 2, and capital O.',
+      text: "Thermal drill overheating! Inject the universal chemical formula for water coolant",
+      badge: (pw) => (pw.includes("H2O") ? "H2O ✓" : "Coolant ?"),
+      hint: 'Water chemical formula is H2O. Type "H2O".',
       check: (pw) => pw.includes("H2O"),
       headline: "INJECT COOLANT!",
-      managerSpeech: "The outer doors are melting from Tommy's thermal drill! Inject coolant formula 'H2O' right now!",
+      managerSpeech: "The vault door hinges are glowing red! Inject the universal water coolant formula right now!",
     },
     {
       id: 23,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "Named after British comedy troupe Monty Python, what is the 3-character dot file extension for scripts written in this language?"',
-      badge: (pw) => (/\.py/i.test(pw) ? ".py ✓" : "Extension ?"),
-      hint: 'Python script extension: ".py".',
-      check: (pw) => /\.py/i.test(pw),
+      text: `🧩 TECH RIDDLE: "Named after ${session.scriptExt.clue}, what is the dot file extension for scripts written in this language?"`,
+      badge: (pw) => (pw.toLowerCase().includes(session.scriptExt.ext) ? `${session.scriptExt.ext} ✓` : "Extension ?"),
+      hint: `File extension for ${session.scriptExt.lang} is "${session.scriptExt.ext}".`,
+      check: (pw) => pw.toLowerCase().includes(session.scriptExt.ext),
       headline: "SCRIPT EXTENSION RIDDLE!",
-      managerSpeech: "Guido's language! What is the file extension for Python scripts? '.py'!",
+      managerSpeech: `Language file specification! What is the dot file extension for ${session.scriptExt.lang} scripts?`,
     },
     {
       id: 24,
       text: `Authorize with 5-letter biometric captcha: [${session.captcha}]`,
       isCaptcha: true,
-      badge: () => session.captcha,
+      badge: (pw) => (pw.includes(session.captcha) ? "Captcha ✓" : "Captcha ?"),
       hint: `Enter "${session.captcha}" in exact uppercase.`,
       check: (pw) => pw.includes(session.captcha),
       headline: "BIOMETRIC RETINAL SCAN!",
@@ -412,20 +566,20 @@ function buildAll45Rules(session, cfg) {
       id: 25,
       isRiddle: true,
       text: '🧩 TECH RIDDLE: "In dining philosophers and multi-threading, I am the fatal condition where two threads wait on each other\'s locks indefinitely. Name this 8-letter state."',
-      badge: (pw) => (/deadlock/i.test(pw) ? "deadlock ✓" : "Deadlock ?"),
+      badge: (pw) => (/deadlock/i.test(pw) ? "deadlock ✓" : "Concurrency ?"),
       hint: 'Mutual process blocking: "deadlock".',
       check: (pw) => /deadlock/i.test(pw),
       headline: "CONCURRENCY DEADLOCK RIDDLE!",
-      managerSpeech: "Two threads waiting forever! That fatal concurrency freeze! It's a 'deadlock'!",
+      managerSpeech: "Two threads waiting forever! That fatal concurrency freeze state! What is it called?",
     },
     {
       id: 26,
-      text: 'VCPD Radio Protocol: Include police dispatch confirmation: "10-4" or "10-20"',
-      badge: () => "10-4 / 10-20",
+      text: "VCPD Radio Protocol: Include standard police 10-code for 'Affirmative / Received' (10-4) or 'Location' (10-20)",
+      badge: (pw) => (/10-4|10-20/.test(pw) ? "Radio ✓" : "10-Code ?"),
       hint: 'Include "10-4" or "10-20".',
       check: (pw) => /10-4|10-20/.test(pw),
       headline: "POLICE RADIO DISPATCH!",
-      managerSpeech: "VCPD cruisers are speeding down the causeway! Acknowledge dispatch with '10-4' or '10-20'!",
+      managerSpeech: "VCPD cruisers are speeding down the causeway! Acknowledge dispatch with standard police 10-code for affirmative or location!",
     },
     {
       id: 27,
@@ -435,31 +589,31 @@ function buildAll45Rules(session, cfg) {
       hint: 'Empty return type keyword: "void".',
       check: (pw) => /void/i.test(pw),
       headline: "VOID RETURN TYPE RIDDLE!",
-      managerSpeech: "A function that yields nothing! In C and Java, what is that empty return type? V-O-I-D!",
+      managerSpeech: "A function that yields nothing! In C and Java, what is that empty return type keyword?",
     },
     {
       id: 28,
-      text: `Bullion element symbol: Include chemical symbol for ${session.element.name}`,
-      badge: () => session.element.sym,
+      text: `Deep Vault Bullion: Include the chemical element symbol for ${session.element.name}`,
+      badge: (pw) => (pw.includes(session.element.sym) ? `${session.element.sym} ✓` : "Symbol ?"),
       hint: `Chemical symbol for ${session.element.name} is "${session.element.sym}".`,
       check: (pw) => pw.includes(session.element.sym),
       headline: "BULLION ELEMENT SPEC!",
-      managerSpeech: `Our deep reserve holds ${session.element.name}! Punch in its atomic chemical symbol "${session.element.sym}"!`,
+      managerSpeech: `Our deep deposit holds ${session.element.name}! Punch in its atomic chemical symbol from the periodic table!`,
     },
     {
       id: 29,
       isRiddle: true,
       text: '🧩 TECH RIDDLE: "Known as the silicon \'Brain of the Computer\' housing the Arithmetic Logic Unit and control circuits. What 3-letter acronym am I?"',
-      badge: (pw) => (/CPU/.test(pw) ? "CPU ✓" : "Silicon ?"),
+      badge: (pw) => (/CPU/.test(pw) ? "CPU ✓" : "Hardware ?"),
       hint: 'Central Processing Unit: "CPU".',
       check: (pw) => /CPU/.test(pw),
       headline: "HARDWARE PROCESSOR RIDDLE!",
-      managerSpeech: "The silicon brain! What is the 3-letter processor acronym? 'CPU'!",
+      managerSpeech: "The silicon brain! What is the 3-letter hardware processor acronym?",
     },
     {
       id: 30,
       text: "Scoped code block: Enclose any token inside curly brackets: { ... }",
-      badge: () => "{ }",
+      badge: (pw) => (/\{[^{}]+\}/.test(pw) ? "{OK} ✓" : "{ ... } ?"),
       hint: 'Wrap any character or token in curly braces, e.g., "{H2O}" or "{7}".',
       check: (pw) => /\{[^{}]+\}/.test(pw),
       headline: "ENCLOSE FUNCTION SCOPE!",
@@ -473,16 +627,16 @@ function buildAll45Rules(session, cfg) {
       hint: 'One-instance design pattern: "singleton".',
       check: (pw) => /singleton/i.test(pw),
       headline: "DESIGN PATTERN RIDDLE!",
-      managerSpeech: "Only one single instance allowed! What GoF design pattern is that? 'singleton'!",
+      managerSpeech: "Only one single instance allowed! What GoF design pattern is that?",
     },
     {
       id: 32,
-      text: "Tommy's escape supercar: Include vehicle model: \"INFERNUS\" or \"CHEETAH\"",
-      badge: () => "Supercar",
-      hint: 'Include "INFERNUS" or "CHEETAH" (case-insensitive).',
-      check: (pw) => /infernus|cheetah/i.test(pw),
+      text: "Tommy's getaway vehicle: Include legendary Vice City supercar model (INFERNUS, CHEETAH, or COMET)",
+      badge: (pw) => (/infernus|cheetah|comet/i.test(pw) ? "Supercar ✓" : "Vehicle ?"),
+      hint: 'Include "INFERNUS", "CHEETAH", or "COMET" (case-insensitive).',
+      check: (pw) => /infernus|cheetah|comet/i.test(pw),
       headline: "GETAWAY SUPERCAR DETECTED!",
-      managerSpeech: "Tommy's getaway driver is revving outside! Intercept their vehicle model: 'INFERNUS' or 'CHEETAH'!",
+      managerSpeech: "Tommy's getaway driver is revving outside! Intercept their vehicle model: 'INFERNUS', 'CHEETAH', or 'COMET'!",
     },
 
     /* ════ LEVEL 4: OMEGA QUANTUM CORE (Rules 33 - 45) ════ */
@@ -490,16 +644,16 @@ function buildAll45Rules(session, cfg) {
       id: 33,
       isRiddle: true,
       text: '🧩 TECH RIDDLE: "I am the universal boolean logic gate that outputs 0 ONLY when both inputs are 1. Any digital gate can be forged from me. What 4-letter gate am I?"',
-      badge: (pw) => (/NAND/.test(pw) ? "NAND ✓" : "Gate ?"),
+      badge: (pw) => (/NAND/.test(pw) ? "NAND ✓" : "Logic Gate ?"),
       hint: 'Universal logic gate: "NAND".',
       check: (pw) => /NAND/.test(pw),
       headline: "UNIVERSAL GATE RIDDLE!",
-      managerSpeech: "The universal circuit gate! What gate produces 0 only on two 1s? 'NAND'!",
+      managerSpeech: "The universal circuit gate! What gate produces 0 only on two 1s?",
     },
     {
       id: 34,
       text: "Master key parity: Total character count must be an EVEN number",
-      badge: (pw) => `Len: ${[...pw].length} (${[...pw].length % 2 === 0 ? "EVEN" : "ODD"})`,
+      badge: (pw) => `Len: ${[...pw].length} (${[...pw].length % 2 === 0 ? "EVEN ✓" : "ODD"})`,
       hint: "Add or remove one character so the length is an even number.",
       check: (pw) => [...pw].length > 0 && [...pw].length % 2 === 0,
       headline: "EVEN PARITY BALANCE!",
@@ -508,19 +662,19 @@ function buildAll45Rules(session, cfg) {
     {
       id: 35,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "In standard Class C IPv4 subnetting with 255.255.255.0, what is the slash-prefix notation for these 24 network bits?"',
-      badge: (pw) => (/\/24/.test(pw) ? "/24 ✓" : "CIDR ?"),
-      hint: 'Class C CIDR notation: "/24".',
-      check: (pw) => pw.includes("/24"),
+      text: `🧩 TECH RIDDLE: "In standard IPv4 subnetting with subnet mask ${session.cidrTarget.mask}, what is the slash-prefix notation for these ${session.cidrTarget.bits} network bits?"`,
+      badge: (pw) => (pw.includes(session.cidrTarget.prefix) ? `${session.cidrTarget.prefix} ✓` : "CIDR ?"),
+      hint: `Subnet mask ${session.cidrTarget.mask} uses prefix "${session.cidrTarget.prefix}". Type "${session.cidrTarget.prefix}".`,
+      check: (pw) => pw.includes(session.cidrTarget.prefix),
       headline: "CIDR SUBNET RIDDLE!",
-      managerSpeech: "24 network bits! In CIDR notation that's a slash twenty-four: '/24'!",
+      managerSpeech: `Network bits calculation! For subnet mask ${session.cidrTarget.mask}, what is the slash prefix notation?`,
     },
     {
       id: 36,
       text: "Perimeter bookend: First and last characters of the master key must be IDENTICAL",
       badge: (pw) => {
         const c = [...pw];
-        return c.length >= 2 ? `${c[0]} … ${c[c.length - 1]}` : "Match Ends";
+        return c.length >= 2 && c[0] === c[c.length - 1] ? `${c[0]} … ${c[0]} ✓` : "Match Ends ?";
       },
       hint: "Make the very first character and last character the same exact character.",
       check: (pw) => {
@@ -538,80 +692,80 @@ function buildAll45Rules(session, cfg) {
       hint: 'Cryptographic hash standard: "SHA256".',
       check: (pw) => /SHA256/i.test(pw),
       headline: "CRYPTOGRAPHIC DIGEST RIDDLE!",
-      managerSpeech: "The NSA's 256-bit cryptographic digest! What secures the blockchain? 'SHA256'!",
+      managerSpeech: "The NSA's 256-bit cryptographic digest! What secures the blockchain?",
     },
     {
       id: 38,
-      text: "Prime security factor: Include at least one 2-digit prime number (e.g., 13, 17, 19, 23, 29, 31, 37, 41, 43, 47)",
-      badge: () => "2-Digit Prime",
-      hint: "Prime numbers: 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97.",
+      text: "Prime security factor: Include at least one 2-digit prime number (greater than 10, divisible only by 1 and itself)",
+      badge: (pw) => (/13|17|19|23|29|31|37|41|43|47|53|59|61|67|71|73|79|83|89|97/.test(pw) ? "Prime ✓" : "2-Digit Prime ?"),
+      hint: "2-digit prime numbers include: 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97.",
       check: (pw) => /13|17|19|23|29|31|37|41|43|47|53|59|61|67|71|73|79|83|89|97/.test(pw),
       headline: "PRIME NUMBER ENCRYPTION!",
-      managerSpeech: "RSA cryptographic circuit requires primes! Include a 2-digit prime number like 13, 17, 19, 23, or 29!",
+      managerSpeech: "RSA cryptographic circuit requires primes! Include a 2-digit prime number!",
     },
     {
       id: 39,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "I am the human-readable data serialization format based on key-value pairs that replaced XML in modern REST APIs. What 4-letter acronym am I?"',
-      badge: (pw) => (/JSON/i.test(pw) ? "JSON ✓" : "Format ?"),
-      hint: 'JavaScript Object Notation: "JSON".',
-      check: (pw) => /JSON/i.test(pw),
-      headline: "DATA SERIALIZATION RIDDLE!",
-      managerSpeech: "Key-value data payload! Replaced XML everywhere! What is it? 'JSON'!",
+      text: '🧩 TECH RIDDLE: "Algorithmic Complexity: In Big-O asymptotic notation, what is the quadratic worst-case runtime complexity of standard unbalanced Quicksort?"',
+      badge: (pw) => (/O\(n\^?2\)/i.test(pw) ? "O(n²) ✓" : "Big-O ?"),
+      hint: 'Quicksort worst-case occurs on sorted arrays: quadratic "O(n2)" or "O(n^2)".',
+      check: (pw) => /O\(n\^?2\)/i.test(pw),
+      headline: "ASYMPTOTIC COMPLEXITY RIDDLE!",
+      managerSpeech: "Quicksort worst-case pivot breakdown! What is the quadratic asymptotic upper bound in Big-O?",
     },
     {
       id: 40,
       text: "Include 3-character uppercase hex code for vault color swatch",
       isSwatch: true,
       swatchColor: session.swatch.css,
-      badge: () => session.swatch.hex,
+      badge: (pw) => (pw.includes(session.swatch.hex) ? `${session.swatch.hex} ✓` : "Hex Code ?"),
       hint: `Color swatch hex code is "${session.swatch.hex}".`,
       check: (pw) => pw.includes(session.swatch.hex),
       headline: "OPTICAL SWATCH CALIBRATION!",
-      managerSpeech: `Calibrate the laser sensors! Type the hex code for our color swatch: "${session.swatch.hex}"!`,
+      managerSpeech: "Calibrate the laser sensors! Type the 3-character hex code for our color swatch!",
     },
     {
       id: 41,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "Named after active submarine sonar pulses, I send ICMP Echo Requests to test host reachability across an IP network. What 4-letter command am I?"',
-      badge: (pw) => (/ping/i.test(pw) ? "ping ✓" : "ICMP ?"),
-      hint: 'ICMP echo utility: "ping".',
-      check: (pw) => /ping/i.test(pw),
-      headline: "ICMP ECHO RIDDLE!",
-      managerSpeech: "Sonar pulse across the wire! What command tests network reachability? 'ping'!",
+      text: '🧩 TECH RIDDLE: "Deadlock Avoidance: What 6-letter algorithm name, formulated by Edsger Dijkstra, tests resource allocation safety before granting claims to avoid deadlocks?"',
+      badge: (pw) => (/banker/i.test(pw) ? "banker ✓" : "Algorithm ?"),
+      hint: 'Dijkstra\'s deadlock avoidance algorithm: "banker".',
+      check: (pw) => /banker/i.test(pw),
+      headline: "DEADLOCK AVOIDANCE RIDDLE!",
+      managerSpeech: "Operating systems resource matrix! What algorithm formulated by Dijkstra tests safe states to prevent deadlock?",
     },
     {
       id: 42,
-      text: 'Chess checkmate notation: Include algebraic mate: "Q#" or "N#"',
-      badge: () => "Q# / N#",
+      text: "Grandmaster chess notation: Include checkmate symbol (#) delivered by Queen (Q) or Knight (N)",
+      badge: (pw) => (pw.includes("Q#") || pw.includes("N#") ? "Checkmate ✓" : "Chess Mate ?"),
       hint: 'Type "Q#" for Queen checkmate or "N#" for Knight checkmate.',
       check: (pw) => pw.includes("Q#") || pw.includes("N#"),
       headline: "GRANDMASTER CHECKMATE!",
-      managerSpeech: "Final tactical moves! Deliver checkmate to Tommy's syndicates with 'Q#' or 'N#'!",
+      managerSpeech: "Final tactical moves! Deliver checkmate to Tommy's syndicates with Queen or Knight mate notation!",
     },
     {
       id: 43,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "I am the British mathematician and father of theoretical computer science whose Bombe machine broke Enigma at Bletchley Park. What is his 6-letter last name?"',
-      badge: (pw) => (/turing/i.test(pw) ? "turing ✓" : "Father of CS ?"),
-      hint: 'Father of modern computing: "turing".',
-      check: (pw) => /turing/i.test(pw),
+      text: `🧩 TECH RIDDLE: "${session.csPioneer.clue}. What is their last name?"`,
+      badge: (pw) => (new RegExp(session.csPioneer.code, "i").test(pw) ? `${session.csPioneer.code} ✓` : "Pioneer ?"),
+      hint: `Computer pioneer last name: "${session.csPioneer.code}".`,
+      check: (pw) => new RegExp(session.csPioneer.code, "i").test(pw),
       headline: "FATHER OF COMPUTING RIDDLE!",
-      managerSpeech: "Bletchley Park! The Turing Test! What was Alan's last name? 'turing'!",
+      managerSpeech: `Computer pioneer identification! What is the last name of ${session.csPioneer.name}?`,
     },
     {
       id: 44,
-      text: 'Synthwave acoustic frequency: Include synth chord note: "A#", "C#", "F#", or "G#"',
-      badge: () => "Synth Note",
-      hint: 'Include "A#", "C#", "F#", or "G#".',
-      check: (pw) => /A#|C#|F#|G#/.test(pw),
+      text: 'Synthwave acoustic frequency: Include an 80s sharp key synth note (A#, C#, D#, F#, or G#)',
+      badge: (pw) => (/A#|C#|D#|F#|G#/.test(pw) ? "Synth Note ✓" : "Sharp Note ?"),
+      hint: 'Include "A#", "C#", "D#", "F#", or "G#".',
+      check: (pw) => /A#|C#|D#|F#|G#/.test(pw),
       headline: "SYNTHWAVE HARMONICS!",
-      managerSpeech: "Tune the acoustic harmonic scanner! Play an 80s sharp synth chord note: 'A#', 'C#', 'F#', or 'G#'!",
+      managerSpeech: "Tune the acoustic harmonic scanner! Play an 80s sharp synth chord note: 'A#', 'C#', 'D#', 'F#', or 'G#'!",
     },
     {
       id: 45,
-      text: 'The Master Lockdown Seal: Include emergency vault command: "VAULT_LOCKED"',
-      badge: () => "VAULT_LOCKED",
+      text: 'The Master Lockdown Seal: Include emergency vault command directive: "VAULT_LOCKED"',
+      badge: (pw) => (/VAULT_LOCKED/i.test(pw) ? "LOCKED ✓" : "Master Seal ?"),
       hint: 'Type "VAULT_LOCKED" to complete the final quantum lock.',
       check: (pw) => /VAULT_LOCKED/i.test(pw),
       headline: "FINAL QUANTUM SEAL!",
@@ -703,16 +857,43 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     localStorage.removeItem("vch_player_name");
     localStorage.removeItem("vch_player_alias");
     localStorage.removeItem("vch_player_college");
+    try {
+      localStorage.removeItem("vch_player_state_" + playerId);
+      localStorage.removeItem("vch_player_data_" + playerId);
+    } catch (_) {}
     setScreen("lobby");
     exitFullscreenSafe();
     SoundEngine.init();
     SoundEngine.playUnlock();
-  }, []);
+  }, [playerId]);
 
   /* 4-Level 40-Minute Progressive Campaign State (10 Min Each) */
   const [currentLevel, setCurrentLevel] = useState(1);
   const [levelScores, setLevelScores] = useState({ 1: 0, 2: 0, 3: 0, 4: 0 });
-  const [levelTimes, setLevelTimes] = useState({ 1: 0, 2: 0, 3: 0, 4: 0 });
+  const [levelTimes, setLevelTimes] = useState(() => {
+    try {
+      const saved = localStorage.getItem("vch_level_times");
+      return saved ? JSON.parse(saved) : { 1: 0, 2: 0, 3: 0, 4: 0 };
+    } catch (_) {
+      return { 1: 0, 2: 0, 3: 0, 4: 0 };
+    }
+  });
+  const [completionData, setCompletionData] = useState(() => {
+    try {
+      const saved = localStorage.getItem("vch_completion_data");
+      return saved ? JSON.parse(saved) : null;
+    } catch (_) {
+      return null;
+    }
+  });
+  const [violations, setViolations] = useState(() => {
+    try {
+      const saved = localStorage.getItem("vch_player_violations_" + playerId);
+      return saved ? JSON.parse(saved) : [];
+    } catch (_) {
+      return [];
+    }
+  });
   const [totalCampaignSeconds, setTotalCampaignSeconds] = useState(0);
 
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -825,6 +1006,15 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       timeLeft: curTime,
       isBreached: curBreach,
       isFrozen: curFrozen,
+      isEjected: overrides.isEjected !== undefined ? overrides.isEjected : isEjected,
+      breachReason: overrides.breachReason !== undefined ? overrides.breachReason : breachReason,
+      levelTimes: overrides.levelTimes || levelTimes,
+      completedAt: overrides.completedAt || completionData?.completedAt || "",
+      completedTimestamp: overrides.completedTimestamp || completionData?.completedTimestamp || 0,
+      totalClearanceSeconds: overrides.totalClearanceSeconds || completionData?.totalClearanceSeconds || 0,
+      clearanceFormatted: overrides.clearanceFormatted || completionData?.clearanceFormatted || "",
+      isGrandWinner: overrides.isGrandWinner || Boolean(completionData),
+      violations: overrides.violations || violations,
       currentPassword: curPassword,
       password: curPassword,
       lastSeen: Date.now(),
@@ -863,7 +1053,23 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         }
       }).catch(() => {});
     } catch (_) {}
-  }, [playerId, playerName, playerAlias, playerCollege, isLockedBreach, isPlayerFrozen, parentFrozen, screen, currentLevel, handleEjected]);
+  }, [
+    playerId,
+    playerName,
+    playerAlias,
+    playerCollege,
+    isLockedBreach,
+    isPlayerFrozen,
+    parentFrozen,
+    screen,
+    currentLevel,
+    handleEjected,
+    isEjected,
+    breachReason,
+    levelTimes,
+    completionData,
+    violations,
+  ]);
 
   /* ── Periodic Heartbeat: ensures live password and stats update smoothly ── */
   useEffect(() => {
@@ -1116,48 +1322,137 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     return () => clearInterval(interval);
   }, [screen, launchStoryMode, playerId, cfg.startSeconds, handleEjected, handleResetToNameInput, advanceFloorByAdmin, isEjected]);
 
-  /* ── Anti-Cheat: Fullscreen & Tab Switch Watcher ── */
+  /* ── Security Violation & Illegal Actions Reporter (Anti-Cheat) ── */
+  const reportViolation = useCallback(
+    (violationType, violationDesc, isEliminated = true) => {
+      let effectiveName = playerName || localStorage.getItem("vch_player_name") || "";
+      if (!effectiveName.trim()) {
+        effectiveName = (playerAlias || localStorage.getItem("vch_player_alias") || "").trim() || `Station ${playerId.slice(-4)}`;
+      }
+
+      const violationRecord = {
+        id: "VIO_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+        playerId,
+        name: effectiveName,
+        alias: playerAlias || localStorage.getItem("vch_player_alias") || `Station ${playerId.slice(-4)}`,
+        college: playerCollege || localStorage.getItem("vch_player_college") || "Vice City",
+        type: violationType,
+        reason: violationDesc,
+        level: currentLevel,
+        timestamp: Date.now(),
+        formattedTime:
+          new Date().toLocaleTimeString("en-US", { hour12: false }) +
+          "." +
+          String(new Date().getMilliseconds()).padStart(3, "0"),
+        eliminated: isEliminated,
+      };
+
+      setViolations((prev) => {
+        const next = [violationRecord, ...prev].slice(0, 30);
+        try {
+          localStorage.setItem("vch_player_violations_" + playerId, JSON.stringify(next));
+        } catch (_) {}
+        return next;
+      });
+
+      // 1. Broadcast to local bus
+      try {
+        if (typeof BroadcastChannel !== "undefined") {
+          const bus = new BroadcastChannel(CHANNEL_NAME);
+          bus.postMessage({ type: "security_violation", violation: violationRecord });
+          bus.close();
+        }
+      } catch (_) {}
+
+      // 2. Post to Port 5176 server
+      try {
+        fetch(`${ADMIN_API_URL}/api/player/violation`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(violationRecord),
+        }).catch(() => {});
+      } catch (_) {}
+
+      // 3. Sync player state with violation
+      reportToAdmin({
+        isBreached: isEliminated ? true : isLockedBreach,
+        isEjected: isEliminated ? true : isEjected,
+        breachReason: isEliminated ? violationDesc : breachReason,
+        lastViolation: violationRecord,
+        status: isEliminated ? `DISQUALIFIED_${violationType}` : undefined,
+      });
+    },
+    [playerId, playerName, playerAlias, playerCollege, currentLevel, isLockedBreach, isEjected, breachReason, reportToAdmin]
+  );
+
+  /* ── Anti-Cheat: Fullscreen, Tab Switch & DevTools Watcher ── */
   useEffect(() => {
     if (screen !== "game" || isLockedBreach) return;
 
     const handleVisibilityChange = () => {
       if (document.hidden && screen === "game") {
         clearInterval(timerRef.current);
+        const reason = "UNAUTHORIZED TAB SWITCH / MINIMIZE DETECTED (Eliminated)";
         setIsLockedBreach(true);
-        setBreachReason("UNAUTHORIZED TAB SWITCH DETECTED");
+        setIsEjected(true);
+        setBreachReason(reason);
         localStorage.setItem("vch_locked_breach", "true");
-        localStorage.setItem("vch_breach_reason", "UNAUTHORIZED TAB SWITCH DETECTED");
+        localStorage.setItem("vch_ejected", "true");
+        localStorage.setItem("vch_breach_reason", reason);
         setScreen("mission_failed");
         exitFullscreenSafe();
         SoundEngine.init();
         SoundEngine.playMissionFailed();
-        reportToAdmin({ isBreached: true, status: "LOCKED_TAB_SWITCH" });
+        reportViolation("TAB_SWITCH", reason, true);
       }
     };
 
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement && screen === "game") {
         clearInterval(timerRef.current);
+        const reason = "FULLSCREEN DEPARTURE DETECTED (Eliminated)";
         setIsLockedBreach(true);
-        setBreachReason("FULLSCREEN DEPARTURE DETECTED");
+        setIsEjected(true);
+        setBreachReason(reason);
         localStorage.setItem("vch_locked_breach", "true");
-        localStorage.setItem("vch_breach_reason", "FULLSCREEN DEPARTURE DETECTED");
+        localStorage.setItem("vch_ejected", "true");
+        localStorage.setItem("vch_breach_reason", reason);
         setScreen("mission_failed");
         exitFullscreenSafe();
         SoundEngine.init();
         SoundEngine.playMissionFailed();
-        reportToAdmin({ isBreached: true, status: "LOCKED_FULLSCREEN_EXIT" });
+        reportViolation("FULLSCREEN_ESCAPE", reason, true);
+      }
+    };
+
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      reportViolation("RIGHT_CLICK_INSPECT", "Attempted right-click context menu / inspect", false);
+    };
+
+    const handleKeyDown = (e) => {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) ||
+        (e.ctrlKey && (e.key === "U" || e.key === "u"))
+      ) {
+        e.preventDefault();
+        reportViolation("DEVTOOLS_SHORTCUT", `Attempted DevTools keyboard shortcut (${e.key})`, false);
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
+    window.addEventListener("contextmenu", handleContextMenu);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      window.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [screen, isLockedBreach, reportToAdmin]);
+  }, [screen, isLockedBreach, reportViolation]);
 
   /* ── Time Adjustment & Feedback ── */
   const triggerTimeBonus = useCallback((delta) => {
@@ -1205,27 +1500,65 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         survivedSecondsRef.current * 15 + cfg.rules * 160 + timeLeftRef.current * 20
       );
 
-      setLevelScores((prev) => ({ ...prev, [currentLevel]: levelScore }));
-      setLevelTimes((prev) => ({ ...prev, [currentLevel]: survivedSecondsRef.current }));
+      const updatedLevelScores = { ...levelScores, [currentLevel]: levelScore };
+      const updatedLevelTimes = { ...levelTimes, [currentLevel]: survivedSecondsRef.current };
+      setLevelScores(updatedLevelScores);
+      setLevelTimes(updatedLevelTimes);
+      try {
+        localStorage.setItem("vch_level_times", JSON.stringify(updatedLevelTimes));
+      } catch (_) {}
 
       // Story Intermission Transitions
       if (currentLevel === 1) {
         setScreen("story_intermission_1");
-        reportToAdmin({ status: "CLEARED_LEVEL_1", currentLevel: 2 });
+        reportToAdmin({ status: "CLEARED_LEVEL_1", currentLevel: 2, levelTimes: updatedLevelTimes });
       } else if (currentLevel === 2) {
         setScreen("story_intermission_2");
-        reportToAdmin({ status: "CLEARED_LEVEL_2", currentLevel: 3 });
+        reportToAdmin({ status: "CLEARED_LEVEL_2", currentLevel: 3, levelTimes: updatedLevelTimes });
       } else if (currentLevel === 3) {
         setScreen("story_intermission_3");
-        reportToAdmin({ status: "CLEARED_LEVEL_3", currentLevel: 4 });
+        reportToAdmin({ status: "CLEARED_LEVEL_3", currentLevel: 4, levelTimes: updatedLevelTimes });
       } else {
-        // Grand Victory!
+        // Grand Victory on Level 4!
         exitFullscreenSafe();
         setScreen("end");
-        reportToAdmin({ status: "GRAND_WON" });
+
+        const now = Date.now();
+        const finishDate = new Date();
+        const finishTimestampStr =
+          finishDate.toLocaleTimeString("en-US", { hour12: false }) +
+          "." +
+          String(finishDate.getMilliseconds()).padStart(3, "0");
+        const totalClearSec =
+          (updatedLevelTimes[1] || 0) +
+          (updatedLevelTimes[2] || 0) +
+          (updatedLevelTimes[3] || 0) +
+          (survivedSecondsRef.current || 0);
+        const mins = Math.floor(totalClearSec / 60);
+        const secs = totalClearSec % 60;
+        const clearanceFormatted = `${String(mins).padStart(2, "0")}m ${String(secs).padStart(2, "0")}s`;
+
+        const compRecord = {
+          completedTimestamp: now,
+          completedAt: finishTimestampStr,
+          completedIso: finishDate.toISOString(),
+          totalClearanceSeconds: totalClearSec,
+          clearanceFormatted,
+          levelTimes: updatedLevelTimes,
+        };
+        setCompletionData(compRecord);
+        try {
+          localStorage.setItem("vch_completion_data", JSON.stringify(compRecord));
+        } catch (_) {}
+
+        reportToAdmin({
+          status: "GRAND_VICTORY",
+          isGrandWinner: true,
+          ...compRecord,
+        });
       }
     },
-    [cfg, currentLevel, soundEnabled, reportToAdmin]
+    [cfg, currentLevel, soundEnabled, reportToAdmin, levelScores, levelTimes]
   );
 
   /* ── Input Change & Progressive Unlock ── */
@@ -1270,12 +1603,28 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   };
 
   /* ── Cutscene Completion ── */
-  const handleCutsceneDone = () => {
+  const handleCutsceneDone = useCallback(() => {
     if (videoRef.current) videoRef.current.pause();
     if (soundEnabled) SoundEngine.playClick();
     setScreen("briefing");
     reportToAdmin({ status: "BRIEFING" });
-  };
+  }, [soundEnabled, reportToAdmin]);
+
+  /* ── Cutscene Keydown & Fullscreen Handler ── */
+  useEffect(() => {
+    if (screen !== "cutscene") return;
+
+    requestFullscreenSafe();
+
+    const handleCutsceneKeyDown = () => {
+      handleCutsceneDone();
+    };
+
+    window.addEventListener("keydown", handleCutsceneKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleCutsceneKeyDown);
+    };
+  }, [screen, handleCutsceneDone]);
 
   /* ── Start Active Defense on Current Level ── */
   const handleStartActiveDefense = (levelToStart) => {
@@ -1616,7 +1965,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
       {/* ── SCREEN 2: TOMMY VERCETTI CUTSCENE VIDEO ── */}
       {screen === "cutscene" && (
-        <section className="cutscene-fullscreen-stage">
+        <section 
+          className="cutscene-fullscreen-stage" 
+          onClick={handleCutsceneDone}
+          tabIndex={0}
+          role="button"
+          aria-label="Click anywhere or press any key to skip cutscene"
+        >
           <div className="video-player-frame">
             <video
               ref={videoRef}
@@ -1626,15 +1981,12 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               onEnded={handleCutsceneDone}
               className="heist-cutscene-video"
             />
-            <div className="cutscene-controls-overlay">
-              <span className="cutscene-tag">🎬 TRANSMISSION // LIVE INFILTRATION</span>
-              <button
-                type="button"
-                className="vice-btn primary-btn skip-cutscene-btn"
-                onClick={handleCutsceneDone}
-              >
-                PROCEED TO SECURITY LOCKER ROOM ➔
-              </button>
+            <div className="cutscene-hud-overlay">
+              <div className="cutscene-hud-pulse">
+                <span className="cutscene-hud-icon">▶▶</span>
+                <span className="cutscene-hud-text">PRESS ANY KEY OR CLICK ANYWHERE TO SKIP INTRO</span>
+              </div>
+              <div className="cutscene-hud-sub">TRANSMISSION // LIVE INFILTRATION — DAEMON '26</div>
             </div>
           </div>
         </section>
@@ -1845,7 +2197,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                             if (soundEnabled) SoundEngine.playHintUsed();
                           }
                         }}
-                        title="Click to reveal Manager Intel (-15s)"
+                        title={isHinted ? "Intel already revealed" : "Click to reveal Manager Intel (-15s penalty)"}
                       >
                         <div className="neon-rule-content">
                           <span className="neon-bullet">{passed ? "✓" : (rule.isRiddle ? "🧩" : "•")}</span>
@@ -1856,6 +2208,11 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                             <span className="neon-swatch" style={{ backgroundColor: rule.swatchColor }} />
                           ) : (
                             <span className={`neon-badge ${rule.isRiddle ? "neon-riddle-badge" : ""}`}>{rule.badge(password)}</span>
+                          )}
+                          {!passed && !isHinted && (
+                            <span className="neon-hint-btn-pill" title="Click to reveal Manager Intel (-15s)">
+                              💡 HINT (-15s)
+                            </span>
                           )}
                         </div>
 
