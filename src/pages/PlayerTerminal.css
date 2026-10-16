@@ -2428,6 +2428,16 @@
   border-left: 3px solid #FFA040;
 }
 
+.neon-rule-row.rule-is-riddle {
+  border-left: 3px solid #d946ef;
+  background: rgba(155, 0, 255, 0.08);
+}
+
+.neon-rule-row.rule-is-riddle.rule-passed {
+  border-left-color: var(--vice-teal, #48d5d0);
+  background: rgba(72, 213, 208, 0.08);
+}
+
 .neon-rule-content {
   display: flex;
   align-items: center;
@@ -2447,12 +2457,28 @@
   line-height: 1.3;
 }
 
+.neon-riddle-text {
+  font-family: 'Outfit', sans-serif, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.25px;
+  line-height: 1.35;
+  text-transform: none;
+}
+
 .neon-badge {
   font-size: 9px;
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid currentColor;
   border-radius: 4px;
   padding: 2px 5px;
+}
+
+.neon-riddle-badge {
+  background: rgba(155, 0, 255, 0.4);
+  border-color: #d946ef;
+  color: #f5d0fe;
+  font-weight: 800;
 }
 
 .neon-swatch {

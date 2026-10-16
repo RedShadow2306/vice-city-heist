@@ -119,7 +119,7 @@ const CAMPAIGN_LEVELS = {
 
 /* ─── Session Randomizer ─── */
 function createSessionData() {
-  const sponsors = ["daemon", "vercetti", "ocean_drive", "corrupto", "sunshine"];
+  const sponsors = ["diaz_cartel", "ocean_drive", "sunshine", "cuban_gang", "starfish", "avery"];
   const elements = [
     { sym: "Au", name: "Gold (Atomic #79)" },
     { sym: "Ag", name: "Silver (Atomic #47)" },
@@ -141,7 +141,7 @@ function createSessionData() {
     { num: 95, roman: "XCV" },
   ];
   const swatches = [
-    { hex: "#FFF", css: "#ffffff", name: "Pure Vault White" },
+    { hex: "#EFA", css: "#eeffaa", name: "Neon Lime Glow" },
     { hex: "#ACE", css: "#aaccee", name: "Vice Ice Blue" },
     { hex: "#FAB", css: "#ffaabb", name: "Flamingo Pink" },
     { hex: "#DAD", css: "#ddaadd", name: "Orchid Neon" },
@@ -151,7 +151,11 @@ function createSessionData() {
   const letters = "ABCDEFGHJKLNPQRSTUVWXYZ";
   let captcha = "";
   for (let i = 0; i < 5; i++) {
-    captcha += letters[Math.floor(Math.random() * letters.length)];
+    let nextChar;
+    do {
+      nextChar = letters[Math.floor(Math.random() * letters.length)];
+    } while (nextChar === captcha[captcha.length - 1]);
+    captcha += nextChar;
   }
 
   return {
@@ -192,17 +196,18 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 3,
-      text: 'Include standard HTTP client status for "Not Found": "404"',
-      badge: () => "HTTP 404",
-      hint: 'Type "404" in your password.',
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "I am the 3-digit HTTP status code returned when a web server cannot find the requested resource. What number am I?"',
+      badge: (pw) => (/404/.test(pw) ? "404 ✓" : "HTTP ?"),
+      hint: 'HTTP Client Error: Not Found = "404".',
       check: (pw) => pw.includes("404"),
-      headline: "RESOURCE NOT FOUND!",
-      managerSpeech: "The teller network hit a missing route! Inject HTTP status '404' to throw Tommy's packet sniffers off track!",
+      headline: "HTTP RIDDLE!",
+      managerSpeech: "The teller network threw a missing resource error! What is the 3-digit HTTP error for Not Found?! Type it in, rookie!",
     },
     {
       id: 4,
       text: "Anti-repetition protocol: No two identical consecutive characters allowed (e.g., 'aa', '11' are strictly forbidden!)",
-      badge: (pw) => /(.)\1/i.test(pw) ? "Duplicate Adjacent!" : "Unique Flow",
+      badge: (pw) => (/(.)\1/i.test(pw) ? "Duplicate Adjacent!" : "Unique Flow"),
       hint: "Ensure no adjacent matching characters like '00', '11', 'aa'.",
       check: (pw) => !/(.)\1/i.test(pw),
       headline: "REPETITION VULNERABILITY!",
@@ -210,12 +215,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 5,
-      text: 'Include a computer science boolean keyword: "true" or "false"',
-      badge: () => "Boolean",
-      hint: 'Type "true" or "false" (case-insensitive).',
-      check: (pw) => /true|false/i.test(pw),
-      headline: "BOOLEAN FLAG REQUIRED!",
-      managerSpeech: "The vault's digital transistor gate needs a binary logic state! Type 'true' or 'false'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "In Boolean algebra and computer logic, I represent truth, affirmative, and binary 1. Type my 4-letter keyword in lowercase."',
+      badge: (pw) => (/true/.test(pw) ? "true ✓" : "Boolean ?"),
+      hint: 'Boolean true keyword: "true".',
+      check: (pw) => /true/.test(pw),
+      headline: "BOOLEAN LOGIC RIDDLE!",
+      managerSpeech: "The vault logic gate demands truth! What's the 4-letter boolean state for binary 1?! Punch in 'true'!",
     },
     {
       id: 6,
@@ -228,12 +234,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 7,
-      text: 'CSE Version Control: Include a git command: "git", "push", or "pull"',
-      badge: () => "Git",
-      hint: 'Include "git", "push", or "pull" (case-insensitive).',
-      check: (pw) => /git|push|pull/i.test(pw),
-      headline: "COMMIT TO REPOSITORY!",
-      managerSpeech: "Commit this security routine to the remote vault branch! Include git command 'git', 'push', or 'pull'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "Linus Torvalds created me in 2005 to track branches, commits, and merges in software repositories. What 3-letter command tool am I?"',
+      badge: (pw) => (/git/i.test(pw) ? "git ✓" : "VCS ?"),
+      hint: 'Distributed Version Control: "git".',
+      check: (pw) => /git/i.test(pw),
+      headline: "VERSION CONTROL RIDDLE!",
+      managerSpeech: "Linus Torvalds' legendary revision tool! How do developers track code branches? Three letters: G-I-T!",
     },
     {
       id: 8,
@@ -246,32 +253,34 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 9,
-      text: 'Include binary representation of decimal 5 ("101") or decimal 2 ("010")',
-      badge: () => "Binary 101/010",
-      hint: 'Include "101" or "010".',
-      check: (pw) => pw.includes("101") || pw.includes("010"),
-      headline: "BINARY LOGIC SIGNAL!",
-      managerSpeech: "Send raw machine language to the tumbler relay! Punch in binary string '101' or '010'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "Convert decimal 5 into a 3-bit binary string (4s place + 1s place). What 3-digit binary string am I?"',
+      badge: (pw) => (/101/.test(pw) ? "101 ✓" : "Binary ?"),
+      hint: 'Decimal 5 in binary is "101".',
+      check: (pw) => pw.includes("101"),
+      headline: "BINARY LOGIC RIDDLE!",
+      managerSpeech: "Quick arithmetic, assistant! What is decimal 5 in 3-bit binary? 4 plus 1 is '101'!",
     },
     {
       id: 10,
-      text: "Signal parity: Exactly ONE special security symbol allowed (!@#$%^&*)",
-      badge: (pw) => `Symbols: ${(pw.match(/[^a-zA-Z0-9\s]/g) || []).length}/1`,
-      hint: "Keep exactly one special symbol in the entire password (no more, no less).",
-      check: (pw) => (pw.match(/[^a-zA-Z0-9\s]/g) || []).length === 1,
-      headline: "SIGNAL INTERFERENCE!",
-      managerSpeech: "Too many symbols create harmonic distortion in the lock! You must have EXACTLY ONE special symbol (!@#$%^&*)!",
+      text: "Signal security: Include at least one special security symbol (!@#$%^&*)",
+      badge: (pw) => `Symbols: ${(pw.match(/[^a-zA-Z0-9\s]/g) || []).length}`,
+      hint: "Include at least one special character (!@#$%^&*).",
+      check: (pw) => /[^a-zA-Z0-9\s]/.test(pw),
+      headline: "ENCRYPT SECURITY SIGNAL!",
+      managerSpeech: "Our security transmission needs noise shielding! Inject at least one special symbol (!@#$%^&*) into the cipher!",
     },
 
     /* ════ LEVEL 2: EXECUTIVE CASH CORRIDORS (Rules 11 - 20) ════ */
     {
       id: 11,
-      text: 'Include network loopback localhost address prefix: "localhost" or "127.0"',
-      badge: () => "Localhost",
-      hint: 'Include "localhost" or "127.0".',
-      check: (pw) => /localhost|127\.0/i.test(pw),
-      headline: "LOOPBACK SHIELD!",
-      managerSpeech: "Route all incoming packets back to origin! Type 'localhost' or '127.0'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "In networking folklore, \'There\'s no place like...\' this sacred local loopback hostname. What 9-letter word am I?"',
+      badge: (pw) => (/localhost/i.test(pw) ? "localhost ✓" : "Host ?"),
+      hint: 'Loopback hostname: "localhost".',
+      check: (pw) => /localhost/i.test(pw),
+      headline: "LOOPBACK SHIELD RIDDLE!",
+      managerSpeech: "There's no place like home! Route incoming packets back to 'localhost'!",
     },
     {
       id: 12,
@@ -284,12 +293,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 13,
-      text: 'Terminal privileges: Include Linux root command: "sudo" or "chmod"',
-      badge: () => "sudo / chmod",
-      hint: 'Type "sudo" or "chmod" (case-insensitive).',
-      check: (pw) => /sudo|chmod/i.test(pw),
-      headline: "ELEVATE PRIVILEGES!",
-      managerSpeech: "Root permissions requested! Inject Linux administrative command 'sudo' or 'chmod'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "Short for \'superuser do\', I am the holy Unix terminal command prepended to execute administrative tasks with root authority. What 4-letter command am I?"',
+      badge: (pw) => (/sudo/i.test(pw) ? "sudo ✓" : "Root ?"),
+      hint: 'Linux root privilege command: "sudo".',
+      check: (pw) => /sudo/i.test(pw),
+      headline: "SUPERUSER PRIVILEGE RIDDLE!",
+      managerSpeech: "Elevate your clearance! What is the Linux superuser command? S-U-D-O!",
     },
     {
       id: 14,
@@ -302,12 +312,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 15,
-      text: 'Include a 2-digit hexadecimal byte (e.g., "0x7F", "0xA5", "0x2B")',
-      badge: () => "0xHex",
-      hint: 'Format: "0x" followed by two hex characters (e.g., "0x7F", "0xA5").',
-      check: (pw) => /0x[0-9a-fA-F]{2}/.test(pw),
-      headline: "HEXADECIMAL ADDRESSING!",
-      managerSpeech: "The memory controller demands raw hexadecimal! Type '0x' followed by two hex digits, like '0xA5' or '0x7F'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "I am the LIFO (Last-In, First-Out) data structure of execution call frames, syntax parsing, and browser back history. What 5-letter structure am I?"',
+      badge: (pw) => (/stack/i.test(pw) ? "stack ✓" : "LIFO ?"),
+      hint: 'Last-In First-Out structure: "stack".',
+      check: (pw) => /stack/i.test(pw),
+      headline: "LIFO DATA STRUCTURE RIDDLE!",
+      managerSpeech: "Last-in, first-out! Plates in a cafeteria! What fundamental data structure is that? 'stack'!",
     },
     {
       id: 16,
@@ -320,12 +331,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 17,
-      text: 'SQL Database defense: Include SQL query keyword: "SELECT", "WHERE", or "JOIN"',
-      badge: () => "SQL",
-      hint: 'Type "SELECT", "WHERE", or "JOIN" (case-insensitive).',
-      check: (pw) => /SELECT|WHERE|JOIN/i.test(pw),
-      headline: "DEFEND THE DATABASE!",
-      managerSpeech: "Tommy's squad is running SQL injections on our ledger! Include SQL keyword 'SELECT', 'WHERE', or 'JOIN'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "I am the standard SQL query clause used to extract columns and records from relational database tables. What 6-letter keyword am I?"',
+      badge: (pw) => (/SELECT/i.test(pw) ? "SELECT ✓" : "SQL ?"),
+      hint: 'SQL retrieval statement: "SELECT".',
+      check: (pw) => /SELECT/i.test(pw),
+      headline: "DATABASE QUERY RIDDLE!",
+      managerSpeech: "Query the financial database! What is the primary SQL statement to fetch rows? 'SELECT'!",
     },
     {
       id: 18,
@@ -347,23 +359,25 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 20,
-      text: 'Networking port: Include default secure web port "443" or web port "8080"',
-      badge: () => "Port 443/8080",
-      hint: 'Include port number "443" or "8080".',
-      check: (pw) => /443|8080/.test(pw),
-      headline: "PORT ROUTING HANDSHAKE!",
-      managerSpeech: "Open the encrypted tunnel socket! Include network port '443' or '8080'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "I am the standard UDP/TCP networking port reserved for DNS (Domain Name System) query lookups. What 2-digit port am I?"',
+      badge: (pw) => (/53/.test(pw) ? "53 ✓" : "DNS Port ?"),
+      hint: 'Default DNS port: "53".',
+      check: (pw) => /53/.test(pw),
+      headline: "DNS NETWORK PORT RIDDLE!",
+      managerSpeech: "Domain Name System lookup! What is the standard port for DNS queries? '53'!",
     },
 
     /* ════ LEVEL 3: TITANIUM DEEP VAULT (Rules 21 - 32) ════ */
     {
       id: 21,
-      text: 'Operating system kernel: Include OS name: "LINUX", "UNIX", or "UBUNTU"',
-      badge: () => "OS Kernel",
-      hint: 'Include "LINUX", "UNIX", or "UBUNTU" (case-insensitive).',
-      check: (pw) => /linux|unix|ubuntu/i.test(pw),
-      headline: "KERNEL AUTHORIZATION!",
-      managerSpeech: "The master mainframe kernel is booting! Include OS name 'LINUX', 'UNIX', or 'UBUNTU'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "Launched in 1991 by Linus Torvalds with Tux the Penguin as my mascot, I power the majority of cloud servers. Name my 5-letter OS kernel."',
+      badge: (pw) => (/linux/i.test(pw) ? "linux ✓" : "Kernel ?"),
+      hint: 'Penguin OS kernel: "linux".',
+      check: (pw) => /linux/i.test(pw),
+      headline: "OS KERNEL RIDDLE!",
+      managerSpeech: "Tux the penguin! What operating system powers the cloud servers? 'linux'!",
     },
     {
       id: 22,
@@ -376,12 +390,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 23,
-      text: 'Script loader: Include source code extension: ".py", ".js", or ".cpp"',
-      badge: () => ".py / .js",
-      hint: 'Include ".py", ".js", or ".cpp" in your password.',
-      check: (pw) => /\.(py|js|cpp)/i.test(pw),
-      headline: "ATTACH SECURITY SCRIPT!",
-      managerSpeech: "Execute the counter-intrusion script! Include file extension '.py', '.js', or '.cpp'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "Named after British comedy troupe Monty Python, what is the 3-character dot file extension for scripts written in this language?"',
+      badge: (pw) => (/\.py/i.test(pw) ? ".py ✓" : "Extension ?"),
+      hint: 'Python script extension: ".py".',
+      check: (pw) => /\.py/i.test(pw),
+      headline: "SCRIPT EXTENSION RIDDLE!",
+      managerSpeech: "Guido's language! What is the file extension for Python scripts? '.py'!",
     },
     {
       id: 24,
@@ -395,12 +410,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 25,
-      text: 'Algorithm complexity: Include Big-O notation: "O(1)" or "O(n)"',
-      badge: () => "O(1) / O(n)",
-      hint: 'Include "O(1)" or "O(n)".',
-      check: (pw) => /O\(1\)|O\(n\)/i.test(pw),
-      headline: "OPTIMIZE TIME COMPLEXITY!",
-      managerSpeech: "The crypto engine needs constant-time verification! Include Big-O notation 'O(1)' or 'O(n)'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "In dining philosophers and multi-threading, I am the fatal condition where two threads wait on each other\'s locks indefinitely. Name this 8-letter state."',
+      badge: (pw) => (/deadlock/i.test(pw) ? "deadlock ✓" : "Deadlock ?"),
+      hint: 'Mutual process blocking: "deadlock".',
+      check: (pw) => /deadlock/i.test(pw),
+      headline: "CONCURRENCY DEADLOCK RIDDLE!",
+      managerSpeech: "Two threads waiting forever! That fatal concurrency freeze! It's a 'deadlock'!",
     },
     {
       id: 26,
@@ -413,12 +429,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 27,
-      text: 'Data structures: Include a classic structure: "STACK", "QUEUE", or "ARRAY"',
-      badge: () => "Data Struct",
-      hint: 'Include "STACK", "QUEUE", or "ARRAY" (case-insensitive).',
-      check: (pw) => /stack|queue|array/i.test(pw),
-      headline: "DATA STRUCTURE PROTOCOL!",
-      managerSpeech: "Allocate the cryptographic buffer! Include data structure keyword 'STACK', 'QUEUE', or 'ARRAY'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "In C and Java, I am the return type keyword specifying that a function performs work without returning any value. What 4-letter keyword am I?"',
+      badge: (pw) => (/void/i.test(pw) ? "void ✓" : "Return Type ?"),
+      hint: 'Empty return type keyword: "void".',
+      check: (pw) => /void/i.test(pw),
+      headline: "VOID RETURN TYPE RIDDLE!",
+      managerSpeech: "A function that yields nothing! In C and Java, what is that empty return type? V-O-I-D!",
     },
     {
       id: 28,
@@ -431,12 +448,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 29,
-      text: 'Computer architecture: Include hardware abbreviation: "CPU", "RAM", or "GPU"',
-      badge: () => "Hardware",
-      hint: 'Include "CPU", "RAM", or "GPU" (Watch single "M" rule if choosing RAM!).',
-      check: (pw) => /CPU|RAM|GPU/.test(pw),
-      headline: "HARDWARE ALLOCATION!",
-      managerSpeech: "Divert power to the processor units! Type 'CPU', 'RAM', or 'GPU'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "Known as the silicon \'Brain of the Computer\' housing the Arithmetic Logic Unit and control circuits. What 3-letter acronym am I?"',
+      badge: (pw) => (/CPU/.test(pw) ? "CPU ✓" : "Silicon ?"),
+      hint: 'Central Processing Unit: "CPU".',
+      check: (pw) => /CPU/.test(pw),
+      headline: "HARDWARE PROCESSOR RIDDLE!",
+      managerSpeech: "The silicon brain! What is the 3-letter processor acronym? 'CPU'!",
     },
     {
       id: 30,
@@ -449,12 +467,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 31,
-      text: 'Null pointer check: Include null keyword: "null", "nullptr", or "None"',
-      badge: () => "Null Reference",
-      hint: 'Include "null", "nullptr", or "None" (case-insensitive).',
-      check: (pw) => /null|nullptr|None/i.test(pw),
-      headline: "PREVENT CRASH!",
-      managerSpeech: "Avoid a null pointer exception in the vault locks! Insert keyword 'null', 'nullptr', or 'None'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "In OOP design patterns, I ensure that a class has only ONE solitary instance throughout the program execution. What 9-letter pattern am I?"',
+      badge: (pw) => (/singleton/i.test(pw) ? "singleton ✓" : "Pattern ?"),
+      hint: 'One-instance design pattern: "singleton".',
+      check: (pw) => /singleton/i.test(pw),
+      headline: "DESIGN PATTERN RIDDLE!",
+      managerSpeech: "Only one single instance allowed! What GoF design pattern is that? 'singleton'!",
     },
     {
       id: 32,
@@ -469,12 +488,13 @@ function buildAll45Rules(session, cfg) {
     /* ════ LEVEL 4: OMEGA QUANTUM CORE (Rules 33 - 45) ════ */
     {
       id: 33,
-      text: 'Digital logic gates: Include boolean operator: "NAND", "XOR", or "NOR"',
-      badge: () => "Logic Gate",
-      hint: 'Type "NAND", "XOR", or "NOR".',
-      check: (pw) => /NAND|XOR|NOR/.test(pw),
-      headline: "QUANTUM LOGIC GATE!",
-      managerSpeech: "Trigger the quantum logic gates! Type 'NAND', 'XOR', or 'NOR' in capital letters!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "I am the universal boolean logic gate that outputs 0 ONLY when both inputs are 1. Any digital gate can be forged from me. What 4-letter gate am I?"',
+      badge: (pw) => (/NAND/.test(pw) ? "NAND ✓" : "Gate ?"),
+      hint: 'Universal logic gate: "NAND".',
+      check: (pw) => /NAND/.test(pw),
+      headline: "UNIVERSAL GATE RIDDLE!",
+      managerSpeech: "The universal circuit gate! What gate produces 0 only on two 1s? 'NAND'!",
     },
     {
       id: 34,
@@ -487,12 +507,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 35,
-      text: 'Network CIDR subnetting: Include subnet mask prefix: "/24" or "/16"',
-      badge: () => "CIDR /24",
-      hint: 'Include subnet prefix "/24" or "/16".',
-      check: (pw) => pw.includes("/24") || pw.includes("/16"),
-      headline: "SUBNET THE NETWORK!",
-      managerSpeech: "Isolate the bank's subnet from the Vice City intranet! Include CIDR prefix '/24' or '/16'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "In standard Class C IPv4 subnetting with 255.255.255.0, what is the slash-prefix notation for these 24 network bits?"',
+      badge: (pw) => (/\/24/.test(pw) ? "/24 ✓" : "CIDR ?"),
+      hint: 'Class C CIDR notation: "/24".',
+      check: (pw) => pw.includes("/24"),
+      headline: "CIDR SUBNET RIDDLE!",
+      managerSpeech: "24 network bits! In CIDR notation that's a slash twenty-four: '/24'!",
     },
     {
       id: 36,
@@ -511,12 +532,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 37,
-      text: 'Cryptographic hash: Include cipher standard: "SHA256", "MD5", or "AES"',
-      badge: () => "Hash / Cipher",
-      hint: 'Include "SHA256", "MD5", or "AES" (case-insensitive).',
-      check: (pw) => /SHA256|MD5|AES/i.test(pw),
-      headline: "ENCRYPT THE ARCHIVE!",
-      managerSpeech: "Hash the cipher before Tommy's decryptor can read it! Include encryption standard 'SHA256', 'MD5', or 'AES'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "Designed by the NSA, I am the 256-bit cryptographic hash function securing Bitcoin and TLS handshakes. What 6-character name am I?"',
+      badge: (pw) => (/SHA256/i.test(pw) ? "SHA256 ✓" : "Hash ?"),
+      hint: 'Cryptographic hash standard: "SHA256".',
+      check: (pw) => /SHA256/i.test(pw),
+      headline: "CRYPTOGRAPHIC DIGEST RIDDLE!",
+      managerSpeech: "The NSA's 256-bit cryptographic digest! What secures the blockchain? 'SHA256'!",
     },
     {
       id: 38,
@@ -529,12 +551,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 39,
-      text: 'Tech domain TLD: Include a tech domain extension: ".io", ".dev", or ".tech"',
-      badge: () => ".io / .dev",
-      hint: 'Include ".io", ".dev", or ".tech" (case-insensitive).',
-      check: (pw) => /\.(io|dev|tech)/i.test(pw),
-      headline: "TOP-LEVEL DOMAIN HANDSHAKE!",
-      managerSpeech: "Connect to our association servers! Include top-level tech domain '.io', '.dev', or '.tech'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "I am the human-readable data serialization format based on key-value pairs that replaced XML in modern REST APIs. What 4-letter acronym am I?"',
+      badge: (pw) => (/JSON/i.test(pw) ? "JSON ✓" : "Format ?"),
+      hint: 'JavaScript Object Notation: "JSON".',
+      check: (pw) => /JSON/i.test(pw),
+      headline: "DATA SERIALIZATION RIDDLE!",
+      managerSpeech: "Key-value data payload! Replaced XML everywhere! What is it? 'JSON'!",
     },
     {
       id: 40,
@@ -549,12 +572,13 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 41,
-      text: 'Network diagnostics: Include terminal command: "ping" or "traceroute"',
-      badge: () => "ping",
-      hint: 'Type "ping" or "traceroute" (case-insensitive).',
-      check: (pw) => /ping|traceroute/i.test(pw),
-      headline: "ECHO REQUEST ACTIVE!",
-      managerSpeech: "Ping the getaway helicopter! Include network diagnostic command 'ping' or 'traceroute'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "Named after active submarine sonar pulses, I send ICMP Echo Requests to test host reachability across an IP network. What 4-letter command am I?"',
+      badge: (pw) => (/ping/i.test(pw) ? "ping ✓" : "ICMP ?"),
+      hint: 'ICMP echo utility: "ping".',
+      check: (pw) => /ping/i.test(pw),
+      headline: "ICMP ECHO RIDDLE!",
+      managerSpeech: "Sonar pulse across the wire! What command tests network reachability? 'ping'!",
     },
     {
       id: 42,
@@ -567,21 +591,22 @@ function buildAll45Rules(session, cfg) {
     },
     {
       id: 43,
-      text: 'Web data format: Include serialization standard: "JSON" or "REST"',
-      badge: () => "JSON / REST",
-      hint: 'Include "JSON" or "REST" (case-insensitive).',
-      check: (pw) => /JSON|REST/i.test(pw),
-      headline: "SERIALIZE DATA STREAM!",
-      managerSpeech: "Pack the vault telemetry into an API payload! Include 'JSON' or 'REST'!",
+      isRiddle: true,
+      text: '🧩 TECH RIDDLE: "I am the British mathematician and father of theoretical computer science whose Bombe machine broke Enigma at Bletchley Park. What is his 6-letter last name?"',
+      badge: (pw) => (/turing/i.test(pw) ? "turing ✓" : "Father of CS ?"),
+      hint: 'Father of modern computing: "turing".',
+      check: (pw) => /turing/i.test(pw),
+      headline: "FATHER OF COMPUTING RIDDLE!",
+      managerSpeech: "Bletchley Park! The Turing Test! What was Alan's last name? 'turing'!",
     },
     {
       id: 44,
-      text: 'Synthwave acoustic tone: Include synth chord: "Am", "Em", or "Dm"',
-      badge: () => "Synth Chord",
-      hint: 'Include "Am", "Em", or "Dm" (Watch single "M" rule!).',
-      check: (pw) => /Am|Em|Dm/.test(pw),
+      text: 'Synthwave acoustic frequency: Include synth chord note: "A#", "C#", "F#", or "G#"',
+      badge: () => "Synth Note",
+      hint: 'Include "A#", "C#", "F#", or "G#".',
+      check: (pw) => /A#|C#|F#|G#/.test(pw),
       headline: "SYNTHWAVE HARMONICS!",
-      managerSpeech: "Tune the acoustic harmonic scanner! Play an 80s synth chord: 'Am', 'Em', or 'Dm'!",
+      managerSpeech: "Tune the acoustic harmonic scanner! Play an 80s sharp synth chord note: 'A#', 'C#', 'F#', or 'G#'!",
     },
     {
       id: 45,
@@ -1812,7 +1837,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                     return (
                       <div
                         key={rule.id}
-                        className={`neon-rule-row ${passed ? "rule-passed" : "rule-failing"} ${isFailingCurrent ? "rule-current-failing" : ""}`}
+                        className={`neon-rule-row ${passed ? "rule-passed" : "rule-failing"} ${isFailingCurrent ? "rule-current-failing" : ""} ${rule.isRiddle ? "rule-is-riddle" : ""}`}
                         onClick={() => {
                           if (!revealedHints.has(rule.id)) {
                             setRevealedHints((prev) => new Set([...prev, rule.id]));
@@ -1823,12 +1848,14 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                         title="Click to reveal Manager Intel (-15s)"
                       >
                         <div className="neon-rule-content">
-                          <span className="neon-bullet">{passed ? "✓" : "•"}</span>
-                          <span className="neon-rule-text">{rule.text.toUpperCase()}</span>
+                          <span className="neon-bullet">{passed ? "✓" : (rule.isRiddle ? "🧩" : "•")}</span>
+                          <span className={`neon-rule-text ${rule.isRiddle ? "neon-riddle-text" : ""}`}>
+                            {rule.isRiddle ? rule.text : rule.text.toUpperCase()}
+                          </span>
                           {rule.isSwatch ? (
                             <span className="neon-swatch" style={{ backgroundColor: rule.swatchColor }} />
                           ) : (
-                            <span className="neon-badge">{rule.badge(password)}</span>
+                            <span className={`neon-badge ${rule.isRiddle ? "neon-riddle-badge" : ""}`}>{rule.badge(password)}</span>
                           )}
                         </div>
 
