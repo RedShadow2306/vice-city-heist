@@ -14,6 +14,17 @@ export function getManagerDirective(rule, pw, session, cfg) {
     };
   }
 
+  if (rule.managerSpeech) {
+    const speech = typeof rule.managerSpeech === "function"
+      ? rule.managerSpeech(pw, cfg)
+      : rule.managerSpeech;
+    return {
+      mood: rule.mood || "demanding",
+      headline: rule.headline || "SECURITY DIRECTIVE:",
+      speech,
+    };
+  }
+
   const pwLen = [...pw].length;
   const digits = (pw.match(/\d/g) || []).map(Number);
   const currentSum = digits.reduce((a, b) => a + b, 0);

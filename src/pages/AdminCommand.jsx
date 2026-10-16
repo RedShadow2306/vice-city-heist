@@ -176,6 +176,13 @@ function AdminDashboard() {
   const [copiedId, setCopiedId] = useState(null);
   const [activePasswordView, setActivePasswordView] = useState(null);
   const [supabaseConnected, setSupabaseConnected] = useState(false);
+  const [ejectedStations, setEjectedStations] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("vch_ejected_stations") || "[]");
+    } catch (_) {
+      return [];
+    }
+  });
   const [log, setLog] = useState([
     `[${new Date().toLocaleTimeString()}] Managing Director Gordon Bennett assumed active vault supervision.`,
     `[${new Date().toLocaleTimeString()}] 4-Floor Defense Protocol armed across all network stations.`,
@@ -516,6 +523,11 @@ function AdminDashboard() {
     SoundEngine.playAlert();
 
     setPlayers(prev => prev.filter(p => p.id !== id));
+    setEjectedStations(prev => {
+      const updated = [{ id, alias, time: new Date().toLocaleTimeString() }, ...prev.filter(s => s.id !== id)];
+      localStorage.setItem("vch_ejected_stations", JSON.stringify(updated.slice(0, 20)));
+      return updated.slice(0, 20);
+    });
     addLog(`Director Bennett revoked security clearance & ejected ${alias} (${id})`);
 
     // 1. Supabase Cloud Sync
@@ -536,6 +548,61 @@ function AdminDashboard() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "REMOVE_PLAYER", playerId: id }),
+    }).catch(() => {});
+  }, [addLog, broadcast]);
+
+  const sendEjectedToNameInput = useCallback(() => {
+    SoundEngine.init();
+    SoundEngine.playUnlock();
+    addLog("Director Bennett dispatched command: Reset all ejected terminals to Name Input registration");
+
+    // 1. Supabase Cloud Sync
+    sendAdminCommandToSupabase({ action: "RESET_TO_NAME_INPUT", target: "ejected" });
+
+    // 2. BroadcastChannel
+    broadcast({ type: "reset_to_name_input", target: "ejected" });
+
+    // 3. Port 5176 Server
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "RESET_TO_NAME_INPUT", target: "ejected" }),
+    }).catch(() => {});
+
+    setEjectedStations([]);
+    localStorage.removeItem("vch_ejected_stations");
+  }, [addLog, broadcast]);
+
+  const sendPlayerToNameInput = useCallback((id, alias) => {
+    SoundEngine.init();
+    SoundEngine.playUnlock();
+    addLog(`Director Bennett reset ${alias} (${id}) back to Name Input registration`);
+
+    setPlayers(prev => prev.filter(p => p.id !== id));
+    setEjectedStations(prev => {
+      const updated = prev.filter(s => s.id !== id);
+      localStorage.setItem("vch_ejected_stations", JSON.stringify(updated));
+      return updated;
+    });
+
+    // 1. Supabase Cloud Sync
+    deletePlayerFromSupabase(id);
+    sendAdminCommandToSupabase({ action: "RESET_TO_NAME_INPUT", playerId: id });
+
+    // 2. Clear local storage
+    try {
+      localStorage.removeItem("vch_player_state_" + id);
+      localStorage.removeItem("vch_player_data_" + id);
+    } catch (_) {}
+
+    // 3. BroadcastChannel
+    broadcast({ type: "reset_to_name_input", playerId: id });
+
+    // 4. Port 5176 Server
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "RESET_TO_NAME_INPUT", playerId: id }),
     }).catch(() => {});
   }, [addLog, broadcast]);
 
@@ -714,6 +781,19 @@ function AdminDashboard() {
           </button>
 
           <button
+            id="reset-ejected-btn"
+            type="button"
+            className="boss-btn boss-btn-nameinput"
+            onClick={sendEjectedToNameInput}
+            title="Redirect ejected / disqualified players back to the Name Input registration screen"
+          >
+            <span className="btn-icon">📝</span>
+            <span className="btn-text">
+              EJECTED ➔ NAME INPUT {ejectedStations.length > 0 ? `(${ejectedStations.length})` : ""}
+            </span>
+          </button>
+
+          <button
             id="purge-roster-btn"
             type="button"
             className="boss-btn boss-btn-eject"
@@ -794,6 +874,27 @@ function AdminDashboard() {
         </div>
       </div>
 
+      {/* ── EJECTED STATIONS ALERT BANNER ── */}
+      {ejectedStations.length > 0 && (
+        <section className="ejected-banner">
+          <div className="ejected-banner-info">
+            <span className="ejected-icon">🚫</span>
+            <span className="ejected-title">EJECTED PLAYERS ({ejectedStations.length}):</span>
+            <span className="ejected-list">
+              {ejectedStations.map(s => `${s.alias} (${s.time})`).join(" · ")}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="ejected-banner-restore-btn"
+            onClick={sendEjectedToNameInput}
+            title="Dispatch command to return all ejected players back to the Name Input registration page"
+          >
+            ↩ SEND ALL EJECTED TO NAME INPUT PAGE
+          </button>
+        </section>
+      )}
+
       {/* ── LIVE STATION SURVEILLANCE TABLE ── */}
       <section className="boss-table-section">
         <div className="table-header-bar">
@@ -827,13 +928,14 @@ function AdminDashboard() {
                 <th>SECURITY STATUS</th>
                 <th>LOCKDOWN</th>
                 <th>ADVANCE FLOOR</th>
+                <th>NAME INPUT</th>
                 <th>DISQUALIFY</th>
               </tr>
             </thead>
             <tbody>
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="table-empty-cell">
+                  <td colSpan={11} className="table-empty-cell">
                     <div className="radar-empty-container">
                       <div className="radar-anim-wrapper">
                         <div className="radar-circle radar-c1"></div>
@@ -979,6 +1081,19 @@ function AdminDashboard() {
                           title={p.chapter >= 4 ? "Station is at Maximum Omega Core" : "Promote station to next floor"}
                         >
                           {p.chapter >= 4 ? "MAX TIER" : "▶ PROMOTE"}
+                        </button>
+                      </td>
+
+                      {/* Return to Name Input */}
+                      <td className="cell-action">
+                        <button
+                          id={`nameinput-${p.id}`}
+                          type="button"
+                          className="boss-cell-btn nameinput-btn"
+                          onClick={() => sendPlayerToNameInput(p.id, p.alias)}
+                          title="Reset station and send back to Name Input registration"
+                        >
+                          📝 NAME INPUT
                         </button>
                       </td>
 

@@ -216,6 +216,17 @@ const server = http.createServer((req, res) => {
             players[id].rulesCleared = 0;
             players[id].isBreached = false;
           }
+        } else if (action === 'RESET_TO_NAME_INPUT') {
+          removedPlayers.clear();
+          gameState.activeCommand = {
+            action: 'RESET_TO_NAME_INPUT',
+            playerId: playerId || null,
+            target: data.target || 'ejected',
+            timestamp: Date.now(),
+          };
+          if (playerId && players[playerId]) {
+            delete players[playerId];
+          }
         } else if (action === 'TRIGGER_SIREN') {
           gameState.activeCommand = {
             action: 'TRIGGER_SIREN',
