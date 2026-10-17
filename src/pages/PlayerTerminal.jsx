@@ -993,7 +993,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const [showPassword, setShowPassword] = useState(true);
 
   /* Video & Manager Avatar Assets */
-  const [managerImgSrc] = useState(() => getAssetUrl("/images/manager.png"));
+  const [managerImgSrc] = useState(() => getAssetUrl("/images/manager_cutout.png"));
   const videoRef = useRef(null);
 
   /* ── Lobby Asset & Video Preloading (Eliminates cutscene & game loading lag) ── */
@@ -1014,6 +1014,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         "/images/vault_neon_bg.jpg",
         "/images/vault_door.jpg",
         "/images/vault_lockers.jpg",
+        "/images/manager_cutout.png",
         "/images/manager.png",
         "/images/manager.svg",
         "/images/vice-hero.jpg",

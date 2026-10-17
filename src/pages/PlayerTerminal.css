@@ -2721,6 +2721,7 @@
   transition: transform 0.3s ease;
   animation: managerBustBreathe 5s ease-in-out infinite;
   transform-origin: bottom center;
+  background: transparent !important;
 }
 
 @keyframes managerBustBreathe {
@@ -2736,6 +2737,7 @@
   width: 100%;
   height: auto;
   display: block;
+  background: transparent !important;
   filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 20px rgba(72, 213, 208, 0.25));
   transition: filter 0.3s ease;
 }

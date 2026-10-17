@@ -48,7 +48,7 @@ function PinGate({ onSuccess }) {
   const [pin, setPin]       = useState("");
   const [shake, setShake]   = useState(false);
   const [attempts, setAtt]  = useState(0);
-  const managerImgSrc = getAssetPath("manager.png");
+  const managerImgSrc = getAssetPath("manager_cutout.png");
 
   const handlePin = useCallback((digit) => {
     SoundEngine.init();
@@ -198,7 +198,7 @@ function AdminDashboard() {
   ]);
   const busRef = useRef(null);
   const logRef = useRef(null);
-  const managerImgSrc = getAssetPath("manager.png");
+  const managerImgSrc = getAssetPath("manager_cutout.png");
 
   const addLog = useCallback((msg) => {
     setLog(l => [...l.slice(-99), `[${new Date().toLocaleTimeString()}] ${msg}`]);
