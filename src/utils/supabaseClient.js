@@ -23,12 +23,24 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export async function syncPlayerToSupabase(player) {
   if (!player || !player.id) return null;
 
+  // STRICT: Only sync registered players from the lobby onwards with real names
+  const trimmedName = (player.name || "").trim();
+  if (
+    !trimmedName ||
+    trimmedName === "Anonymous Agent" ||
+    trimmedName.startsWith("Station ") ||
+    player.status === "NAME_ENTRY" ||
+    player.isRegistered === false
+  ) {
+    return null;
+  }
+
   try {
     const payload = {
       id: player.id,
-      name: player.name || "Anonymous Agent",
-      alias: player.alias || "Station",
-      college: player.college || "Vice City Bank",
+      name: trimmedName,
+      alias: (player.alias || "").trim() || trimmedName,
+      college: (player.college || "").trim() || "Vice City Bank",
       status: player.status || "IN_LOBBY",
       current_level: Number(player.currentLevel) || 1,
       rules_cleared: Number(player.rulesCleared) || 0,

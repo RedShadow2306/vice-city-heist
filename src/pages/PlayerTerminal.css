@@ -1911,63 +1911,57 @@
 
 .cutscene-hud-overlay {
   position: absolute;
-  bottom: 35px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 24px;
+  right: 28px;
+  left: auto;
+  transform: none;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  background: rgba(8, 12, 22, 0.88);
-  border: 1.5px solid var(--vice-hotpink, #f84391);
-  box-shadow: 0 0 25px rgba(248, 67, 145, 0.5), inset 0 0 15px rgba(248, 67, 145, 0.2);
-  border-radius: 30px;
-  padding: 12px 28px;
+  align-items: flex-end;
+  gap: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
   pointer-events: none;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  animation: hudPulse 2s ease-in-out infinite alternate;
-}
-
-@keyframes hudPulse {
-  0% {
-    box-shadow: 0 0 15px rgba(248, 67, 145, 0.4), inset 0 0 10px rgba(248, 67, 145, 0.15);
-    border-color: rgba(248, 67, 145, 0.7);
-  }
-  100% {
-    box-shadow: 0 0 35px rgba(0, 229, 255, 0.7), inset 0 0 20px rgba(0, 229, 255, 0.3);
-    border-color: rgba(0, 229, 255, 0.9);
-  }
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  z-index: 100;
 }
 
 .cutscene-hud-pulse {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  animation: subtleTextPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes subtleTextPulse {
+  0%   { opacity: 0.65; }
+  100% { opacity: 1; }
 }
 
 .cutscene-hud-icon {
   color: var(--vice-teal, #00e5ff);
-  font-size: 16px;
-  letter-spacing: -2px;
-  animation: blinkFast 1s infinite alternate;
+  font-size: 13px;
+  letter-spacing: -1px;
+  opacity: 0.85;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.7), 0 2px 6px rgba(0, 0, 0, 0.95);
 }
 
 .cutscene-hud-text {
   font-family: var(--font-display, 'Outfit', sans-serif);
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #fff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 12px rgba(0, 0, 0, 0.9);
 }
 
 .cutscene-hud-sub {
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-  color: var(--vice-gold, #ffd166);
-  letter-spacing: 0.15em;
-  opacity: 0.85;
+  display: none;
 }
 
 /* ══════════════════════════════════════════════════════

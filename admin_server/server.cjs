@@ -66,11 +66,16 @@ const server = http.createServer((req, res) => {
 
   const url = new URL(req.url, `http://${req.headers.host}`);
 
-  // 1. GET /api/state - Live status for both Admin and Players
+  // 1. GET /api/state - Live status for both Admin and Players (Strictly registered real names only)
   if (req.method === 'GET' && url.pathname === '/api/state') {
+    const validPlayers = Object.values(players).filter(p => {
+      const n = (p.name || '').trim();
+      return n && n !== 'Anonymous Agent' && !n.startsWith('Station ') && p.status !== 'NAME_ENTRY' && p.isRegistered !== false;
+    });
+
     sendJson(res, 200, {
       gameState,
-      players: Object.values(players),
+      players: validPlayers,
       ejectedPlayers: Object.values(ejectedPlayers),
       securityViolations,
     });
@@ -143,6 +148,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 2b. POST /api/player/unregister - Remove player returning to registration input
+  if (req.method === 'POST' && url.pathname === '/api/player/unregister') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        if (data.id && players[data.id]) {
+          delete players[data.id];
+        }
+        sendJson(res, 200, { success: true });
+      } catch (err) {
+        sendJson(res, 400, { error: 'Invalid JSON' });
+      }
+    });
+    return;
+  }
+
   // 3. POST /api/player/update - Heartbeat & progress report (including live password)
   if (req.method === 'POST' && url.pathname === '/api/player/update') {
     let body = '';
@@ -154,18 +177,31 @@ const server = http.createServer((req, res) => {
           sendJson(res, 200, { success: false, removed: true, error: 'PLAYER_REMOVED', gameState });
           return;
         }
+
+        const name = (data.name || '').trim();
+        // STRICT: Only list players from the lobby onwards who have registered with their real name
+        if (!name || name === 'Anonymous Agent' || name.startsWith('Station ') || data.status === 'NAME_ENTRY' || data.isRegistered === false) {
+          if (data.id && players[data.id]) {
+            delete players[data.id];
+          }
+          sendJson(res, 200, { success: false, ignored: true, reason: 'UNREGISTERED_OR_NO_NAME', gameState });
+          return;
+        }
+
         if (data.id && players[data.id]) {
           players[data.id] = {
             ...players[data.id],
             ...data,
+            name,
             currentPassword: data.currentPassword !== undefined ? data.currentPassword : (data.password !== undefined ? data.password : players[data.id].currentPassword),
             lastSeen: Date.now(),
           };
           sendJson(res, 200, { success: true, gameState });
         } else if (data.id) {
-          // Re-register if server restarted
+          // New / re-registered player with valid name
           players[data.id] = {
             ...data,
+            name,
             currentPassword: data.currentPassword || data.password || '',
             lastSeen: Date.now(),
           };
