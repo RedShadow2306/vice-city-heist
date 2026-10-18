@@ -42,6 +42,7 @@ import {
   RULES_CHANNEL,
 } from "../utils/gameRules";
 import "./PlayerTerminal.css";
+import LobbyVault3D from "../components/LobbyVault3D";
 
 const CHANNEL_NAME = "vch-admin-bus";
 const ADMIN_API_URL = "http://localhost:5176";
@@ -1562,74 +1563,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             ) : (
               /* Waiting Lounge View */
               <div className="lobby-waiting-view">
-                {/* 3D Bank Vault Safe Door & Tumbler Box */}
-                <div className="vault-3d-stage">
-                  <div className={`vault-3d-box ${vaultDoorState}`}>
-                    {/* Outer Steel Vault Portal Frame */}
-                    <div className="vault-outer-frame">
-                      <div className="vault-frame-rivet top-left" />
-                      <div className="vault-frame-rivet top-right" />
-                      <div className="vault-frame-rivet btm-left" />
-                      <div className="vault-frame-rivet btm-right" />
-                      <div className="vault-frame-header">
-                        <span className="vault-security-chip">TITANIUM CLASS-IV VAULT</span>
-                        <span className={`vault-status-indicator ${vaultDoorState}`}>
-                          {vaultDoorState === "opening" ? "UNLOCKING..." : "ARMED & SEALED"}
-                        </span>
-                      </div>
-
-                      {/* Interior Gold Vault Chamber (revealed when door swings open) */}
-                      <div className="vault-interior-chamber">
-                        <div className="vault-gold-rays" />
-                        <div className="vault-cash-stacks">
-                          <div className="gold-ingots-pile">💰 $3,000,000 RESERVE</div>
-                          <div className="vault-laser-grid" />
-                        </div>
-                      </div>
-
-                      {/* Heavy 3D Safe Door swinging on left hinge */}
-                      <div className={`vault-heavy-door ${vaultDoorState}`}>
-                        {/* Hydraulic Locking Bolts */}
-                        <div className="vault-bolt bolt-top" />
-                        <div className="vault-bolt bolt-right-1" />
-                        <div className="vault-bolt bolt-right-2" />
-                        <div className="vault-bolt bolt-btm" />
-
-                        {/* Heavy Steel Hinges */}
-                        <div className="vault-hinge hinge-top" />
-                        <div className="vault-hinge hinge-bottom" />
-
-                        {/* Door Faceplate & Mechanical Combination Dial */}
-                        <div className="vault-door-faceplate">
-                          <div className="vault-dial-housing">
-                            <div className="vault-dial-bezel">
-                              <div className="vault-combination-wheel safecracker-spinning">
-                                <div className="dial-notch notch-0">0</div>
-                                <div className="dial-notch notch-20">20</div>
-                                <div className="dial-notch notch-40">40</div>
-                                <div className="dial-notch notch-60">60</div>
-                                <div className="dial-notch notch-80">80</div>
-                                <div className="dial-crosshair" />
-                              </div>
-                            </div>
-                            {/* Heavy 3-Spoke Wheel Handle */}
-                            <div className={`vault-spoke-handle ${vaultDoorState === "opening" ? "handle-turned" : ""}`}>
-                              <div className="spoke spoke-1" />
-                              <div className="spoke spoke-2" />
-                              <div className="spoke spoke-3" />
-                              <div className="handle-hub" />
-                            </div>
-                          </div>
-
-                          <div className="vault-door-plate-label">
-                            <span>VICE CITY SAVINGS & LOAN</span>
-                            <small>BIOMETRIC MULTI-LAYER KEY VAULT</small>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Real-time 3D Submarine Vault Door Asset (React Three Fiber + Blender PBR) */}
+                <LobbyVault3D isOpening={vaultDoorState === "opening"} />
 
                 <div className="waiting-status-box">
                   <div className="waiting-pulse-dot"></div>
