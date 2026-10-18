@@ -206,13 +206,29 @@ class SoundEngine {
   }
 
   static _playWastedSynth() {
+    this.resume();
     const t = this._ctx?.currentTime ?? 0;
-    // Classic GTA Vice City deep brass doom hit with heavy reverberation
-    this._osc('sawtooth', 130.81, t, t + 1.2, 0.4);
-    this._osc('sawtooth', 98.0, t + 0.05, t + 1.4, 0.35);
-    this._osc('sawtooth', 65.4, t + 0.1, t + 1.8, 0.38);
-    this._osc('sine', 45.0, t + 0.15, t + 2.2, 0.5);
-    this._noise(1.4, t + 0.05, 0.25);
+    // Classic GTA Vice City deep brass doom hit with heavy reverberation & pitch drop
+    this._osc('sawtooth', 130.81, t, t + 1.6, 0.45);
+    this._osc('sawtooth', 98.0, t + 0.04, t + 1.8, 0.4);
+    this._osc('sawtooth', 65.4, t + 0.08, t + 2.2, 0.42);
+    // Sub-bass slow boom
+    if (this._ctx) {
+      try {
+        const osc = this._ctx.createOscillator();
+        const gain = this._ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(85, t);
+        osc.frequency.exponentialRampToValueAtTime(30, t + 1.5);
+        gain.gain.setValueAtTime(0.65, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 2.4);
+        osc.connect(gain);
+        gain.connect(this._ctx.destination);
+        osc.start(t);
+        osc.stop(t + 2.4);
+      } catch (_) {}
+    }
+    this._noise(1.5, t + 0.05, 0.3);
   }
 
   static playMissionPassed() {

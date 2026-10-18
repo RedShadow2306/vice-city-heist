@@ -1080,9 +1080,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     timeBonus: 25000,
   });
 
-  /* GTA Wasted Cinematic State */
-  const [wastedPhase, setWastedPhase] = useState("snapshots"); // "snapshots" | "wasted_text"
-  const [wastedSnapIndex, setWastedSnapIndex] = useState(0);
+  /* Preview & Cinematic State */
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [previewOrigin, setPreviewOrigin] = useState("lobby");
 
   /* Video Preload & Cache State */
   const [videoPreload, setVideoPreload] = useState(() => ({
@@ -1103,6 +1103,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* Auto-advance GTA Slideshow Stages */
   useEffect(() => {
     if (screen === "story_slideshow") {
+      if (isPreviewMode) return; // Keep active on screen during preview
       if (storySlideshow.stage === "splash") {
         const timer = setTimeout(() => {
           setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
@@ -1117,30 +1118,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         }, 2800);
         return () => clearTimeout(timer);
       }
-    } else if (screen === "wasted_slideshow") {
-      if (wastedPhase === "snapshots") {
-        const snapTimer = setInterval(() => {
-          setWastedSnapIndex((idx) => {
-            if (idx < BREACH_SNAPSHOTS.length - 1) {
-              if (soundEnabled) SoundEngine.playCameraClick();
-              return idx + 1;
-            } else {
-              clearInterval(snapTimer);
-              setWastedPhase("wasted_text");
-              if (soundEnabled) SoundEngine.playWasted();
-              return idx;
-            }
-          });
-        }, 340);
-        return () => clearInterval(snapTimer);
-      } else if (wastedPhase === "wasted_text") {
-        const endTimer = setTimeout(() => {
-          setScreen("mission_failed");
-        }, 6000);
-        return () => clearTimeout(endTimer);
-      }
     }
-  }, [screen, storySlideshow.stage, wastedPhase, soundEnabled]);
+  }, [screen, storySlideshow.stage, isPreviewMode, soundEnabled]);
 
   /* Timer Ref & Fullscreen Helpers */
   const timerRef = useRef(null);
@@ -1185,16 +1164,16 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     clearInterval(timerRef.current);
     setIsLockedBreach(true);
     setIsEjected(true);
-    setBreachReason("DISQUALIFIED & REMOVED FROM TOURNAMENT BY DISPATCH ADMIN");
+    const reason = "DISQUALIFIED & REMOVED FROM TOURNAMENT BY DISPATCH ADMIN";
+    setBreachReason(reason);
     localStorage.setItem("vch_locked_breach", "true");
     localStorage.setItem("vch_ejected", "true");
-    localStorage.setItem("vch_breach_reason", "DISQUALIFIED & REMOVED FROM TOURNAMENT BY DISPATCH ADMIN");
-    setScreen("mission_failed");
+    localStorage.setItem("vch_breach_reason", reason);
+    setScreen("wasted_cinematic");
     exitFullscreenSafe();
     SoundEngine.init();
-    SoundEngine.playAlert();
-    SoundEngine.playDenied();
-  }, []);
+    if (soundEnabled) SoundEngine.playWasted();
+  }, [soundEnabled]);
 
   const handleResetToNameInput = useCallback(() => {
     clearInterval(timerRef.current);
@@ -1527,6 +1506,64 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     });
   }, [currentLevel, reportToAdmin]);
 
+  /* ── Trigger Cinematic WASTED Sequence ── */
+  const triggerWastedSequence = useCallback((reason = "THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000", isElimination = false) => {
+    clearInterval(timerRef.current);
+    if (soundEnabled) SoundEngine.stopDrone();
+    setBreachReason(reason);
+    localStorage.setItem("vch_breach_reason", reason);
+    setIsLockedBreach(true);
+    localStorage.setItem("vch_locked_breach", "true");
+    if (isElimination) {
+      setIsEjected(true);
+      localStorage.setItem("vch_ejected", "true");
+    }
+    setScreen("wasted_cinematic");
+    exitFullscreenSafe();
+    SoundEngine.init();
+    if (soundEnabled) SoundEngine.playWasted();
+    reportToAdmin({ status: "LOCKED_FAILED", isBreached: true, reason });
+  }, [soundEnabled, reportToAdmin]);
+
+  /* ── Cinematic Demo Previews (On-Demand Visual Verification) ── */
+  const handleTriggerWastedDemo = useCallback(() => {
+    setPreviewOrigin(screen);
+    setIsPreviewMode(true);
+    setBreachReason("SIMULATION // THERMAL DRILL PENETRATED TITANIUM CHAMBER");
+    setScreen("wasted_cinematic");
+    SoundEngine.init();
+    if (soundEnabled) SoundEngine.playWasted();
+  }, [screen, soundEnabled]);
+
+  const handleTriggerPassedDemo = useCallback(() => {
+    setPreviewOrigin(screen);
+    setIsPreviewMode(true);
+    setStorySlideshow({
+      active: true,
+      stage: "splash",
+      levelCleared: currentLevel || 1,
+      nextLevel: 2,
+      scoreEarned: 1500,
+      timeBonus: 25000,
+    });
+    setScreen("story_slideshow");
+    SoundEngine.init();
+    if (soundEnabled) SoundEngine.playMissionPassed();
+    try {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ["#F8C018", "#00E676", "#FF2A6D", "#00E5FF", "#FFF2E3"],
+      });
+    } catch (_) {}
+  }, [screen, currentLevel, soundEnabled]);
+
+  const handleExitPreview = useCallback(() => {
+    setIsPreviewMode(false);
+    setScreen(previewOrigin || "lobby");
+  }, [previewOrigin]);
+
   /* ── Listen for BroadcastChannel events ── */
   useEffect(() => {
     if (typeof BroadcastChannel === "undefined") return;
@@ -1566,7 +1603,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           localStorage.removeItem("vch_ejected");
           SoundEngine.init();
           SoundEngine.playUnlock();
-          if (screen === "mission_failed") {
+          if (screen === "mission_failed" || screen === "wasted_cinematic" || screen === "wasted_slideshow") {
             setScreen("game");
             setTimeLeft(cfg.startSeconds);
             timeLeftRef.current = cfg.startSeconds;
@@ -1616,7 +1653,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 localStorage.removeItem("vch_locked_breach");
                 localStorage.removeItem("vch_breach_reason");
                 localStorage.removeItem("vch_ejected");
-                if (screen === "mission_failed") {
+                if (screen === "mission_failed" || screen === "wasted_cinematic" || screen === "wasted_slideshow") {
                   setScreen("game");
                   setTimeLeft(cfg.startSeconds);
                   timeLeftRef.current = cfg.startSeconds;
@@ -1678,7 +1715,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 localStorage.removeItem("vch_locked_breach");
                 localStorage.removeItem("vch_breach_reason");
                 localStorage.removeItem("vch_ejected");
-                if (screen === "mission_failed") {
+                if (screen === "mission_failed" || screen === "wasted_cinematic" || screen === "wasted_slideshow") {
                   setScreen("game");
                   setTimeLeft(cfg.startSeconds);
                   timeLeftRef.current = cfg.startSeconds;
@@ -1791,18 +1828,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
     const handleVisibilityChange = () => {
       if (document.hidden && screen === "game") {
-        clearInterval(timerRef.current);
         const reason = "UNAUTHORIZED TAB SWITCH / MINIMIZE DETECTED (Eliminated)";
-        setIsLockedBreach(true);
-        setIsEjected(true);
-        setBreachReason(reason);
-        localStorage.setItem("vch_locked_breach", "true");
-        localStorage.setItem("vch_ejected", "true");
-        localStorage.setItem("vch_breach_reason", reason);
-        setScreen("mission_failed");
-        exitFullscreenSafe();
-        SoundEngine.init();
-        SoundEngine.playMissionFailed();
+        triggerWastedSequence(reason, true);
         reportViolation("TAB_SWITCH", reason, true);
       }
     };
@@ -1834,18 +1861,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             graceTimerRef.current = null;
             setFullscreenGraceCountdown(null);
 
-            clearInterval(timerRef.current);
             const reason = "FULLSCREEN DEPARTURE DETECTED (Eliminated)";
-            setIsLockedBreach(true);
-            setIsEjected(true);
-            setBreachReason(reason);
-            localStorage.setItem("vch_locked_breach", "true");
-            localStorage.setItem("vch_ejected", "true");
-            localStorage.setItem("vch_breach_reason", reason);
-            setScreen("mission_failed");
-            exitFullscreenSafe();
-            SoundEngine.init();
-            SoundEngine.playMissionFailed();
+            triggerWastedSequence(reason, true);
             reportViolation("FULLSCREEN_ESCAPE", reason, true);
           }
         }, 1000);
@@ -1880,7 +1897,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       window.removeEventListener("contextmenu", handleContextMenu);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [screen, isLockedBreach, reportViolation]);
+  }, [screen, isLockedBreach, reportViolation, triggerWastedSequence]);
 
   /* ── Time Adjustment & Feedback ── */
   const triggerTimeBonus = useCallback((delta) => {
@@ -1902,15 +1919,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
       if (!won) {
         // Mission Failed / Vault Breached!
-        setIsLockedBreach(true);
-        setBreachReason("THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000");
-        localStorage.setItem("vch_locked_breach", "true");
-        localStorage.setItem("vch_breach_reason", "THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000");
-        setWastedPhase("snapshots");
-        setWastedSnapIndex(0);
-        setScreen("wasted_slideshow");
-        if (soundEnabled) SoundEngine.playCameraClick();
-        reportToAdmin({ status: "LOCKED_FAILED", isBreached: true });
+        const reason = "THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000";
+        triggerWastedSequence(reason, false);
         return;
       }
 
@@ -2281,10 +2291,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         }
       } else if (e.key === "Escape") {
         e.preventDefault();
-        setIsLockedBreach(true);
-        setBreachReason("MISSION ABORTED BY AGENT");
-        setScreen("mission_failed");
-        reportToAdmin({ status: "ABORTED", isBreached: true });
+        triggerWastedSequence("MISSION ABORTED BY AGENT", false);
       } else {
         if (document.activeElement !== inputRef.current && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
           inputRef.current?.focus();
@@ -2908,10 +2915,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 type="button"
                 className="footer-keybind-btn cancel-btn"
                 onClick={() => {
-                  setIsLockedBreach(true);
-                  setBreachReason("MISSION ABORTED BY AGENT");
-                  setScreen("mission_failed");
-                  reportToAdmin({ status: "ABORTED", isBreached: true });
+                  triggerWastedSequence("MISSION ABORTED BY AGENT", false);
                 }}
                 title="Cancel Session [Esc]"
               >
@@ -2923,10 +2927,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 type="button"
                 className="footer-plain-btn abort-btn"
                 onClick={() => {
-                  setIsLockedBreach(true);
-                  setBreachReason("MISSION ABORTED BY AGENT");
-                  setScreen("mission_failed");
-                  reportToAdmin({ status: "ABORTED", isBreached: true });
+                  triggerWastedSequence("MISSION ABORTED BY AGENT", false);
                 }}
               >
                 ABORT MISSION
@@ -2973,73 +2974,132 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         </section>
       )}
 
-      {/* ── SCREEN: GTA WASTED CINEMATIC SPLASH ── */}
-      {/* ── SCREEN: GTA WASTED / VAULT BREACHED CINEMATIC ── */}
-      {screen === "wasted_slideshow" && (
+      {/* ── SCREEN: AUTHENTIC GTA WASTED / MISSION FAILED CINEMATIC ── */}
+      {(screen === "wasted_cinematic" || screen === "wasted_slideshow") && (
         <section
           className="gta-wasted-fullscreen-stage"
-          onClick={() => {
-            if (wastedPhase === "snapshots") {
-              setWastedPhase("wasted_text");
-              if (soundEnabled) SoundEngine.playWasted();
-            } else {
-              setScreen("mission_failed");
-            }
-          }}
           tabIndex={0}
-          role="button"
-          aria-label="Click anywhere or press any key to view incident report"
+          role="region"
+          aria-label="GTA Wasted Mission Failed Screen"
         >
-          {wastedPhase === "snapshots" ? (
-            /* Phase 1: Rapid Snapshots ("sudden pictures changing" effect) */
-            <div className="wasted-snapshots-stage">
-              <div className="wasted-snap-flash" key={`flash-${wastedSnapIndex}`} />
-              <img
-                src={getAssetUrl(BREACH_SNAPSHOTS[wastedSnapIndex]?.img || "/images/vault_door.jpg")}
-                alt="Breach Surveillance Feed"
-                className="wasted-snap-img"
-              />
-              <div className="wasted-snap-overlay-red" />
-              <div className="wasted-snap-scanlines" />
+          {/* Cinema Letterbox Widescreen Bars */}
+          <div className="gta-cinema-bars top" />
+          <div className="gta-cinema-bars bottom" />
 
-              {BREACH_SNAPSHOTS[wastedSnapIndex]?.hasManager && (
-                <div className="wasted-snap-manager-captured">
-                  <img src={getAssetUrl("/images/manager_cutout.png")} alt="Manager in custody" className="wasted-snap-manager-img" />
-                  <div className="wasted-snap-custody-label">⚠️ IN CUSTODY // HOSTAGE SITUATION</div>
-                </div>
+          {/* CCTV Live Surveillance Feed Overlay */}
+          <div className="gta-wasted-cctv-hud">
+            <div className="cctv-rec-indicator">
+              <span className="cctv-rec-dot" />
+              <span className="cctv-rec-text">● REC · LIVE OVERRIDE</span>
+            </div>
+            <div className="cctv-camera-tag">
+              CAM 08 · TITANIUM VAULT SUB-01 // {new Date().toLocaleTimeString()}
+            </div>
+          </div>
+
+          {/* Layered Gritty Dark Background Environment with Ken Burns Drift & Red Klaxon */}
+          <div className="gta-wasted-bg-environment">
+            <img
+              src={getAssetUrl("/images/vault_breached_lockers.jpg")}
+              alt="Vault Breached Emptied Lockers"
+              className="gta-wasted-bg-img"
+            />
+            <div className="gta-wasted-klaxon-sweep" />
+            <div className="gta-wasted-red-vignette" />
+            <div className="gta-wasted-scanlines" />
+          </div>
+
+          {/* Central Hero Card */}
+          <div className="gta-wasted-card">
+            <h1 className="gta-wasted-title">WASTED</h1>
+            <div className="gta-wasted-breached-banner">
+              ⚠️ MISSION FAILED // VAULT BREACHED
+            </div>
+            <p className="gta-wasted-subtitle">
+              VERCETTI SYNDICATE FORCED THE MULTI-CIPHER AIRLOCK AND EMPTIED EL BANCO CORRUPTO GRANDE
+            </p>
+
+            {/* Debrief Telemetry Box */}
+            <div className="gta-wasted-debrief-box">
+              <div className="debrief-row">
+                <span className="debrief-label">AGENT STATION:</span>
+                <span className="debrief-val">{playerName || "AGENT"} ({playerAlias || "STATION-01"})</span>
+              </div>
+              <div className="debrief-row">
+                <span className="debrief-label">SECURITY LEVEL:</span>
+                <span className="debrief-val">{CAMPAIGN_LEVELS[currentLevel]?.title || "LEVEL 1 // OUTER LOBBY"}</span>
+              </div>
+              <div className="debrief-row">
+                <span className="debrief-label">BREACH CAUSE:</span>
+                <span className="debrief-val status-danger">{breachReason || "THERMAL DRILL PENETRATED TITANIUM CHAMBER"}</span>
+              </div>
+              <div className="debrief-row">
+                <span className="debrief-label">PROTOCOL STATUS:</span>
+                <span className="debrief-val status-danger">{isEjected ? "🚫 DISQUALIFIED BY CENTRAL DISPATCH" : "🔒 HIGH-SECURITY LOCKDOWN"}</span>
+              </div>
+            </div>
+
+            {/* Actions Row */}
+            <div className="gta-wasted-actions-row">
+              {isPreviewMode ? (
+                <>
+                  <button
+                    type="button"
+                    className="gta-action-btn retry-btn"
+                    onClick={() => {
+                      SoundEngine.init();
+                      if (soundEnabled) SoundEngine.playWasted();
+                    }}
+                  >
+                    🔄 REPLAY WASTED AUDIO
+                  </button>
+                  <button
+                    type="button"
+                    className="gta-action-btn secondary-btn"
+                    onClick={handleExitPreview}
+                  >
+                    ✖ EXIT PREVIEW
+                  </button>
+                </>
+              ) : !isEjected ? (
+                <>
+                  <button
+                    type="button"
+                    className="gta-action-btn retry-btn"
+                    onClick={() => {
+                      setIsLockedBreach(false);
+                      localStorage.removeItem("vch_locked_breach");
+                      localStorage.removeItem("vch_breach_reason");
+                      handleStartActiveDefense(currentLevel);
+                    }}
+                  >
+                    🔄 RETRY LEVEL {currentLevel} DEFENSE
+                  </button>
+                  <button
+                    type="button"
+                    className="gta-action-btn secondary-btn"
+                    onClick={() => {
+                      setIsLockedBreach(false);
+                      localStorage.removeItem("vch_locked_breach");
+                      localStorage.removeItem("vch_breach_reason");
+                      setScreen("lobby");
+                      exitFullscreenSafe();
+                    }}
+                  >
+                    🏠 RETURN TO LOBBY
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="gta-action-btn secondary-btn"
+                  onClick={handleResetToNameInput}
+                >
+                  [➔ REGISTER NEW AGENT DETAILS]
+                </button>
               )}
-
-              <div className="wasted-snap-hud">
-                <div className="wasted-snap-rec-dot" />
-                <div className="wasted-snap-title">{BREACH_SNAPSHOTS[wastedSnapIndex]?.title}</div>
-                <div className="wasted-snap-sub">{BREACH_SNAPSHOTS[wastedSnapIndex]?.sub}</div>
-              </div>
             </div>
-          ) : (
-            /* Phase 2: Authentic GTA Wasted / Vault Breached Impact */
-            <div className="gta-wasted-card-wrap">
-              <div className="gta-wasted-bg-desaturated">
-                <img
-                  src={getAssetUrl("/images/vault_neon_bg.jpg")}
-                  alt="Vault Breached"
-                  className="gta-wasted-bg-img"
-                />
-                <div className="gta-wasted-red-vignette" />
-              </div>
-
-              <div className="gta-wasted-card">
-                <h1 className="gta-wasted-title">WASTED</h1>
-                <div className="gta-wasted-breached-banner">VAULT BREACHED</div>
-                <p className="gta-wasted-subtitle">
-                  VERCETTI SYNDICATE HAS INFILTRATED AND EMPTIED THE RESERVES
-                </p>
-                <div className="gta-wasted-custody-notice">
-                  👔 BANK MANAGER GORDON BENNETT & VAULT STAFF ARE IN CUSTODY
-                </div>
-                <span className="gta-wasted-legend-tag">[PRESS ANY KEY OR CLICK ANYWHERE TO VIEW INCIDENT REPORT]</span>
-              </div>
-            </div>
-          )}
+          </div>
         </section>
       )}
 
@@ -3097,18 +3157,61 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="vice-btn primary-btn"
-                  style={{ padding: "12px 34px", fontSize: "14px", marginTop: "12px", boxShadow: "0 0 25px rgba(255, 42, 109, 0.6)" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
-                    if (soundEnabled) SoundEngine.playRadioChirp();
-                  }}
-                >
-                  CONTINUE STORY SEQUENCE ➔
-                </button>
+                <div className="gta-passed-actions-row" style={{ marginTop: "16px" }}>
+                  {isPreviewMode ? (
+                    <>
+                      <button
+                        type="button"
+                        className="gta-action-btn retry-btn"
+                        style={{
+                          background: "linear-gradient(135deg, #FFB300 0%, #FF6F00 100%)",
+                          border: "1.5px solid #FFE082",
+                          color: "#000",
+                          fontWeight: 900,
+                          boxShadow: "0 0 25px rgba(255, 179, 0, 0.7)"
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          SoundEngine.init();
+                          if (soundEnabled) SoundEngine.playMissionPassed();
+                          try {
+                            confetti({
+                              particleCount: 120,
+                              spread: 80,
+                              origin: { y: 0.6 },
+                              colors: ["#F8C018", "#00E676", "#FF2A6D", "#00E5FF", "#FFF2E3"],
+                            });
+                          } catch (_) {}
+                        }}
+                      >
+                        🎉 REPLAY VICTORY & CONFETTI
+                      </button>
+                      <button
+                        type="button"
+                        className="gta-action-btn secondary-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExitPreview();
+                        }}
+                      >
+                        ✖ EXIT PREVIEW
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="vice-btn primary-btn"
+                      style={{ padding: "12px 34px", fontSize: "14px", marginTop: "12px", boxShadow: "0 0 25px rgba(255, 42, 109, 0.6)" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
+                        if (soundEnabled) SoundEngine.playRadioChirp();
+                      }}
+                    >
+                      CONTINUE STORY SEQUENCE ➔
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

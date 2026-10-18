@@ -23,6 +23,8 @@ import {
   supabase,
 } from "../utils/supabaseClient";
 
+import confetti from "canvas-confetti";
+import "./PlayerTerminal.css";
 import "./AdminCommand.css";
 
 const ADMIN_PIN    = "1986";
@@ -192,6 +194,30 @@ function AdminDashboard() {
     }
   });
   const [violationFilter, setViolationFilter] = useState("ALL");
+  const [adminPreviewCinematic, setAdminPreviewCinematic] = useState(null); // "wasted" | "passed" | null
+
+  const handleTriggerAdminPreview = useCallback((type) => {
+    setAdminPreviewCinematic(type);
+    SoundEngine.init();
+    if (type === "wasted") {
+      SoundEngine.playWasted();
+    } else if (type === "passed") {
+      SoundEngine.playMissionPassed();
+      try {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ["#F8C018", "#00E676", "#FF2A6D", "#00E5FF", "#FFF2E3"],
+        });
+      } catch (_) {}
+    }
+  }, []);
+
+  const handleCloseAdminPreview = useCallback(() => {
+    setAdminPreviewCinematic(null);
+  }, []);
+
   const [log, setLog] = useState([
     `[${new Date().toLocaleTimeString()}] Managing Director Gordon Bennett assumed active vault supervision.`,
     `[${new Date().toLocaleTimeString()}] 4-Floor Defense Protocol armed across all network stations.`,
@@ -1187,6 +1213,30 @@ function AdminDashboard() {
           </button>
 
           <button
+            id="admin-preview-wasted-btn"
+            type="button"
+            className="boss-btn boss-btn-alarm"
+            style={{ borderColor: "#FF1744", background: "rgba(255, 23, 68, 0.18)" }}
+            onClick={() => handleTriggerAdminPreview("wasted")}
+            title="Preview the GTA Vice City WASTED / Mission Failed animation"
+          >
+            <span className="btn-icon">💀</span>
+            <span className="btn-text">PREVIEW WASTED</span>
+          </button>
+
+          <button
+            id="admin-preview-passed-btn"
+            type="button"
+            className="boss-btn boss-btn-launch"
+            style={{ borderColor: "#FFD700", background: "rgba(255, 215, 0, 0.18)" }}
+            onClick={() => handleTriggerAdminPreview("passed")}
+            title="Preview the GTA Vice City Mission Passed / Successful animation"
+          >
+            <span className="btn-icon">🏆</span>
+            <span className="btn-text">PREVIEW PASSED</span>
+          </button>
+
+          <button
             id="global-freeze-btn"
             type="button"
             className={`boss-btn ${globalFreeze ? "boss-btn-unfreeze" : "boss-btn-lockdown"}`}
@@ -1915,6 +1965,171 @@ function AdminDashboard() {
           <span>OFFICIAL CONSOLE OF MANAGING DIRECTOR GORDON BENNETT // EST. 1986</span>
         </div>
       </footer>
+
+      {/* ── CINEMATIC PREVIEW OVERLAY (ADMIN ONLY) ── */}
+      {adminPreviewCinematic === "wasted" && (
+        <section
+          className="gta-wasted-fullscreen-stage"
+          style={{ position: "fixed", inset: 0, zIndex: 999999 }}
+        >
+          {/* Cinema Letterbox Widescreen Bars */}
+          <div className="gta-cinema-bars top" />
+          <div className="gta-cinema-bars bottom" />
+
+          {/* CCTV Live Surveillance Feed Overlay */}
+          <div className="gta-wasted-cctv-hud">
+            <div className="cctv-rec-indicator">
+              <span className="cctv-rec-dot" />
+              <span className="cctv-rec-text">● REC · LIVE OVERRIDE</span>
+            </div>
+            <div className="cctv-camera-tag">
+              OVERSEER MONITOR · VAULT LOCKERS // {new Date().toLocaleTimeString()}
+            </div>
+          </div>
+
+          {/* Layered Gritty Dark Background Environment with Ken Burns Drift & Red Klaxon */}
+          <div className="gta-wasted-bg-environment">
+            <img
+              src={getAssetPath("/images/vault_breached_lockers.jpg")}
+              alt="Vault Breached Emptied Lockers"
+              className="gta-wasted-bg-img"
+            />
+            <div className="gta-wasted-klaxon-sweep" />
+            <div className="gta-wasted-red-vignette" />
+            <div className="gta-wasted-scanlines" />
+          </div>
+
+          {/* Central Hero Card */}
+          <div className="gta-wasted-card">
+            <h1 className="gta-wasted-title">WASTED</h1>
+            <div className="gta-wasted-breached-banner">
+              ⚠️ MISSION FAILED // VAULT BREACHED
+            </div>
+            <p className="gta-wasted-subtitle">
+              VERCETTI SYNDICATE FORCED THE MULTI-CIPHER AIRLOCK AND EMPTIED EL BANCO CORRUPTO GRANDE
+            </p>
+
+            {/* Debrief Telemetry Box */}
+            <div className="gta-wasted-debrief-box">
+              <div className="debrief-row">
+                <span className="debrief-label">PREVIEW STATION:</span>
+                <span className="debrief-val">ADMIN COMMAND SUITE // PORT 5176</span>
+              </div>
+              <div className="debrief-row">
+                <span className="debrief-label">SECURITY LEVEL:</span>
+                <span className="debrief-val">ALL TIERS (1 - 4) AUDIT MODE</span>
+              </div>
+              <div className="debrief-row">
+                <span className="debrief-label">INCIDENT STATUS:</span>
+                <span className="debrief-val status-danger">VAULT DOOR HOLLOWED · LOCKERS EMPTIED</span>
+              </div>
+            </div>
+
+            {/* Actions Row */}
+            <div className="gta-wasted-actions-row">
+              <button
+                type="button"
+                className="gta-action-btn retry-btn"
+                onClick={() => {
+                  SoundEngine.init();
+                  SoundEngine.playWasted();
+                }}
+              >
+                🔄 REPLAY WASTED AUDIO
+              </button>
+              <button
+                type="button"
+                className="gta-action-btn secondary-btn"
+                onClick={handleCloseAdminPreview}
+              >
+                ✖ CLOSE PREVIEW
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {adminPreviewCinematic === "passed" && (
+        <section
+          className="gta-slideshow-fullscreen-stage"
+          style={{ position: "fixed", inset: 0, zIndex: 999999 }}
+        >
+          {/* Cinema Letterbox Widescreen Bars */}
+          <div className="gta-cinema-bars top" />
+          <div className="gta-cinema-bars bottom" />
+
+          <div className="gta-passed-splash-card">
+            {/* Theme Background */}
+            <div className="gta-passed-theme-bg" aria-hidden="true">
+              <img
+                src={getAssetPath("/images/vault_neon_bg.jpg")}
+                alt="Vice City Vault Defense Theme"
+                className="gta-passed-bg-img"
+              />
+              <div className="gta-passed-sunburst" />
+              <div className="gta-passed-vignette" />
+              <div className="gta-passed-scanlines" />
+            </div>
+
+            <div className="gta-passed-content">
+              <div className="gta-passed-badge">🌴 VAULT DEFENSE PROTOCOL · LEVEL 01 COMPLETE 🌴</div>
+              <h1 className="gta-passed-title">MISSION PASSED!</h1>
+              <div className="gta-respect-badge">RESPECT +</div>
+
+              <p className="gta-passed-subtitle">
+                VAULT SECURED // LEVEL 1: TELLERS GATE LOCKED
+              </p>
+
+              <div className="gta-passed-stats-row">
+                <div className="gta-stat-pill">
+                  SCORE: <span className="highlight">+1500 PTS</span>
+                </div>
+                <div className="gta-stat-pill">
+                  TIME BONUS: <span className="highlight" style={{ color: "#00E676" }}>+$25,000</span>
+                </div>
+                <div className="gta-stat-pill">
+                  STATUS: <span className="highlight" style={{ color: "#00E676" }}>100% SECURE</span>
+                </div>
+              </div>
+
+              <div className="gta-passed-actions-row">
+                <button
+                  type="button"
+                  className="gta-action-btn retry-btn"
+                  style={{
+                    background: "linear-gradient(135deg, #FFB300 0%, #FF6F00 100%)",
+                    border: "1.5px solid #FFE082",
+                    color: "#000",
+                    fontWeight: 900,
+                    boxShadow: "0 0 25px rgba(255, 179, 0, 0.7)"
+                  }}
+                  onClick={() => {
+                    SoundEngine.init();
+                    SoundEngine.playMissionPassed();
+                    try {
+                      confetti({
+                        particleCount: 120,
+                        spread: 80,
+                        origin: { y: 0.6 },
+                        colors: ["#F8C018", "#00E676", "#FF2A6D", "#00E5FF", "#FFF2E3"],
+                      });
+                    } catch (_) {}
+                  }}
+                >
+                  🎉 REPLAY VICTORY & CONFETTI
+                </button>
+                <button
+                  type="button"
+                  className="gta-action-btn secondary-btn"
+                  onClick={handleCloseAdminPreview}
+                >
+                  ✖ CLOSE PREVIEW
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
