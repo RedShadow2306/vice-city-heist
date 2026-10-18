@@ -929,6 +929,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* Fullscreen Grace Countdown & Filter States */
   const [fullscreenGraceCountdown, setFullscreenGraceCountdown] = useState(null);
   const graceTimerRef = useRef(null);
+  const rulesScrollRef = useRef(null);
   const [filterFailingOnly, setFilterFailingOnly] = useState(false);
 
   const resumeFullscreenSafe = useCallback(() => {
@@ -1867,13 +1868,45 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     return () => clearInterval(timerRef.current);
   }, [screen, isLockedBreach, parentFrozen, isPlayerFrozen, soundEnabled, handleLevelFinished]);
 
-  /* ── Manager Dialogue Computation ── */
+  /* ── Manager Dialogue Computation & Dynamic Rule Sorting ── */
   const displayedRules = useMemo(() => activeRulesList.slice(0, unlockedCount), [activeRulesList, unlockedCount]);
+
+  /* 
+   * Dynamic Rule Priority:
+   * 1. Rules to be completed, newly unlocked rules, and broken rules appear at the VERY TOP.
+   * 2. The newest unlocked uncompleted rule is always at index 0 (top of the list).
+   * 3. Completed / passed rules move down to the bottom.
+   */
   const visibleRulesInPanel = useMemo(() => {
-    if (!filterFailingOnly) return displayedRules;
-    const failing = displayedRules.filter((r) => !r.check(password));
-    return failing.length > 0 ? failing : displayedRules;
+    const sourceList = filterFailingOnly
+      ? displayedRules.filter((r) => !r.check(password))
+      : displayedRules;
+
+    const failing = [];
+    const passed = [];
+
+    sourceList.forEach((rule) => {
+      if (rule.check(password)) {
+        passed.push(rule);
+      } else {
+        failing.push(rule);
+      }
+    });
+
+    // Uncompleted / broken rules at the TOP, newest first
+    failing.sort((a, b) => b.id - a.id);
+    // Completed rules at the BOTTOM, newest completed first
+    passed.sort((a, b) => b.id - a.id);
+
+    return [...failing, ...passed];
   }, [displayedRules, filterFailingOnly, password]);
+
+  // Auto-scroll rules panel to top whenever a new rule is unlocked so player sees it immediately
+  useEffect(() => {
+    if (rulesScrollRef.current) {
+      rulesScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [unlockedCount, currentLevel]);
 
   const activeFailing = useMemo(
     () => [...displayedRules].reverse().find((r) => !r.check(password)),
@@ -2399,7 +2432,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                   </div>
                 </div>
 
-                <div className="neon-rules-scroll">
+                <div className="neon-rules-scroll" ref={rulesScrollRef}>
                   {visibleRulesInPanel.map((rule) => {
                     const passed = rule.check(password);
                     const isHinted = revealedHints.has(rule.id);

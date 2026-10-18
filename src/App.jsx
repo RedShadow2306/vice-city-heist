@@ -18,7 +18,11 @@ import SoundEngine from "./utils/soundEngine";
 import { getAssetUrl } from "./utils/assetPath";
 import "./App.css";
 
-const ADMIN_PORTAL_URL = "http://localhost:5176/";
+const getAdminPortalUrl = () => {
+  if (typeof window === "undefined") return "http://localhost:5176/";
+  if (window.location.port === "5176") return window.location.href;
+  return `${window.location.origin}${window.location.pathname}#/admin`;
+};
 
 function Shell() {
   const [lite, setLite] = useState(false);
@@ -31,7 +35,7 @@ function Shell() {
         e.preventDefault();
         SoundEngine.init();
         SoundEngine.playUnlock();
-        window.open(ADMIN_PORTAL_URL, "_blank");
+        window.open(getAdminPortalUrl(), "_blank");
       }
     };
 
@@ -96,7 +100,7 @@ function Shell() {
         <span
           className="organizer-shortcut-text"
           title="Central Dispatch shortcut: Ctrl + Shift + A"
-          onDoubleClick={() => window.open(ADMIN_PORTAL_URL, "_blank")}
+          onDoubleClick={() => window.open(getAdminPortalUrl(), "_blank")}
         >
           🔒 Central Security System v2.6 · [Ctrl+Shift+A for Dispatch Console]
         </span>
