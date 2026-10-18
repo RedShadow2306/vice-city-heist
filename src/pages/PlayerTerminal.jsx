@@ -1031,6 +1031,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const [playerAlias, setPlayerAlias] = useState(() => localStorage.getItem("vch_player_alias") || "");
   const [playerCollege, setPlayerCollege] = useState(() => localStorage.getItem("vch_player_college") || "");
   const [isRegistered, setIsRegistered] = useState(() => Boolean(localStorage.getItem("vch_registered")));
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   /* Lockout & Security Freeze State */
   const [isLockedBreach, setIsLockedBreach] = useState(() => localStorage.getItem("vch_locked_breach") === "true");
@@ -1071,6 +1072,27 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       return () => clearTimeout(timer);
     }
   }, [screen, storySlideshow.stage, soundEnabled]);
+
+  /* Timer Ref & Fullscreen Helpers */
+  const timerRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const requestFullscreenSafe = () => {
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen && !document.fullscreenElement) {
+        el.requestFullscreen().catch(() => {});
+      }
+    } catch (_) {}
+  };
+
+  const exitFullscreenSafe = () => {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch (_) {}
+  };
 
   /* Fullscreen Grace Countdown & Filter States */
   const [fullscreenGraceCountdown, setFullscreenGraceCountdown] = useState(null);
@@ -1174,8 +1196,6 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     }
   });
   const [totalCampaignSeconds, setTotalCampaignSeconds] = useState(0);
-
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [showPassword, setShowPassword] = useState(true);
 
   /* Video & Manager Avatar Assets */
@@ -1242,9 +1262,6 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   const survivedSecondsRef = useRef(survivedSeconds);
   survivedSecondsRef.current = survivedSeconds;
-
-  const inputRef = useRef(null);
-  const timerRef = useRef(null);
 
   const cfg = CAMPAIGN_LEVELS[currentLevel] || CAMPAIGN_LEVELS[1];
   const allRules = useMemo(() => buildAll45Rules(sessionData, cfg), [sessionData, cfg]);
@@ -1366,25 +1383,6 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     }, 1500);
     return () => clearInterval(interval);
   }, [reportToAdmin, isRegistered, playerName]);
-
-  /* ── Start Fullscreen Mode ── */
-  const requestFullscreenSafe = () => {
-    try {
-      const el = document.documentElement;
-      if (el.requestFullscreen && !document.fullscreenElement) {
-        el.requestFullscreen().catch(() => {});
-      }
-    } catch (_) {}
-  };
-
-  /* ── Release Fullscreen Mode ── */
-  const exitFullscreenSafe = () => {
-    try {
-      if (document.fullscreenElement && document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      }
-    } catch (_) {}
-  };
 
   /* ── Launch Story Mode from Lobby ── */
   const launchStoryMode = useCallback(() => {
