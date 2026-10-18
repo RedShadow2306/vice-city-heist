@@ -1,0 +1,104 @@
+/* ══════════════════════════════════════════════════════
+   LOBBY MINI 3D VAULT COMPONENT
+   ══════════════════════════════════════════════════════ */
+
+.lobby-vault-3d-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 12px auto 16px;
+  background: radial-gradient(circle at center, rgba(14, 22, 38, 0.95) 0%, rgba(6, 9, 16, 0.98) 100%);
+  border: 1.5px solid rgba(0, 229, 255, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 229, 255, 0.15);
+  overflow: hidden;
+}
+
+.lobby-vault-header-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(10, 15, 26, 0.85);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.vault-tag-pulsing-dot {
+  width: 6px;
+  height: 6px;
+  background: #00E676;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00E676;
+  margin-right: 6px;
+  display: inline-block;
+  animation: pulseDotSmall 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulseDotSmall {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.25); opacity: 1; }
+}
+
+.vault-tag-title {
+  color: #48D5D0;
+  flex: 1;
+}
+
+.vault-fullscreen-link {
+  color: #FF007F;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 0, 127, 0.4);
+  background: rgba(255, 0, 127, 0.1);
+  transition: all 0.2s ease;
+}
+
+.vault-fullscreen-link:hover {
+  background: rgba(255, 0, 127, 0.25);
+  color: #FFF;
+  box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+}
+
+.lobby-canvas-container {
+  position: relative;
+  width: 100%;
+  height: clamp(190px, 24vh, 230px);
+  cursor: grab;
+}
+
+.lobby-canvas-container:active {
+  cursor: grabbing;
+}
+
+.lobby-r3f-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.lobby-drag-hint {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+  .lobby-canvas-container {
+    height: 170px;
+  }
+}
