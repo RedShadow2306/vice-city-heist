@@ -32,6 +32,7 @@ import SoundEngine from "../utils/soundEngine";
 import { getManagerDirective, MANAGER_PRAISE } from "../utils/managerDialogue";
 import { getAssetUrl } from "../utils/assetPath";
 import { syncPlayerToSupabase, fetchGameStateFromSupabase, deletePlayerFromSupabase } from "../utils/supabaseClient";
+import { videoPreloader } from "../utils/videoPreloader";
 import "./PlayerTerminal.css";
 
 const CHANNEL_NAME = "vch-admin-bus";
@@ -1050,6 +1051,22 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     timeBonus: 25000,
   });
 
+  /* Video Preload & Cache State */
+  const [videoPreload, setVideoPreload] = useState(() => ({
+    status: videoPreloader.status,
+    progress: videoPreloader.progress,
+    blobUrl: videoPreloader.blobUrl,
+  }));
+  const [videoIsBuffering, setVideoIsBuffering] = useState(false);
+
+  useEffect(() => {
+    videoPreloader.init();
+    const unsubscribe = videoPreloader.subscribe((state) => {
+      setVideoPreload({ ...state });
+    });
+    return unsubscribe;
+  }, []);
+
   /* Auto-advance GTA Slideshow Stages */
   useEffect(() => {
     if (screen === "story_slideshow") {
@@ -1218,6 +1235,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
       // 2. Preload all background textures & UI graphics
       const assetsToPreload = [
+        "/images/heist_intro_poster.jpg",
         "/images/vault_neon_bg.jpg",
         "/images/vault_door.jpg",
         "/images/vault_lockers.jpg",
@@ -1939,6 +1957,18 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
     requestFullscreenSafe();
 
+    if (videoRef.current) {
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            videoRef.current.play().catch(() => {});
+          }
+        });
+      }
+    }
+
     const handleCutsceneKeyDown = () => {
       handleCutsceneDone();
     };
@@ -1947,7 +1977,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     return () => {
       window.removeEventListener("keydown", handleCutsceneKeyDown);
     };
-  }, [screen, handleCutsceneDone]);
+  }, [screen, handleCutsceneDone, videoPreload.blobUrl]);
 
   /* ── Start Active Defense on Current Level ── */
   const handleStartActiveDefense = (levelToStart) => {
@@ -2223,7 +2253,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             preload="auto"
             muted
             playsInline
-            src={getAssetUrl("/video/heist_intro.mp4")}
+            src={videoPreload.blobUrl || getAssetUrl("/video/heist_intro.mp4")}
             style={{ display: "none", position: "absolute", width: "1px", height: "1px", opacity: 0, pointerEvents: "none" }}
             aria-hidden="true"
           />
@@ -2367,6 +2397,12 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                   </span>
                 </div>
 
+                <div className="lobby-vault-feed-status">
+                  <span className={`status-pill ${videoPreload.progress === 100 ? "status-ready" : "status-loading"}`}>
+                    {videoPreload.progress === 100 ? "⚡ SURVEILLANCE FEED CACHED (0ms LAG)" : `⚡ PRE-CACHING INTRO FEED: ${videoPreload.progress}%`}
+                  </span>
+                </div>
+
                 <p className="waiting-dispatch-msg">
                   STANDBY IN THE BANK LOBBY. AWAITING CENTRAL DISPATCH (PORT 5176) TO LAUNCH STORY MODE.
                 </p>
@@ -2421,12 +2457,34 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           <div className="video-player-frame">
             <video
               ref={videoRef}
-              src={getAssetUrl("/video/heist_intro.mp4")}
+              src={videoPreload.blobUrl || getAssetUrl("/video/heist_intro.mp4")}
+              poster={getAssetUrl("/images/heist_intro_poster.jpg")}
               autoPlay
               playsInline
+              preload="auto"
               onEnded={handleCutsceneDone}
+              onWaiting={() => setVideoIsBuffering(true)}
+              onPlaying={() => setVideoIsBuffering(false)}
+              onCanPlay={() => setVideoIsBuffering(false)}
               className="heist-cutscene-video"
             />
+
+            {/* Video Loading/Buffering HUD (only if network is still streaming and not ready) */}
+            {(videoIsBuffering && videoPreload.progress < 100) && (
+              <div className="video-loading-hud" onClick={(e) => { e.stopPropagation(); handleCutsceneDone(); }}>
+                <div className="video-loading-spinner" />
+                <div className="video-loading-text">
+                  DECRYPTING SURVEILLANCE FEED... {videoPreload.progress}%
+                </div>
+                <div className="video-loading-bar-track">
+                  <div className="video-loading-bar-fill" style={{ width: `${videoPreload.progress}%` }} />
+                </div>
+                <div className="video-loading-sub">
+                  PRESS ESC / SPACE OR CLICK ANYWHERE TO SKIP DIRECTLY TO BRIEFING
+                </div>
+              </div>
+            )}
+
             <div className="cutscene-hud-overlay">
               <div className="cutscene-hud-pulse">
                 <span className="cutscene-hud-icon">▶▶</span>
