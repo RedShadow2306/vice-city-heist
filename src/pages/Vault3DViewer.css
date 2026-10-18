@@ -221,8 +221,8 @@
   background: rgba(7, 10, 20, 0.94);
   border-top: 1px solid rgba(0, 229, 255, 0.3);
   padding: 12px 20px;
-  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .deck-actions-row {
