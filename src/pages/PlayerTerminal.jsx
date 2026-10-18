@@ -36,6 +36,7 @@ import { videoPreloader } from "../utils/videoPreloader";
 import {
   CAMPAIGN_LEVELS,
   createSessionData,
+  buildAll59Rules,
   buildAll45Rules,
   loadSavedSessionData,
   RULES_CHANNEL,
@@ -440,7 +441,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   }, [survivedSeconds]);
 
   const cfg = CAMPAIGN_LEVELS[currentLevel] || CAMPAIGN_LEVELS[1];
-  const allRules = useMemo(() => buildAll45Rules(sessionData, cfg), [sessionData, cfg]);
+  const allRules = useMemo(() => buildAll59Rules(sessionData, cfg), [sessionData, cfg]);
   const activeRulesList = useMemo(() => allRules.slice(0, cfg.rules), [allRules, cfg]);
 
   /* ── Report Player Status to Supabase, Local Bus, & Admin Server ── */
@@ -1930,6 +1931,22 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                       >
                         <div className="neon-rule-content">
                           <span className="neon-bullet">{passed ? "✓" : (rule.isRiddle ? "🧩" : "•")}</span>
+                          {rule.difficultyStars && (
+                            <span
+                              className="neon-diff-star-pill"
+                              style={{
+                                color: rule.difficultyColor || "#00E676",
+                                fontSize: "0.72rem",
+                                fontWeight: 800,
+                                marginRight: "6px",
+                                letterSpacing: "0.5px",
+                                whiteSpace: "nowrap"
+                              }}
+                              title={rule.difficultyTier || "Difficulty"}
+                            >
+                              {rule.difficultyStars}
+                            </span>
+                          )}
                           <span className={`neon-rule-text ${rule.isRiddle ? "neon-riddle-text" : ""}`}>
                             {rule.isRiddle ? rule.text : rule.text.toUpperCase()}
                           </span>

@@ -4551,5 +4551,16 @@
   letter-spacing: 1px;
 }
 
+/* 5-Tier Gradual Difficulty Badge in Rule Row */
+.neon-diff-star-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono, monospace);
+  text-shadow: 0 0 6px currentColor;
+  padding: 1px 4px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 3px;
+}
+
 
 

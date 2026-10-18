@@ -26,6 +26,7 @@ import {
 import confetti from "canvas-confetti";
 import {
   CAMPAIGN_LEVELS,
+  buildAll59Rules,
   buildAll45Rules,
   createSessionData,
   saveSessionData,
@@ -43,6 +44,8 @@ import {
   SQL_KEYWORD_OPTIONS,
   NET_PORT_OPTIONS,
   CS_PIONEERS,
+  CHATGPT_OPTIONS,
+  TESLA_OPTIONS,
   SWATCH_OPTIONS,
   CS_FUNDAMENTALS,
 } from "../utils/gameRules";
@@ -263,9 +266,9 @@ function AdminDashboard() {
     return () => bus.close();
   }, []);
 
-  /* Build all 45 rules with live session & any director customizations */
-  const all45Rules = useMemo(() => {
-    const base = buildAll45Rules(adminSession);
+  /* Build all 59 rules with live session & any director customizations */
+  const allRules = useMemo(() => {
+    const base = buildAll59Rules(adminSession);
     return base.map((r) => {
       const custom = customEdits[r.id];
       if (!custom) return r;
@@ -281,7 +284,7 @@ function AdminDashboard() {
 
   /* Filter rules based on floor tab & search keyword */
   const filteredRules = useMemo(() => {
-    return all45Rules.filter((r) => {
+    return allRules.filter((r) => {
       if (rulesFloorFilter !== "ALL" && r.level !== Number(rulesFloorFilter)) {
         return false;
       }
@@ -296,7 +299,7 @@ function AdminDashboard() {
       }
       return true;
     });
-  }, [all45Rules, rulesFloorFilter, rulesSearch]);
+  }, [allRules, rulesFloorFilter, rulesSearch]);
 
   /* Reroll individual dynamic question from its pool */
   const handleRerollQuestion = useCallback((rule) => {
@@ -405,12 +408,12 @@ function AdminDashboard() {
     addLog(`Reset Rule #${ruleId} to standard vault protocol`);
   };
 
-  /* Copy All 45 Questions and Solutions to Clipboard */
+  /* Copy All 59 Questions and Solutions to Clipboard */
   const copyAllRulesSummary = () => {
     SoundEngine.init();
     SoundEngine.playClick();
-    const fullRules = buildAll45Rules(adminSession);
-    let summary = "EL BANCO CORRUPTO GRANDE — ALL 45 VAULT CIPHER CONDITIONS & QUESTIONS\n";
+    const fullRules = buildAll59Rules(adminSession);
+    let summary = "EL BANCO CORRUPTO GRANDE — ALL 59 VAULT CIPHER CONDITIONS & QUESTIONS\n";
     summary += "Supervised by Chief Vault Overseer: Gordon Bennett\n";
     summary += "Generated: " + new Date().toLocaleString() + "\n\n";
 
@@ -1408,10 +1411,10 @@ function AdminDashboard() {
               SoundEngine.playClick();
               setShowRulesInspector(true);
             }}
-            title="Inspect all 45 vault questions and conditions in level order, reroll riddles, and customize questions"
+            title="Inspect all 59 vault questions and conditions in level order, reroll riddles, and customize questions"
           >
             <span className="btn-icon">📜</span>
-            <span className="btn-text">CIPHER QUESTIONS (45)</span>
+            <span className="btn-text">CIPHER QUESTIONS (59)</span>
           </button>
 
           <button
@@ -1606,7 +1609,7 @@ function AdminDashboard() {
                   const isWinner = idx === 0;
                   const isRunnerUp = idx === 1;
                   const isThird = idx === 2;
-                  const isLevel4Cleared = p.isGrandWinner || p.status === "GRAND_VICTORY" || (p.currentLevel >= 4 && p.rulesCleared >= 45);
+                  const isLevel4Cleared = p.isGrandWinner || p.status === "GRAND_VICTORY" || (p.currentLevel >= 4 && p.rulesCleared >= 59);
 
                   return (
                     <tr
@@ -1631,7 +1634,7 @@ function AdminDashboard() {
                       </td>
                       <td>
                         <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                          {p.rulesCleared} / {p.currentLevel >= 4 ? 45 : p.currentLevel === 3 ? 32 : p.currentLevel === 2 ? 20 : 10}
+                          {p.rulesCleared} / {p.currentLevel >= 4 ? 59 : p.currentLevel === 3 ? 39 : p.currentLevel === 2 ? 23 : 10}
                         </span>
                       </td>
                       <td>
@@ -2232,7 +2235,7 @@ function AdminDashboard() {
                     EXECUTIVE CIPHER QUESTIONS & PROTOCOLS INSPECTOR
                   </h2>
                   <p className="inspector-modal-subtitle">
-                    Floor-by-floor breakdown of all 45 sequential conditions and riddles. Oversee, reroll, or customize active questions in real-time.
+                    Floor-by-floor breakdown of all 59 sequential conditions and riddles. Oversee, reroll, or customize active questions in real-time.
                   </p>
                 </div>
               </div>
@@ -2254,7 +2257,7 @@ function AdminDashboard() {
                   className={`inspector-tab-btn ${rulesFloorFilter === "ALL" ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter("ALL")}
                 >
-                  ALL FLOORS (45)
+                  ALL FLOORS (59)
                 </button>
                 <button
                   type="button"
@@ -2268,21 +2271,21 @@ function AdminDashboard() {
                   className={`inspector-tab-btn fl2-tab ${rulesFloorFilter === 2 ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter(2)}
                 >
-                  FL.2 CASH (11-20) · 9m
+                  FL.2 CASH (11-23) · 9m
                 </button>
                 <button
                   type="button"
                   className={`inspector-tab-btn fl3-tab ${rulesFloorFilter === 3 ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter(3)}
                 >
-                  FL.3 TITANIUM (21-32) · 8m
+                  FL.3 TITANIUM (24-39) · 8m
                 </button>
                 <button
                   type="button"
                   className={`inspector-tab-btn fl4-tab ${rulesFloorFilter === 4 ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter(4)}
                 >
-                  FL.4 OMEGA (33-45) · 7m
+                  FL.4 OMEGA (40-59) · 7m
                 </button>
               </div>
 
@@ -2345,6 +2348,23 @@ function AdminDashboard() {
                           <span className="rule-level-tag" style={{ color: floorColor }}>
                             LEVEL {rule.level} · {rule.section}
                           </span>
+                          {rule.difficultyStars && (
+                            <span
+                              className="rule-diff-badge"
+                              style={{
+                                color: rule.difficultyColor || "#00E676",
+                                border: `1px solid ${rule.difficultyColor || "#00E676"}`,
+                                background: "rgba(0,0,0,0.65)",
+                                padding: "2px 8px",
+                                borderRadius: "4px",
+                                fontSize: "0.72rem",
+                                fontWeight: 800,
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              {rule.difficultyStars} {rule.difficultyTier}
+                            </span>
+                          )}
                           <span className="rule-category-tag">{rule.category}</span>
                           {rule.poolCategory && (
                             <span className="rule-pool-tag" title="Dynamically randomized from pool">
