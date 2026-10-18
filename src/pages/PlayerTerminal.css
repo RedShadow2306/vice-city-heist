@@ -2160,7 +2160,7 @@
   align-items: center;
   justify-content: center;
   margin: 10px auto;
-  max-width: 540px;
+  max-width: min(640px, 94vw);
   width: 100%;
 }
 
@@ -2242,12 +2242,15 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .crt-bracket {
   font-size: 20px;
   color: #52ff88;
   font-weight: 900;
+  flex-shrink: 0;
 }
 
 .crt-chars-wrapper {
@@ -2255,6 +2258,26 @@
   gap: 6px;
   letter-spacing: 0.12em;
   font-size: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding: 2px 4px;
+  scroll-behavior: smooth;
+}
+
+.crt-chars-wrapper::-webkit-scrollbar {
+  height: 4px;
+}
+
+.crt-chars-wrapper::-webkit-scrollbar-track {
+  background: rgba(0, 20, 10, 0.5);
+  border-radius: 2px;
+}
+
+.crt-chars-wrapper::-webkit-scrollbar-thumb {
+  background: #52ff88;
+  border-radius: 2px;
+  box-shadow: 0 0 6px #52ff88;
 }
 
 .crt-char-cell {
@@ -2348,6 +2371,14 @@
   background: #52ff88;
   color: #000;
   box-shadow: 0 0 8px #52ff88;
+}
+
+.crt-keypad-btn:active {
+  transform: scale(0.9);
+  background: #48D5D0;
+  color: #000;
+  border-color: #48D5D0;
+  box-shadow: 0 0 10px #48D5D0;
 }
 
 .crt-status-row {
@@ -2540,10 +2571,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   font-family: var(--font-mono, monospace);
   font-size: 14px;
   font-weight: 700;
+  flex-wrap: wrap;
 }
 
 .neon-bullet {
@@ -4561,6 +4593,100 @@
   background: rgba(0, 0, 0, 0.45);
   border-radius: 3px;
 }
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE DESIGN & VIEWPORT ADAPTATIONS
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 1200px), (max-height: 860px) {
+  .vault-game-stage {
+    padding: 12px 18px 8px;
+    min-height: calc(100vh - 65px);
+  }
+
+  .manager-bust-container {
+    width: clamp(160px, 16vw, 240px);
+  }
+
+  .manager-comic-bubble {
+    max-width: clamp(240px, 22vw, 320px);
+    padding: 8px 12px;
+    margin-bottom: 6px;
+  }
+
+  .bubble-speech-text {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .neon-rules-scroll {
+    max-height: clamp(170px, 28vh, 250px);
+    gap: 8px;
+  }
+
+  .neon-rule-row {
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+
+  .crt-screen-glass {
+    padding: 10px 14px;
+  }
+
+  .crt-interactive-row {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .vault-game-footer {
+    padding: 6px 14px;
+  }
+}
+
+@media (max-width: 960px) {
+  .vault-manager-corner {
+    position: static;
+    margin: 8px auto 0;
+    align-items: center;
+    width: 100%;
+  }
+
+  .manager-bust-container {
+    display: none; /* Hide large bust on tablets/mobile to keep rules and keypad in full view */
+  }
+
+  .manager-comic-bubble {
+    max-width: 100%;
+    margin-bottom: 0;
+  }
+
+  .bubble-tail {
+    display: none;
+  }
+
+  .vault-center-unit {
+    max-width: 100%;
+    margin: 6px 0;
+  }
+
+  .neon-rules-inner {
+    padding: 12px 14px;
+  }
+
+  .vault-top-hud {
+    gap: 10px;
+  }
+
+  .hud-drill-bar-box {
+    width: 100%;
+  }
+
+  .footer-keys-group,
+  .footer-hints-group {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 
 
 

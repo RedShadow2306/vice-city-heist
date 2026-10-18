@@ -214,6 +214,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* Timer Ref & Fullscreen Helpers */
   const timerRef = useRef(null);
   const inputRef = useRef(null);
+  const charsWrapperRef = useRef(null);
+  const reportDebounceTimerRef = useRef(null);
 
   const requestFullscreenSafe = () => {
     try {
@@ -426,7 +428,16 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   useEffect(() => {
     passwordRef.current = password;
+    if (charsWrapperRef.current) {
+      charsWrapperRef.current.scrollLeft = charsWrapperRef.current.scrollWidth;
+    }
   }, [password]);
+
+  useEffect(() => {
+    return () => {
+      if (reportDebounceTimerRef.current) clearTimeout(reportDebounceTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     unlockedCountRef.current = unlockedCount;
@@ -1130,18 +1141,22 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     if (soundEnabled) SoundEngine.playKeyType();
 
     let curUnlocked = unlockedCountRef.current;
+    let ruleMilestonePassed = false;
+
     while (curUnlocked <= cfg.rules) {
       const activeRules = activeRulesList.slice(0, curUnlocked);
       const allPassed = activeRules.every((r) => r.check(newPw));
 
       if (allPassed) {
         if (curUnlocked === cfg.rules) {
+          if (reportDebounceTimerRef.current) clearTimeout(reportDebounceTimerRef.current);
           setUnlockedCount(curUnlocked);
           reportToAdmin({ currentPassword: newPw, password: newPw, unlockedCount: curUnlocked });
           handleLevelFinished(true, newPw, curUnlocked);
           return;
         }
         curUnlocked += 1;
+        ruleMilestonePassed = true;
         setUnlockedCount(curUnlocked);
         triggerTimeBonus(cfg.bonusSeconds);
 
@@ -1158,8 +1173,17 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       }
     }
 
-    // Save live password to Supabase and BroadcastChannel in real-time
-    reportToAdmin({ currentPassword: newPw, password: newPw, unlockedCount: curUnlocked });
+    if (ruleMilestonePassed) {
+      // Immediate sync to server and cloud when a security protocol rule clears
+      if (reportDebounceTimerRef.current) clearTimeout(reportDebounceTimerRef.current);
+      reportToAdmin({ currentPassword: newPw, password: newPw, unlockedCount: curUnlocked });
+    } else {
+      // Debounce routine keystrokes by 250ms to maintain instantaneous 60fps local fluidity without HTTP queue lag
+      if (reportDebounceTimerRef.current) clearTimeout(reportDebounceTimerRef.current);
+      reportDebounceTimerRef.current = setTimeout(() => {
+        reportToAdmin({ currentPassword: newPw, password: newPw, unlockedCount: curUnlocked });
+      }, 250);
+    }
   }, [isLockedBreach, isPlayerFrozen, parentFrozen, soundEnabled, cfg, activeRulesList, triggerTimeBonus, handleLevelFinished, reportToAdmin, setPassword, setUnlockedCount]);
 
   /* ── Cutscene Completion ── */
@@ -1368,10 +1392,11 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* On-Screen Numeric Keypad Press */
   const handleKeypadPress = useCallback((char) => {
     if (isLockedBreach || isPlayerFrozen || Boolean(parentFrozen)) return;
+    if (soundEnabled) SoundEngine.playKeyType();
     const newPw = password + char;
     handleInputChange({ target: { value: newPw } });
     inputRef.current?.focus();
-  }, [password, isLockedBreach, isPlayerFrozen, parentFrozen, handleInputChange]);
+  }, [password, isLockedBreach, isPlayerFrozen, parentFrozen, soundEnabled, handleInputChange]);
 
   /* Global Keyboard Shortcuts for Game Screen */
   useEffect(() => {
@@ -1825,7 +1850,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                       <span className="crt-bracket-label">PASSWORD:</span>
                       <div className="crt-slots-container">
                         <span className="crt-bracket">[</span>
-                        <div className="crt-chars-wrapper">
+                        <div className="crt-chars-wrapper" ref={charsWrapperRef}>
                           {slotChars.map((ch, idx) => (
                             <span
                               key={idx}
