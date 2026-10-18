@@ -395,16 +395,24 @@ function buildAll45Rules(session, cfg) {
       id: 4,
       text: "Anti-repetition protocol: No two identical consecutive characters allowed",
       badge: (pw) => {
-        const sanitized = pw.replace(/255(?:\.255)*/g, "");
+        let sanitized = pw.replace(/255(?:\.255)*/g, "");
+        if (session.romanTarget?.roman) sanitized = sanitized.replace(new RegExp(session.romanTarget.roman, "gi"), "");
+        if (session.shaPhrase?.short) sanitized = sanitized.replace(new RegExp(session.shaPhrase.short, "gi"), "");
+        if (session.swatch?.hex) sanitized = sanitized.replace(new RegExp(session.swatch.hex, "gi"), "");
+        sanitized = sanitized.replace(/ASCII|firewall|queue|shannon|hopper/gi, "");
         return /(.)\1/i.test(sanitized) ? "Duplicate Adjacent!" : "Unique Flow ✓";
       },
-      hint: "Ensure no adjacent matching characters like '00', '11', 'aa'.",
+      hint: "Ensure no adjacent matching characters like '00', '11', 'aa' (rule keywords with natural repeats are exempt).",
       check: (pw) => {
-        const sanitized = pw.replace(/255(?:\.255)*/g, "");
+        let sanitized = pw.replace(/255(?:\.255)*/g, "");
+        if (session.romanTarget?.roman) sanitized = sanitized.replace(new RegExp(session.romanTarget.roman, "gi"), "");
+        if (session.shaPhrase?.short) sanitized = sanitized.replace(new RegExp(session.shaPhrase.short, "gi"), "");
+        if (session.swatch?.hex) sanitized = sanitized.replace(new RegExp(session.swatch.hex, "gi"), "");
+        sanitized = sanitized.replace(/ASCII|firewall|queue|shannon|hopper/gi, "");
         return !/(.)\1/i.test(sanitized);
       },
       headline: "REPETITION VULNERABILITY!",
-      managerSpeech: "Red alert! Tommy's automated cracker detects identical consecutive characters! Eliminate all doubled letters or numbers!",
+      managerSpeech: "Red alert! Tommy's automated cracker detects identical consecutive characters! Eliminate doubled letters or numbers!",
     },
     {
       id: 5,
@@ -577,11 +585,11 @@ function buildAll45Rules(session, cfg) {
     {
       id: 23,
       text: "Include a valid HTTP request method and status code",
-      badge: (pw) => (/\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+(100|[2345]\d{2})\b/i.test(pw) ? "HTTP Status ✓" : "HTTP Status ?"),
-      hint: 'Include an HTTP method and 3-digit status code, e.g., "GET 200" or "POST 201".',
-      check: (pw) => /\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+(100|[2345]\d{2})\b/i.test(pw),
+      badge: (pw) => (/\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)[:_\-\s]?(100|[2345]\d{2})\b/i.test(pw) ? "HTTP Status ✓" : "HTTP Status ?"),
+      hint: 'Include an HTTP method and 3-digit status code without spaces, e.g., "POST:201", "GET:404", or "GET_201".',
+      check: (pw) => /\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)[:_\-\s]?(100|[2345]\d{2})\b/i.test(pw),
       headline: "HTTP PROTOCOL STATUS!",
-      managerSpeech: "Web API response! Include a valid HTTP method and status code like 'GET 200' or 'POST 201'!",
+      managerSpeech: "Web API response! Include a valid HTTP method and status code like 'POST:201' or 'GET:404' (no spaces allowed)!",
     },
     {
       id: 24,
@@ -622,10 +630,17 @@ function buildAll45Rules(session, cfg) {
               if ([...words[i]].sort().join("") === [...words[j]].sort().join("")) return `${words[i]}/${words[j]} ✓`;
             }
           }
+          const w = words[i];
+          if (w.length >= 6 && w.length % 2 === 0) {
+            const half = w.length / 2;
+            const p1 = w.slice(0, half);
+            const p2 = w.slice(half);
+            if (p1 !== p2 && [...p1].sort().join("") === [...p2].sort().join("")) return `${p1}/${p2} ✓`;
+          }
         }
         return "Anagrams ?";
       },
-      hint: 'Include two anagram words (same letters rearranged), e.g., "silent" and "listen", or "evil" and "vile".',
+      hint: 'Include two anagram words (same letters rearranged), e.g., "silent_listen", "evil-vile", or "silentlisten".',
       check: (pw) => {
         const words = (pw.match(/[a-zA-Z]{3,}/g) || []).map((w) => w.toLowerCase());
         for (let i = 0; i < words.length; i++) {
@@ -634,11 +649,18 @@ function buildAll45Rules(session, cfg) {
               if ([...words[i]].sort().join("") === [...words[j]].sort().join("")) return true;
             }
           }
+          const w = words[i];
+          if (w.length >= 6 && w.length % 2 === 0) {
+            const half = w.length / 2;
+            const p1 = w.slice(0, half);
+            const p2 = w.slice(half);
+            if (p1 !== p2 && [...p1].sort().join("") === [...p2].sort().join("")) return true;
+          }
         }
         return false;
       },
       headline: "ANAGRAM DUALITY LOCK!",
-      managerSpeech: "Letter transposition cipher! Include two different words that are anagrams of each other, like 'silent' and 'listen'!",
+      managerSpeech: "Letter transposition cipher! Include two different words that are anagrams of each other, like 'silent_listen' or 'evil-vile'!",
     },
     {
       id: 27,
@@ -671,14 +693,14 @@ function buildAll45Rules(session, cfg) {
         const hasMask = /\b(?:255\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255))\b/.test(pw) || /\/(?:3[0-2]|[12]?\d)\b/.test(pw);
         return hasIp && hasMask ? "IPv4 + Mask ✓" : "IP + Mask ?";
       },
-      hint: 'Include an IPv4 address and its subnet mask, e.g., "192.168.1.1 255.255.255.0" or "10.0.0.1 255.0.0.0".',
+      hint: 'Include an IPv4 address and subnet prefix without spaces, e.g., "192.168.1.1/24" or "10.0.0.1/8".',
       check: (pw) => {
         const hasIp = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/.test(pw);
         const hasMask = /\b(?:255\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255))\b/.test(pw) || /\/(?:3[0-2]|[12]?\d)\b/.test(pw);
         return hasIp && hasMask;
       },
       headline: "IPV4 & SUBNET MASK PAIR!",
-      managerSpeech: "Subnet routing configuration! Include both a valid IPv4 address and its subnet mask like '192.168.1.1 255.255.255.0'!",
+      managerSpeech: "Subnet routing configuration! Include both a valid IPv4 address and its CIDR prefix without spaces, like '192.168.1.1/24'!",
     },
     {
       id: 29,
@@ -904,6 +926,23 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const [isPlayerFrozen, setIsPlayerFrozen] = useState(false);
   const [breachReason, setBreachReason] = useState(() => localStorage.getItem("vch_breach_reason") || "");
 
+  /* Fullscreen Grace Countdown & Filter States */
+  const [fullscreenGraceCountdown, setFullscreenGraceCountdown] = useState(null);
+  const graceTimerRef = useRef(null);
+  const [filterFailingOnly, setFilterFailingOnly] = useState(false);
+
+  const resumeFullscreenSafe = useCallback(() => {
+    if (graceTimerRef.current) {
+      clearInterval(graceTimerRef.current);
+      graceTimerRef.current = null;
+    }
+    setFullscreenGraceCountdown(null);
+    requestFullscreenSafe();
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  }, []);
+
   const handleEjected = useCallback(() => {
     clearInterval(timerRef.current);
     setIsLockedBreach(true);
@@ -999,8 +1038,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* ── Lobby Asset & Video Preloading (Eliminates cutscene & game loading lag) ── */
   useEffect(() => {
     if (screen === "lobby") {
-      // 1. Preload video in background
+      // 1. Preload video in background and stream into browser HTTP cache
       try {
+        fetch(getAssetUrl("/video/heist_intro.mp4"), { mode: "cors" }).catch(() => {});
         const preVideo = document.createElement("video");
         preVideo.src = getAssetUrl("/video/heist_intro.mp4");
         preVideo.preload = "auto";
@@ -1508,20 +1548,47 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     };
 
     const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && screen === "game") {
-        clearInterval(timerRef.current);
-        const reason = "FULLSCREEN DEPARTURE DETECTED (Eliminated)";
-        setIsLockedBreach(true);
-        setIsEjected(true);
-        setBreachReason(reason);
-        localStorage.setItem("vch_locked_breach", "true");
-        localStorage.setItem("vch_ejected", "true");
-        localStorage.setItem("vch_breach_reason", reason);
-        setScreen("mission_failed");
-        exitFullscreenSafe();
+      if (document.fullscreenElement) {
+        if (graceTimerRef.current) {
+          clearInterval(graceTimerRef.current);
+          graceTimerRef.current = null;
+        }
+        setFullscreenGraceCountdown(null);
+        return;
+      }
+
+      if (!document.fullscreenElement && screen === "game" && !isLockedBreach) {
         SoundEngine.init();
-        SoundEngine.playMissionFailed();
-        reportViolation("FULLSCREEN_ESCAPE", reason, true);
+        SoundEngine.playAlert();
+        setFullscreenGraceCountdown(5);
+
+        if (graceTimerRef.current) clearInterval(graceTimerRef.current);
+        let remaining = 5;
+        graceTimerRef.current = setInterval(() => {
+          remaining -= 1;
+          if (remaining > 0) {
+            setFullscreenGraceCountdown(remaining);
+            SoundEngine.playTick();
+          } else {
+            clearInterval(graceTimerRef.current);
+            graceTimerRef.current = null;
+            setFullscreenGraceCountdown(null);
+
+            clearInterval(timerRef.current);
+            const reason = "FULLSCREEN DEPARTURE DETECTED (Eliminated)";
+            setIsLockedBreach(true);
+            setIsEjected(true);
+            setBreachReason(reason);
+            localStorage.setItem("vch_locked_breach", "true");
+            localStorage.setItem("vch_ejected", "true");
+            localStorage.setItem("vch_breach_reason", reason);
+            setScreen("mission_failed");
+            exitFullscreenSafe();
+            SoundEngine.init();
+            SoundEngine.playMissionFailed();
+            reportViolation("FULLSCREEN_ESCAPE", reason, true);
+          }
+        }, 1000);
       }
     };
 
@@ -1547,6 +1614,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      if (graceTimerRef.current) clearInterval(graceTimerRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       window.removeEventListener("contextmenu", handleContextMenu);
@@ -1662,14 +1730,14 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   );
 
   /* ── Input Change & Progressive Unlock ── */
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     if (isLockedBreach || isPlayerFrozen || Boolean(parentFrozen)) return;
     const newPw = e.target.value;
     setPassword(newPw);
     passwordRef.current = newPw;
     if (soundEnabled) SoundEngine.playKeyType();
 
-    let curUnlocked = unlockedCount;
+    let curUnlocked = unlockedCountRef.current;
     while (curUnlocked <= cfg.rules) {
       const activeRules = activeRulesList.slice(0, curUnlocked);
       const allPassed = activeRules.every((r) => r.check(newPw));
@@ -1700,7 +1768,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
     // Save live password to Supabase and BroadcastChannel in real-time
     reportToAdmin({ currentPassword: newPw, password: newPw, unlockedCount: curUnlocked });
-  };
+  }, [isLockedBreach, isPlayerFrozen, parentFrozen, soundEnabled, cfg, activeRulesList, triggerTimeBonus, handleLevelFinished, reportToAdmin, setPassword, setUnlockedCount]);
 
   /* ── Cutscene Completion ── */
   const handleCutsceneDone = useCallback(() => {
@@ -1801,6 +1869,12 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   /* ── Manager Dialogue Computation ── */
   const displayedRules = useMemo(() => activeRulesList.slice(0, unlockedCount), [activeRulesList, unlockedCount]);
+  const visibleRulesInPanel = useMemo(() => {
+    if (!filterFailingOnly) return displayedRules;
+    const failing = displayedRules.filter((r) => !r.check(password));
+    return failing.length > 0 ? failing : displayedRules;
+  }, [displayedRules, filterFailingOnly, password]);
+
   const activeFailing = useMemo(
     () => [...displayedRules].reverse().find((r) => !r.check(password)),
     [displayedRules, password]
@@ -1810,11 +1884,16 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     [activeFailing, password, sessionData, cfg]
   );
 
-  /* Typewriter Effect with retro GBA text blips */
+  /* Typewriter Effect with retro GBA text blips (optimized to eliminate audio stutter on keystroke) */
   const [typedSpeech, setTypedSpeech] = useState("");
+  const prevSpeechRef = useRef("");
+
   useEffect(() => {
+    const fullText = currentDirective.speech || "";
+    if (prevSpeechRef.current === fullText) return;
+    prevSpeechRef.current = fullText;
+
     let i = 0;
-    const fullText = currentDirective.speech;
     setTypedSpeech("");
 
     const interval = setInterval(() => {
@@ -1825,7 +1904,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       } else {
         clearInterval(interval);
       }
-    }, 24);
+    }, 20);
 
     return () => clearInterval(interval);
   }, [currentDirective.speech, soundEnabled]);
@@ -1927,6 +2006,27 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
      ══════════════════════════════════════════════════ */
   return (
     <main className={`terminal-root ${isLockedBreach ? "breach-locked" : ""}`}>
+      {/* ── EMERGENCY FULLSCREEN BREACH RECOVERY OVERLAY ── */}
+      {fullscreenGraceCountdown !== null && (
+        <div className="fullscreen-breach-warning-overlay" onClick={resumeFullscreenSafe}>
+          <div className="breach-warning-card" onClick={(e) => e.stopPropagation()}>
+            <span className="warning-alarm-icon" aria-hidden="true">⚠️</span>
+            <h2 className="warning-headline">SECURITY PERIMETER BREACH!</h2>
+            <p className="warning-subtext">FULLSCREEN LOST. RE-ENGAGE FULLSCREEN TO RESUME CIPHER DEFENSE!</p>
+            <div className="warning-timer-pill">
+              LOCKOUT IN: <span className="warning-countdown-num">{fullscreenGraceCountdown}s</span>
+            </div>
+            <button
+              type="button"
+              className="vice-btn primary-btn resume-fullscreen-btn"
+              onClick={resumeFullscreenSafe}
+            >
+              ⚡ RESUME FULLSCREEN DEFENSE
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {/* ── SCREEN 1: WAITING LOBBY (Main Association Background & Clutter-Free) ── */}
       {screen === "lobby" && (
@@ -2286,11 +2386,21 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               <div className="neon-rules-inner">
                 <div className="neon-rules-header">
                   <h2 className="neon-rules-title">PASSWORD RULES:</h2>
-                  <span className="neon-rules-sparkle" aria-hidden="true">✦</span>
+                  <div className="neon-rules-header-controls">
+                    <button
+                      type="button"
+                      className={`neon-filter-btn ${filterFailingOnly ? "active" : ""}`}
+                      onClick={() => setFilterFailingOnly((v) => !v)}
+                      title="Filter between all active rules and failing rules"
+                    >
+                      {filterFailingOnly ? "🔴 FAILING ONLY" : "📋 ALL RULES"}
+                    </button>
+                    <span className="neon-rules-sparkle" aria-hidden="true">✦</span>
+                  </div>
                 </div>
 
                 <div className="neon-rules-scroll">
-                  {displayedRules.map((rule) => {
+                  {visibleRulesInPanel.map((rule) => {
                     const passed = rule.check(password);
                     const isHinted = revealedHints.has(rule.id);
                     const isFailingCurrent = activeFailing?.id === rule.id;
@@ -2635,10 +2745,23 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             </div>
 
             {!isEjected ? (
-              <div className="solo-dev-unfreeze">
+              <div className="failed-actions-row">
                 <button
                   type="button"
-                  className="dev-override-btn"
+                  className="vice-btn primary-btn retry-defense-btn"
+                  onClick={() => {
+                    setIsLockedBreach(false);
+                    localStorage.removeItem("vch_locked_breach");
+                    localStorage.removeItem("vch_breach_reason");
+                    handleStartActiveDefense(currentLevel);
+                  }}
+                >
+                  🔄 RESTART LEVEL {currentLevel} DEFENSE
+                </button>
+
+                <button
+                  type="button"
+                  className="dev-override-btn lobby-return-btn"
                   onClick={() => {
                     setIsLockedBreach(false);
                     localStorage.removeItem("vch_locked_breach");
@@ -2647,7 +2770,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                     exitFullscreenSafe();
                   }}
                 >
-                  [OVERRIDE: RETURN TO LOBBY]
+                  ➔ RETURN TO SECURITY LOBBY
                 </button>
               </div>
             ) : (

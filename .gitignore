@@ -28,3 +28,18 @@ previous model
 *.njsproj
 *.sln
 *.sw?
+
+# AI IDEs and Agent tooling
+.codex
+.cursor
+.gemini
+.grok
+.kimi-code
+.kiro
+.mastracode
+.mcp.json
+.pi
+.zed
+config/
+kilo.json
+opencode.jsonc

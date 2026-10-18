@@ -3235,3 +3235,229 @@
   line-height: 1.6;
   margin-bottom: 28px;
 }
+
+/* ══════════════════════════════════════════════════════
+   RULES FILTER HEADER CONTROLS
+   ══════════════════════════════════════════════════════ */
+.neon-rules-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.neon-filter-btn {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 160, 64, 0.55);
+  color: #FFA040;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.05em;
+}
+
+.neon-filter-btn:hover {
+  background: rgba(255, 160, 64, 0.2);
+  border-color: #FFA040;
+  box-shadow: 0 0 10px rgba(255, 160, 64, 0.4);
+}
+
+.neon-filter-btn.active {
+  background: rgba(255, 42, 42, 0.25);
+  border-color: #FF2A2A;
+  color: #FF6B6B;
+  box-shadow: 0 0 12px rgba(255, 42, 42, 0.6);
+}
+
+/* ══════════════════════════════════════════════════════
+   MISSION FAILED ACTION BUTTONS
+   ══════════════════════════════════════════════════════ */
+.failed-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.retry-defense-btn {
+  background: linear-gradient(135deg, #FF2A2A 0%, #D32F2F 100%) !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FF8080 !important;
+  box-shadow: 0 0 25px rgba(255, 42, 42, 0.6) !important;
+  font-family: var(--font-display, sans-serif);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  padding: 12px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-defense-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 35px rgba(255, 42, 42, 0.9) !important;
+}
+
+.lobby-return-btn {
+  border: 1.5px solid rgba(72, 213, 208, 0.5) !important;
+  color: var(--vice-teal, #48D5D0) !important;
+  font-size: 12px !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lobby-return-btn:hover {
+  background: rgba(72, 213, 208, 0.15) !important;
+  box-shadow: 0 0 20px rgba(72, 213, 208, 0.5) !important;
+}
+
+/* ══════════════════════════════════════════════════════
+   EMERGENCY FULLSCREEN BREACH RECOVERY OVERLAY
+   ══════════════════════════════════════════════════════ */
+.fullscreen-breach-warning-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(10, 2, 5, 0.88);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: pointer;
+  animation: breachOverlayPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes breachOverlayPulse {
+  from { background: rgba(18, 3, 7, 0.88); }
+  to   { background: rgba(35, 5, 12, 0.94); }
+}
+
+.breach-warning-card {
+  max-width: 520px;
+  width: 100%;
+  background: rgba(18, 12, 28, 0.96);
+  border: 2px solid #FF2A2A;
+  box-shadow: 0 0 45px rgba(255, 42, 42, 0.7), inset 0 0 20px rgba(255, 42, 42, 0.2);
+  border-radius: 16px;
+  padding: 32px 28px;
+  text-align: center;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.warning-alarm-icon {
+  font-size: 44px;
+  filter: drop-shadow(0 0 16px #FF2A2A);
+  animation: alarmWiggle 0.6s ease-in-out infinite;
+}
+
+@keyframes alarmWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+
+.warning-headline {
+  font-family: var(--font-display, sans-serif);
+  font-size: clamp(22px, 3.5vw, 28px);
+  color: #FF3B3B;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 20px rgba(255, 59, 59, 0.8);
+  margin: 0;
+}
+
+.warning-subtext {
+  font-size: 13px;
+  font-family: var(--font-mono, monospace);
+  color: rgba(255, 235, 235, 0.85);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.warning-timer-pill {
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
+  font-weight: 800;
+  color: #FFA5A5;
+  background: rgba(255, 42, 42, 0.2);
+  border: 1px solid rgba(255, 42, 42, 0.6);
+  padding: 6px 18px;
+  border-radius: 20px;
+  letter-spacing: 0.1em;
+}
+
+.warning-countdown-num {
+  color: #FFFFFF;
+  font-size: 18px;
+  font-weight: 900;
+  text-shadow: 0 0 10px #FF2A2A;
+}
+
+.resume-fullscreen-btn {
+  background: linear-gradient(135deg, #00E5FF 0%, #0088FF 100%) !important;
+  color: #070A13 !important;
+  border: 2px solid #00FFFF !important;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.7) !important;
+  font-family: var(--font-display, sans-serif);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  padding: 12px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 800;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.resume-fullscreen-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 35px rgba(0, 229, 255, 1) !important;
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE LAYOUT OPTIMIZATIONS
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .vault-manager-corner {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    margin-top: 20px;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .vault-game-stage {
+    padding: 12px;
+  }
+  .neon-rules-panel {
+    max-width: 100%;
+  }
+  .neon-rules-scroll {
+    max-height: 200px;
+  }
+  .failed-actions-row {
+    flex-direction: column;
+    width: 100%;
+  }
+  .retry-defense-btn,
+  .lobby-return-btn {
+    width: 100%;
+  }
+}
+
