@@ -49,7 +49,7 @@ const CAMPAIGN_LEVELS = {
     startSeconds: 600, // 10:00 minutes
     drillSpeedMultiplier: 1.0,
     wantedStars: 2,
-    bonusSeconds: 15,
+    bonusSeconds: 0, // Challenging Round 1: No positive time bonuses
     minLength: 8,
     minUpper: 2,
     digitSumTarget: 20,
@@ -68,7 +68,7 @@ const CAMPAIGN_LEVELS = {
     startSeconds: 600, // 10:00 minutes
     drillSpeedMultiplier: 1.4,
     wantedStars: 3,
-    bonusSeconds: 12,
+    bonusSeconds: 0, // Challenging Round 2: No positive time bonuses
     minLength: 12,
     minUpper: 3,
     digitSumTarget: 28,
@@ -191,56 +191,56 @@ const TECH_COMMON_RIDDLES = [
     ans: "cloud",
     alt: ["cloud", "server"],
     label: "Storage",
-    hint: "Think of internet-based remote storage: cloud (type directly, do not use quotes)."
+    hint: "Think of remote distributed internet servers and offsite data storage (do NOT use quotes)."
   },
   {
     prompt: "What is Tesla's famous automated driving capability? (9-letter word)",
     ans: "autopilot",
     alt: ["autopilot", "fsd"],
     label: "Autopilot",
-    hint: "Tesla's autonomous driver-assistance system: autopilot (type directly, do not use quotes)."
+    hint: "Aviation and autonomous vehicle term for self-navigating driver-assistance (do NOT use quotes)."
   },
   {
     prompt: "What is considered the central 'brain' of any computer or smartphone? (3-letter acronym)",
     ans: "cpu",
     alt: ["cpu", "processor"],
     label: "CPU",
-    hint: "Central Processing Unit: cpu (type directly, do not use quotes)."
+    hint: "The primary processor chip responsible for executing machine instructions (do NOT use quotes)."
   },
   {
     prompt: "What secure protocol shows a padlock icon in your web browser URL bar? (5-letter acronym)",
     ans: "https",
     alt: ["https", "ssl"],
     label: "HTTPS",
-    hint: "Secure Hypertext Transfer Protocol: https (type directly, do not use quotes)."
+    hint: "Encrypted web communications secured over Transport Layer Security (do NOT use quotes)."
   },
   {
     prompt: "What global network of interconnected computers connects the whole world? (8-letter word)",
     ans: "internet",
     alt: ["internet", "web"],
     label: "Internet",
-    hint: "The worldwide network: internet (type directly, do not use quotes)."
+    hint: "The vast global telecommunications system of packet-switched networks (do NOT use quotes)."
   },
   {
     prompt: "What device in your home routes Wi-Fi signals to your phone and laptop? (6-letter word)",
     ans: "router",
     alt: ["router", "modem"],
     label: "Router",
-    hint: "Directs network traffic: router (type directly, do not use quotes)."
+    hint: "The networking appliance directing packets between local LAN and WAN (do NOT use quotes)."
   },
   {
     prompt: "What Google mobile operating system is named after Android? (7-letter word)",
     ans: "android",
     alt: ["android"],
     label: "Android",
-    hint: "Google's smartphone OS: android (type directly, do not use quotes)."
+    hint: "The open-source mobile operating system developed under the Open Handset Alliance (do NOT use quotes)."
   },
   {
     prompt: "What wireless technology connects your smartphone to earbuds or speakers? (9-letter word)",
     ans: "bluetooth",
     alt: ["bluetooth"],
     label: "Bluetooth",
-    hint: "Short-range wireless standard: bluetooth (type directly, do not use quotes)."
+    hint: "Named after tenth-century King Harald Gormsson; connects personal area devices wirelessly (do NOT use quotes)."
   }
 ];
 
@@ -563,11 +563,11 @@ function buildAll45Rules(session, cfg) {
     {
       id: 7,
       text: "Include a binary number representing decimal 10",
-      badge: (pw) => (pw.includes("1010") ? "1010 ✓" : "Binary 10 ?"),
-      hint: "Decimal 10 in binary is 1010. Type 1010 (type directly, no quotes).",
+      badge: (pw) => (pw.includes("1010") ? "Binary 10 ✓" : "Binary 10 ?"),
+      hint: "Convert decimal 10 into 4-bit binary (sum of powers 8 + 2). Type directly, no quotes.",
       check: (pw) => pw.replace(/["']/g, "").includes("1010"),
       headline: "BINARY REGISTER CONVERSION!",
-      managerSpeech: "Convert decimal 10 into its binary equivalent! In binary that's 1010 (no quotes)!",
+      managerSpeech: "Convert decimal 10 into its binary representation! Calculate using base-2 powers (8 and 2)!",
     },
     {
       id: 8,
@@ -581,20 +581,20 @@ function buildAll45Rules(session, cfg) {
     {
       id: 9,
       text: "Include the decimal representation of binary 1101",
-      badge: (pw) => (pw.includes("13") ? "13 ✓" : "Decimal 1101 ?"),
-      hint: "Binary 1101 in decimal is 8 + 4 + 0 + 1 = 13. Type 13 (type directly, no quotes).",
+      badge: (pw) => (pw.includes("13") ? "Decimal 1101 ✓" : "Decimal 1101 ?"),
+      hint: "Convert binary 1101 to decimal (8 + 4 + 0 + 1). Type directly, no quotes.",
       check: (pw) => pw.replace(/["']/g, "").includes("13"),
       headline: "BINARY TO DECIMAL CONVERSION!",
-      managerSpeech: "Translate binary 1101 back to decimal! 8 plus 4 plus 1 gives decimal 13 (no quotes)!",
+      managerSpeech: "Translate binary register 1101 back to decimal! Add up the active bit values for 8, 4, and 1!",
     },
     {
       id: 10,
-      text: "Include a valid file extension, such as .js or .py",
+      text: "Include a valid programming file extension (.js, .py, .ts, etc.)",
       badge: (pw) => (/\.(js|py|html|css|ts|json|cpp|java|sh|jsx|tsx|php|rb|go|rs|sql|md)/i.test(pw.replace(/["']/g, "")) ? "File Ext ✓" : "Extension ?"),
-      hint: "Include a valid file extension like .js, .py, or .ts (type directly, do NOT use quotes).",
+      hint: "Include a standard code file extension preceded by a dot (e.g. .js, .py, .ts). Do NOT use quotes.",
       check: (pw) => /\.(js|py|html|css|ts|json|cpp|java|sh|jsx|tsx|php|rb|go|rs|sql|md)/i.test(pw.replace(/["']/g, "")),
       headline: "FILE EXTENSION SPECIFICATION!",
-      managerSpeech: "The security program needs to register its script extension! Include a valid file extension like .js or .py (no quotes needed)!",
+      managerSpeech: "The security program needs to register its script extension! Include a valid programming file extension with its dot!",
     },
 
     /* ════ LEVEL 2: EXECUTIVE CASH CORRIDORS (Rules 11 - 20) ════ */
@@ -619,37 +619,37 @@ function buildAll45Rules(session, cfg) {
       id: 12,
       text: "Include a valid HTML tag",
       badge: (pw) => (/<\s*(?:div|p|span|h[1-6]|a|b|i|u|button|input|form|table|tr|td|th|ul|ol|li|img|head|body|html|main|nav|header|footer|section|article|code|pre)\b[^>]*>/i.test(pw.replace(/["']/g, "")) || /<[a-zA-Z][a-zA-Z0-9]*>/i.test(pw.replace(/["']/g, "")) ? "HTML Tag ✓" : "HTML Tag ?"),
-      hint: "Include an HTML tag like <div> or <p> (type directly, do NOT use quotes).",
+      hint: "Enclose a standard HTML markup element between angle brackets (e.g. div, p, span). Do NOT use quotes.",
       check: (pw) => /<\s*(?:div|p|span|h[1-6]|a|b|i|u|button|input|form|table|tr|td|th|ul|ol|li|img|head|body|html|main|nav|header|footer|section|article|code|pre)\b[^>]*>/i.test(pw.replace(/["']/g, "")) || /<[a-zA-Z][a-zA-Z0-9]*>/i.test(pw.replace(/["']/g, "")),
       headline: "HTML MARKUP TAG!",
-      managerSpeech: "Structure the document DOM! Enclose a valid HTML markup tag like <div> or <p> (no quotes)!",
+      managerSpeech: "Structure the document DOM! Enclose a standard HTML markup tag between angle brackets!",
     },
     {
       id: 13,
       text: "Include a Python keyword",
       badge: (pw) => (/(def|return|import|lambda|class|yield|async|await|while|elif|from|with|raise|except|finally|assert|break|continue|global|nonlocal)/i.test(pw.replace(/["']/g, "")) ? "Python KW ✓" : "Python KW ?"),
-      hint: "Include a Python reserved keyword like def, return, lambda, or import (type directly, do NOT use quotes).",
+      hint: "Include a reserved Python language keyword (e.g. for functions, loops, or imports). Do NOT use quotes.",
       check: (pw) => /(def|return|import|lambda|class|yield|async|await|while|elif|from|with|raise|except|finally|assert|break|continue|global|nonlocal)/i.test(pw.replace(/["']/g, "")),
       headline: "PYTHON KEYWORD INJECTION!",
-      managerSpeech: "Authenticate backend scripts! Include a Python keyword like def, return, or import (no quotes needed)!",
+      managerSpeech: "Authenticate backend scripts! Inject a reserved Python language keyword!",
     },
     {
       id: 14,
       text: "Include a Git command",
       badge: (pw) => (/(commit|push|pull|checkout|branch|clone|status|merge|rebase|fetch|stash|reset|diff)/i.test(pw.replace(/["']/g, "")) ? "Git Cmd ✓" : "Git Cmd ?"),
-      hint: "Include a Git command like commit, push, pull, or branch (type directly, do NOT use quotes).",
+      hint: "Include a command used in Git version control (e.g. for repository branching, commits, or remotes). Do NOT use quotes.",
       check: (pw) => /(commit|push|pull|checkout|branch|clone|status|merge|rebase|fetch|stash|reset|diff)/i.test(pw.replace(/["']/g, "")),
       headline: "VERSION CONTROL COMMAND!",
-      managerSpeech: "Version control sync! Include a common Git command like commit, push, or pull (no quotes needed)!",
+      managerSpeech: "Version control sync! Include a primary Git workflow command!",
     },
     {
       id: 15,
       text: "Include a valid IPv4 address",
       badge: (pw) => (/(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/.test(pw.replace(/["']/g, "")) ? "IPv4 ✓" : "IPv4 ?"),
-      hint: "Include a 4-octet IPv4 address like 192.168.1.1 or 10.0.0.1 (type directly, do NOT use quotes).",
+      hint: "Include a 4-octet IPv4 numerical address with octets 0-255 separated by dots. Do NOT use quotes.",
       check: (pw) => /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/.test(pw.replace(/["']/g, "")),
       headline: "IPV4 ADDRESS ROUTING!",
-      managerSpeech: "Network interface configuration! Include a valid 4-octet IPv4 address like 192.168.1.1!",
+      managerSpeech: "Network interface configuration! Route packets with a 4-octet IPv4 numerical address!",
     },
     {
       id: 16,
@@ -1218,6 +1218,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     localStorage.removeItem("vch_player_name");
     localStorage.removeItem("vch_player_alias");
     localStorage.removeItem("vch_player_college");
+    localStorage.removeItem("vch_round_submissions");
+    setRoundSubmissions({ 1: "", 2: "", 3: "", 4: "" });
     try {
       localStorage.removeItem("vch_player_state_" + playerId);
       localStorage.removeItem("vch_player_data_" + playerId);
@@ -1246,6 +1248,14 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       return saved ? JSON.parse(saved) : { 1: 0, 2: 0, 3: 0, 4: 0 };
     } catch (_) {
       return { 1: 0, 2: 0, 3: 0, 4: 0 };
+    }
+  });
+  const [roundSubmissions, setRoundSubmissions] = useState(() => {
+    try {
+      const saved = localStorage.getItem("vch_round_submissions");
+      return saved ? JSON.parse(saved) : { 1: "", 2: "", 3: "", 4: "" };
+    } catch (_) {
+      return { 1: "", 2: "", 3: "", 4: "" };
     }
   });
   const [completionData, setCompletionData] = useState(() => {
@@ -1322,16 +1332,25 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   /* Stable Refs */
   const passwordRef = useRef(password);
-  passwordRef.current = password;
-
   const unlockedCountRef = useRef(unlockedCount);
-  unlockedCountRef.current = unlockedCount;
-
   const timeLeftRef = useRef(timeLeft);
-  timeLeftRef.current = timeLeft;
-
   const survivedSecondsRef = useRef(survivedSeconds);
-  survivedSecondsRef.current = survivedSeconds;
+
+  useEffect(() => {
+    passwordRef.current = password;
+  }, [password]);
+
+  useEffect(() => {
+    unlockedCountRef.current = unlockedCount;
+  }, [unlockedCount]);
+
+  useEffect(() => {
+    timeLeftRef.current = timeLeft;
+  }, [timeLeft]);
+
+  useEffect(() => {
+    survivedSecondsRef.current = survivedSeconds;
+  }, [survivedSeconds]);
 
   const cfg = CAMPAIGN_LEVELS[currentLevel] || CAMPAIGN_LEVELS[1];
   const allRules = useMemo(() => buildAll45Rules(sessionData, cfg), [sessionData, cfg]);
@@ -1381,6 +1400,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       isEjected: overrides.isEjected !== undefined ? overrides.isEjected : isEjected,
       breachReason: overrides.breachReason !== undefined ? overrides.breachReason : breachReason,
       levelTimes: overrides.levelTimes || levelTimes,
+      roundSubmissions: overrides.roundSubmissions || roundSubmissions,
+      completionStats: overrides.completionStats || completionData,
       completedAt: overrides.completedAt || completionData?.completedAt || "",
       completedTimestamp: overrides.completedTimestamp || completionData?.completedTimestamp || 0,
       totalClearanceSeconds: overrides.totalClearanceSeconds || completionData?.totalClearanceSeconds || 0,
@@ -1844,12 +1865,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   /* ── Time Adjustment & Feedback ── */
   const triggerTimeBonus = useCallback((delta) => {
+    if (!delta || delta === 0) return;
     setTimeLeft((prev) => {
       const next = Math.max(0, prev + delta);
       timeLeftRef.current = next;
       return next;
     });
-    setBonusFloat(`+${delta}s`);
+    setBonusFloat(delta > 0 ? `+${delta}s` : `${delta}s`);
     setTimeout(() => setBonusFloat(null), 1800);
   }, []);
 
@@ -1886,17 +1908,21 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         } catch (_) {}
       }
 
+      // No positive time bonuses awarded in Round 1 & Round 2 for challenging gameplay
       const levelScore = Math.round(
-        survivedSecondsRef.current * 15 + cfg.rules * 160 + timeLeftRef.current * 20
+        survivedSecondsRef.current * 15 + cfg.rules * 160 + (currentLevel <= 2 ? 0 : timeLeftRef.current * 20)
       );
-      const timeBonus = timeLeftRef.current * 250;
+      const timeBonus = currentLevel <= 2 ? 0 : timeLeftRef.current * 250;
 
       const updatedLevelScores = { ...levelScores, [currentLevel]: levelScore };
       const updatedLevelTimes = { ...levelTimes, [currentLevel]: survivedSecondsRef.current };
+      const updatedSubmissions = { ...roundSubmissions, [currentLevel]: finalPw };
       setLevelScores(updatedLevelScores);
       setLevelTimes(updatedLevelTimes);
+      setRoundSubmissions(updatedSubmissions);
       try {
         localStorage.setItem("vch_level_times", JSON.stringify(updatedLevelTimes));
+        localStorage.setItem("vch_round_submissions", JSON.stringify(updatedSubmissions));
       } catch (_) {}
 
       // Story Intermission Transitions
@@ -1910,7 +1936,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           timeBonus: timeBonus,
         });
         setScreen("story_slideshow");
-        reportToAdmin({ status: `CLEARED_LEVEL_${currentLevel}`, currentLevel: currentLevel + 1, levelTimes: updatedLevelTimes });
+        reportToAdmin({
+          status: `CLEARED_LEVEL_${currentLevel}`,
+          currentLevel: currentLevel + 1,
+          levelTimes: updatedLevelTimes,
+          roundSubmissions: updatedSubmissions,
+          currentPassword: finalPw,
+        });
       } else {
         // Grand Victory on Level 4!
         exitFullscreenSafe();
@@ -1938,6 +1970,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           totalClearanceSeconds: totalClearSec,
           clearanceFormatted,
           levelTimes: updatedLevelTimes,
+          roundSubmissions: updatedSubmissions,
         };
         setCompletionData(compRecord);
         try {
@@ -1948,10 +1981,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           status: "GRAND_VICTORY",
           isGrandWinner: true,
           ...compRecord,
+          roundSubmissions: updatedSubmissions,
+          currentPassword: finalPw,
+          rulesCleared: cfg.rules,
         });
       }
     },
-    [cfg, currentLevel, soundEnabled, reportToAdmin, levelScores, levelTimes]
+    [cfg, currentLevel, soundEnabled, reportToAdmin, levelScores, levelTimes, roundSubmissions]
   );
 
   /* ── Input Change & Progressive Unlock ── */
@@ -3031,7 +3067,11 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                     SCORE: <span className="highlight">+{storySlideshow.scoreEarned} PTS</span>
                   </div>
                   <div className="gta-stat-pill">
-                    TIME BONUS: <span className="highlight" style={{ color: "#00E676" }}>+${storySlideshow.timeBonus.toLocaleString()}</span>
+                    TIME BONUS: {storySlideshow.timeBonus > 0 ? (
+                      <span className="highlight" style={{ color: "#00E676" }}>+${storySlideshow.timeBonus.toLocaleString()}</span>
+                    ) : (
+                      <span className="highlight" style={{ color: "#FFD166" }}>CHALLENGE TIER (NO TIME BONUS)</span>
+                    )}
                   </div>
                   <div className="gta-stat-pill">
                     STATUS: <span className="highlight" style={{ color: "#00E676" }}>100% SECURE</span>

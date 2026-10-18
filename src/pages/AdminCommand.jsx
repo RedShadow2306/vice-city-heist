@@ -9,7 +9,7 @@
  * - Executive Vault controls: Story dispatch, Emergency Siren, Global Lockdown, Floor Advance (up to Tier 4), Player Ejection
  * - ZERO prebuilt demo pieces: 100% connected real players
  */
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import SoundEngine from "../utils/soundEngine";
 import { getAssetPath } from "../utils/assetPath";
 import {
@@ -878,6 +878,145 @@ function AdminDashboard() {
     setTimeout(() => setCopiedId(null), 1800);
   }, [addLog]);
 
+  /* ── Export Tournament Data as CSV ── */
+  const exportAuditCSV = useCallback(() => {
+    if (players.length === 0) {
+      alert("No player records available to export.");
+      return;
+    }
+
+    const headers = [
+      "Rank",
+      "Player ID",
+      "Agent Alias",
+      "Full Name",
+      "College / Team",
+      "Status",
+      "Current Floor",
+      "Rules Cleared",
+      "Final Score ($)",
+      "Time Left (s)",
+      "Round 1 Clear Time (s)",
+      "Round 1 Submitted Cipher",
+      "Round 2 Clear Time (s)",
+      "Round 2 Submitted Cipher",
+      "Round 3 Clear Time (s)",
+      "Round 3 Submitted Cipher",
+      "Round 4 Clear Time (s)",
+      "Round 4 Submitted Cipher",
+      "Total Clearance Time (s)",
+      "Total Time Formatted",
+      "Live / Final Cipher",
+      "Security Violations",
+      "Registered At",
+      "Last Seen"
+    ];
+
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = tiebreakerRankings.map((p, idx) => {
+      const lTimes = p.levelTimes || {};
+      const rSubs = p.roundSubmissions || {};
+      const violCount = (securityViolations || []).filter(v => v.playerId === p.id).length;
+
+      return [
+        idx + 1,
+        escapeCSV(p.id),
+        escapeCSV(p.alias),
+        escapeCSV(p.name || p.alias),
+        escapeCSV(p.college || "Vice City"),
+        escapeCSV(p.isBreached ? "BREACHED" : (frozen[p.id] || p.isFrozen ? "FROZEN" : (p.status || "ACTIVE"))),
+        p.currentLevel || p.chapter || 1,
+        p.rulesCleared || 0,
+        p.score || 0,
+        p.timeLeft ?? 0,
+        lTimes[1] ?? (p.currentLevel > 1 ? "Cleared" : "--"),
+        escapeCSV(rSubs[1] || "--"),
+        lTimes[2] ?? (p.currentLevel > 2 ? "Cleared" : "--"),
+        escapeCSV(rSubs[2] || "--"),
+        lTimes[3] ?? (p.currentLevel > 3 ? "Cleared" : "--"),
+        escapeCSV(rSubs[3] || "--"),
+        lTimes[4] ?? (p.rulesCleared >= 45 ? "Cleared" : "--"),
+        escapeCSV(rSubs[4] || "--"),
+        p.totalClearanceSeconds || "--",
+        escapeCSV(p.clearanceFormatted || "--"),
+        escapeCSV(p.currentPassword || "--"),
+        violCount,
+        escapeCSV(p.createdAt || "--"),
+        escapeCSV(p.lastSeen ? new Date(p.lastSeen).toISOString() : "--")
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    link.href = url;
+    link.setAttribute("download", `vice_city_heist_tournament_audit_${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    addLog("Director Bennett exported full tournament audit report as CSV");
+  }, [players, tiebreakerRankings, frozen, securityViolations, addLog]);
+
+  /* ── Export Complete Telemetry as JSON ── */
+  const exportAuditJSON = useCallback(() => {
+    if (players.length === 0) {
+      alert("No player records available to export.");
+      return;
+    }
+
+    const exportData = {
+      tournament: "Vice City Heist: Bank Manager Vault Defense",
+      association: "CSE Association · DAEMON '26",
+      exportedAt: new Date().toISOString(),
+      totalParticipants: players.length,
+      director: "Gordon Bennett",
+      roster: tiebreakerRankings.map((p, idx) => ({
+        rank: idx + 1,
+        id: p.id,
+        alias: p.alias,
+        name: p.name,
+        college: p.college,
+        status: p.isBreached ? "BREACHED" : (frozen[p.id] || p.isFrozen ? "FROZEN" : (p.status || "ACTIVE")),
+        currentFloor: p.currentLevel || p.chapter || 1,
+        rulesCleared: p.rulesCleared || 0,
+        score: p.score || 0,
+        timeLeftSeconds: p.timeLeft ?? 0,
+        levelTimesSeconds: p.levelTimes || {},
+        roundSubmissions: p.roundSubmissions || {},
+        totalClearanceSeconds: p.totalClearanceSeconds || 0,
+        clearanceFormatted: p.clearanceFormatted || "",
+        currentPassword: p.currentPassword || "",
+        passwordHistory: p.passwordHistory || [],
+        completionStats: p.completionStats || {},
+        createdAt: p.createdAt,
+        lastSeen: p.lastSeen,
+      })),
+      ejectedParticipants: ejectedStations,
+      securityViolations: securityViolations,
+    };
+
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    link.href = url;
+    link.setAttribute("download", `vice_city_heist_telemetry_${timestamp}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    addLog("Director Bennett exported complete telemetry as JSON");
+  }, [players, tiebreakerRankings, frozen, ejectedStations, securityViolations, addLog]);
+
   return (
     <div className="boss-admin-root">
       {/* ── TOP EXECUTIVE BANNER ── */}
@@ -962,6 +1101,28 @@ function AdminDashboard() {
           >
             <span className="btn-icon">🗑️</span>
             <span className="btn-text">PURGE ROSTER</span>
+          </button>
+
+          <button
+            id="export-csv-btn"
+            type="button"
+            className="boss-btn boss-btn-export"
+            onClick={exportAuditCSV}
+            title="Download full tournament results as Excel-compatible CSV"
+          >
+            <span className="btn-icon">📊</span>
+            <span className="btn-text">EXPORT CSV</span>
+          </button>
+
+          <button
+            id="export-json-btn"
+            type="button"
+            className="boss-btn boss-btn-export-json"
+            onClick={exportAuditJSON}
+            title="Download complete telemetry and submissions as JSON"
+          >
+            <span className="btn-icon">📁</span>
+            <span className="btn-text">EXPORT JSON</span>
           </button>
 
           <button
@@ -1579,6 +1740,46 @@ function AdminDashboard() {
                 <span className="pw-modal-pill">Length: {[...(activePasswordView.currentPassword || "")].length} characters</span>
                 <span className="pw-modal-pill">Rules Cleared: {activePasswordView.rulesCleared}</span>
                 <span className="pw-modal-pill">Current Level: Floor {activePasswordView.chapter}</span>
+                {activePasswordView.clearanceFormatted && (
+                  <span className="pw-modal-pill" style={{ color: "#00E676" }}>Total Time: {activePasswordView.clearanceFormatted}</span>
+                )}
+              </div>
+
+              {/* Round-by-Round Breakdown */}
+              <div style={{ marginTop: "16px" }}>
+                <label className="pw-modal-label">FLOOR-BY-FLOOR SUBMISSIONS & TIMING</label>
+                <div className="pw-modal-rounds-grid">
+                  {[1, 2, 3, 4].map((lvl) => {
+                    const timeTaken = activePasswordView.levelTimes?.[lvl];
+                    const subPw = activePasswordView.roundSubmissions?.[lvl];
+                    const floorNames = {
+                      1: "FLOOR 1: TELLERS GATE",
+                      2: "FLOOR 2: CASH CORRIDOR",
+                      3: "FLOOR 3: TITANIUM VAULT",
+                      4: "FLOOR 4: OMEGA CORE",
+                    };
+
+                    return (
+                      <div key={lvl} className="pw-round-card">
+                        <div className="pw-round-title">
+                          <span>{floorNames[lvl]}</span>
+                          <span className="pw-round-time">
+                            {timeTaken !== undefined ? `⏱️ ${timeTaken}s` : "⏳ Pending"}
+                          </span>
+                        </div>
+                        <div className="pw-round-val">
+                          {subPw ? (
+                            <code>{subPw}</code>
+                          ) : lvl < (activePasswordView.chapter || 1) ? (
+                            <em style={{ color: "rgba(255,255,255,0.4)" }}>Cleared (no snapshot)</em>
+                          ) : (
+                            <em style={{ color: "rgba(255,255,255,0.4)" }}>Not yet reached</em>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

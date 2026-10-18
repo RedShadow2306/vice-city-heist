@@ -3817,64 +3817,6 @@
 .gta-cinema-bars.top { top: 0; border-bottom: 2px solid rgba(255, 255, 255, 0.05); }
 .gta-cinema-bars.bottom { bottom: 0; border-top: 2px solid rgba(255, 255, 255, 0.05); }
 
-.gta-passed-splash-card {
-  text-align: center;
-  max-width: 680px;
-  padding: 40px;
-  background: rgba(12, 18, 30, 0.9);
-  border: 2px solid #FFD700;
-  border-radius: 12px;
-  box-shadow: 0 0 50px rgba(255, 215, 0, 0.35), 0 20px 40px rgba(0, 0, 0, 0.9);
-  cursor: pointer;
-  animation: scaleUpIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes scaleUpIn {
-  0% { transform: scale(0.85); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.gta-passed-title {
-  font-family: "Pricedown", "Impact", var(--font-display, sans-serif);
-  font-size: 56px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  color: #FFD700;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 3px 3px 0 #7a5e00, 5px 5px 0 #000;
-  margin: 16px 0 8px 0;
-  text-transform: uppercase;
-}
-
-.gta-passed-subtitle {
-  font-family: var(--font-mono, monospace);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: #00E5FF;
-  margin-bottom: 24px;
-}
-
-.gta-respect-badge {
-  display: inline-block;
-  padding: 8px 24px;
-  background: rgba(0, 230, 118, 0.15);
-  border: 2px solid #00E676;
-  border-radius: 30px;
-  font-family: var(--font-display, sans-serif);
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 0.15em;
-  color: #00E676;
-  text-shadow: 0 0 15px rgba(0, 230, 118, 0.8);
-  margin-bottom: 28px;
-  animation: respectPulse 1.2s infinite alternate;
-}
-
-@keyframes respectPulse {
-  0% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 230, 118, 0.4); }
-  100% { transform: scale(1.08); box-shadow: 0 0 25px rgba(0, 230, 118, 0.9); }
-}
-
 /* ─── GTA MISSION PASSED STAGE (Game Theme Background - No Green Screen) ─── */
 .gta-passed-splash-card {
   position: relative;

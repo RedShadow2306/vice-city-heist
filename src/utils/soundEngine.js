@@ -191,19 +191,16 @@ class SoundEngine {
   }
 
   static playWasted() {
+    if (this._muted) return;
     this.resume();
-    if (!this._muted) {
-      try {
-        if (!this._wastedAudio) {
-          this._wastedAudio = new Audio(getAssetUrl("/audio/wasted.m4a"));
-        }
-        this._wastedAudio.currentTime = 0;
-        this._wastedAudio.volume = 0.95;
-        this._wastedAudio.play().catch(() => this._playWastedSynth());
-      } catch (_) {
-        this._playWastedSynth();
+    try {
+      if (!this._wastedAudio) {
+        this._wastedAudio = new Audio(getAssetUrl("/audio/wasted.m4a"));
       }
-    } else {
+      this._wastedAudio.currentTime = 0;
+      this._wastedAudio.volume = 0.95;
+      this._wastedAudio.play().catch(() => this._playWastedSynth());
+    } catch (_) {
       this._playWastedSynth();
     }
   }
@@ -219,19 +216,16 @@ class SoundEngine {
   }
 
   static playMissionPassed() {
+    if (this._muted) return;
     this.resume();
-    if (!this._muted) {
-      try {
-        if (!this._passedAudio) {
-          this._passedAudio = new Audio(getAssetUrl("/audio/mission_passed.m4a"));
-        }
-        this._passedAudio.currentTime = 0;
-        this._passedAudio.volume = 0.95;
-        this._passedAudio.play().catch(() => this._playMissionPassedSynth());
-      } catch (_) {
-        this._playMissionPassedSynth();
+    try {
+      if (!this._passedAudio) {
+        this._passedAudio = new Audio(getAssetUrl("/audio/mission_passed.m4a"));
       }
-    } else {
+      this._passedAudio.currentTime = 0;
+      this._passedAudio.volume = 0.95;
+      this._passedAudio.play().catch(() => this._playMissionPassedSynth());
+    } catch (_) {
       this._playMissionPassedSynth();
     }
   }

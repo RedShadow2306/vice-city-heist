@@ -49,6 +49,9 @@ export async function syncPlayerToSupabase(player) {
       is_breached: Boolean(player.isBreached),
       is_frozen: Boolean(player.isFrozen),
       current_password: player.currentPassword || player.password || "",
+      level_times: player.levelTimes || player.level_times || {},
+      round_submissions: player.roundSubmissions || player.round_submissions || {},
+      completion_stats: player.completionStats || player.completion_stats || {},
       last_seen: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -100,6 +103,11 @@ export async function fetchPlayersFromSupabase() {
       isFrozen: Boolean(p.is_frozen),
       currentPassword: p.current_password || "",
       passwordHistory: p.password_history || [],
+      levelTimes: p.level_times || {},
+      roundSubmissions: p.round_submissions || {},
+      completionStats: p.completion_stats || {},
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
       lastSeen: p.last_seen,
       isMock: false,
     }));
