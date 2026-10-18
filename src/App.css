@@ -109,6 +109,24 @@
   box-shadow: 0 0 16px rgba(72, 213, 208, 0.4) !important;
 }
 
+.vault-3d-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #00e5ff !important;
+  border-color: rgba(0, 229, 255, 0.35) !important;
+  background: rgba(0, 229, 255, 0.08) !important;
+}
+
+.vault-3d-link:hover {
+  background: rgba(0, 229, 255, 0.22) !important;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.45) !important;
+}
+
+.nav-cube-icon {
+  font-size: 13px;
+}
+
 .nav-portal-logo-icon {
   width: 18px;
   height: 18px;

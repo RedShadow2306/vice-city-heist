@@ -8,12 +8,13 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import CyberBackground from "./components/CyberBackground";
 import DaemonLogo from "./components/DaemonLogo";
 import PlayerTerminal from "./pages/PlayerTerminal";
 import AdminCommand from "./pages/AdminCommand";
 import ProjectorStage from "./pages/ProjectorStage";
+import Vault3DViewer from "./pages/Vault3DViewer";
 import SoundEngine from "./utils/soundEngine";
 import { getAssetUrl } from "./utils/assetPath";
 import "./App.css";
@@ -63,6 +64,15 @@ function Shell() {
         </div>
 
         <div className="nav-links">
+          <Link
+            to="/vault-3d"
+            className="nav-link vault-3d-link"
+            title="Inspect Low-Poly 3D Vault Safe (Blender 5.2 + R3F)"
+          >
+            <span className="nav-cube-icon">🧊</span>
+            <span>3D VAULT MODEL</span>
+          </Link>
+
           <a
             href="http://localhost:5174/"
             target="_blank"
@@ -91,6 +101,8 @@ function Shell() {
           <Route path="/admin" element={<AdminCommand />} />
           <Route path="/stage" element={<ProjectorStage />} />
           <Route path="/leaderboard" element={<ProjectorStage />} />
+          <Route path="/vault-3d" element={<Vault3DViewer />} />
+          <Route path="/model-viewer" element={<Vault3DViewer />} />
           <Route path="*" element={<PlayerTerminal />} />
         </Routes>
       </div>

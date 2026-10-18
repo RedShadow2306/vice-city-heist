@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@playwright/test": "^1.64.1",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
     "@supabase/supabase-js": "^2.118.0",
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",
