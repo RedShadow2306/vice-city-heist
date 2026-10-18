@@ -3475,3 +3475,532 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════
+   3D BANK VAULT SAFE BOX & INTERACTIVE SWINGING DOOR
+   ══════════════════════════════════════════════════════ */
+.vault-3d-stage {
+  perspective: 1200px;
+  width: 100%;
+  max-width: 380px;
+  margin: 18px auto;
+  display: flex;
+  justify-content: center;
+}
+
+.vault-3d-box {
+  width: 320px;
+  height: 240px;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.vault-outer-frame {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, #202738 0%, #101522 80%, #080c14 100%);
+  border: 4px solid #364463;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.9), 0 0 15px rgba(0, 229, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.vault-frame-rivet {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle, #8fa3c7 30%, #2b354d 90%);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+.vault-frame-rivet.top-left { top: 8px; left: 8px; }
+.vault-frame-rivet.top-right { top: 8px; right: 8px; }
+.vault-frame-rivet.btm-left { bottom: 8px; left: 8px; }
+.vault-frame-rivet.btm-right { bottom: 8px; right: 8px; }
+
+.vault-frame-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vault-security-chip {
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #8fa3c7;
+}
+
+.vault-status-indicator {
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #00E5FF;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+}
+
+.vault-status-indicator.opening {
+  color: #FFD166;
+  text-shadow: 0 0 10px #FFD166;
+  animation: blink 0.4s infinite alternate;
+}
+
+/* Interior Gold Chamber */
+.vault-interior-chamber {
+  position: absolute;
+  top: 32px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  background: radial-gradient(circle at 50% 60%, #3d2a00 0%, #151000 70%, #000 100%);
+  border-radius: 6px;
+  border: 2px solid #5a4200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.vault-gold-rays {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(255, 215, 0, 0.25) 30deg, transparent 60deg, rgba(255, 215, 0, 0.25) 90deg, transparent 120deg, rgba(255, 215, 0, 0.25) 150deg, transparent 180deg, rgba(255, 215, 0, 0.25) 210deg, transparent 240deg, rgba(255, 215, 0, 0.25) 270deg, transparent 300deg, rgba(255, 215, 0, 0.25) 330deg, transparent 360deg);
+  animation: goldRayRotate 12s linear infinite;
+}
+
+@keyframes goldRayRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.vault-cash-stacks {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.gold-ingots-pile {
+  font-family: var(--font-display, sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+  color: #FFD700;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.8), 0 2px 4px #000;
+  letter-spacing: 0.08em;
+}
+
+/* 3D Heavy Vault Safe Door */
+.vault-heavy-door {
+  position: absolute;
+  top: 30px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  background: linear-gradient(145deg, #2b354d 0%, #182033 50%, #101624 100%);
+  border: 3px solid #4a5c82;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.9), inset 0 2px 4px rgba(255, 255, 255, 0.15);
+  transform-origin: 0% 50%;
+  transition: transform 1.5s cubic-bezier(0.2, 0.85, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.vault-heavy-door.opening {
+  transform: rotateY(-88deg);
+  box-shadow: 20px 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.vault-bolt {
+  position: absolute;
+  background: linear-gradient(180deg, #c0cadb 0%, #687999 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 4px #000;
+}
+
+.vault-bolt.bolt-top {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 7px;
+}
+.vault-bolt.bolt-btm {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 7px;
+}
+.vault-bolt.bolt-right-1 {
+  right: -6px;
+  top: 30%;
+  width: 7px;
+  height: 24px;
+}
+.vault-bolt.bolt-right-2 {
+  right: -6px;
+  top: 70%;
+  width: 7px;
+  height: 24px;
+}
+
+.vault-hinge {
+  position: absolute;
+  left: -7px;
+  width: 8px;
+  height: 26px;
+  background: linear-gradient(90deg, #5c6e94 0%, #202738 100%);
+  border: 1px solid #1a2030;
+  border-radius: 3px;
+}
+.vault-hinge.hinge-top { top: 20px; }
+.vault-hinge.hinge-bottom { bottom: 20px; }
+
+.vault-door-faceplate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.vault-dial-housing {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vault-dial-bezel {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3d4966 40%, #151b2a 100%);
+  border: 2px solid #5a6d96;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8), 0 4px 10px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vault-combination-wheel {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1e2638 55%, #0f131d 100%);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  position: relative;
+}
+
+.vault-combination-wheel.safecracker-spinning {
+  animation: safeDialSpin 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@keyframes safeDialSpin {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(180deg); }
+  50% { transform: rotate(90deg); }
+  75% { transform: rotate(270deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dial-notch {
+  position: absolute;
+  font-family: var(--font-mono, monospace);
+  font-size: 7px;
+  font-weight: 700;
+  color: #798ea8;
+}
+.dial-notch.notch-0 { top: 2px; left: 50%; transform: translateX(-50%); }
+.dial-notch.notch-20 { right: 2px; top: 50%; transform: translateY(-50%); }
+.dial-notch.notch-40 { bottom: 2px; left: 50%; transform: translateX(-50%); }
+.dial-notch.notch-60 { left: 2px; top: 50%; transform: translateY(-50%); }
+
+.vault-spoke-handle {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  z-index: 5;
+  transition: transform 0.6s ease-out;
+}
+
+.vault-spoke-handle.handle-turned {
+  transform: rotate(120deg);
+}
+
+.vault-spoke-handle .spoke {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 54px;
+  background: linear-gradient(180deg, #d2dbe8 0%, #5a6b8a 100%);
+  border-radius: 2px;
+  margin-left: -2px;
+  margin-top: -27px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.vault-spoke-handle .spoke-1 { transform: rotate(0deg); }
+.vault-spoke-handle .spoke-2 { transform: rotate(60deg); }
+.vault-spoke-handle .spoke-3 { transform: rotate(120deg); }
+
+.vault-spoke-handle .handle-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  background: radial-gradient(circle, #e2eaf5 30%, #506180 100%);
+  border-radius: 50%;
+  margin-left: -9px;
+  margin-top: -9px;
+  border: 1px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.vault-door-plate-label {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vault-door-plate-label span {
+  font-family: var(--font-display, sans-serif);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #a3b8d9;
+}
+
+.vault-door-plate-label small {
+  font-family: var(--font-mono, monospace);
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
+  color: #5c6f8f;
+}
+
+/* ══════════════════════════════════════════════════════
+   GTA MISSION PASSED & WASTED SLIDESHOW
+   ══════════════════════════════════════════════════════ */
+.gta-slideshow-fullscreen-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: radial-gradient(circle at 50% 50%, rgba(10, 16, 28, 0.96) 0%, rgba(2, 4, 8, 0.99) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.gta-cinema-bars {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: #000;
+  z-index: 100;
+}
+.gta-cinema-bars.top { top: 0; border-bottom: 2px solid rgba(255, 255, 255, 0.05); }
+.gta-cinema-bars.bottom { bottom: 0; border-top: 2px solid rgba(255, 255, 255, 0.05); }
+
+.gta-passed-splash-card {
+  text-align: center;
+  max-width: 680px;
+  padding: 40px;
+  background: rgba(12, 18, 30, 0.9);
+  border: 2px solid #FFD700;
+  border-radius: 12px;
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.35), 0 20px 40px rgba(0, 0, 0, 0.9);
+  cursor: pointer;
+  animation: scaleUpIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleUpIn {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.gta-passed-title {
+  font-family: "Pricedown", "Impact", var(--font-display, sans-serif);
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #FFD700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 3px 3px 0 #7a5e00, 5px 5px 0 #000;
+  margin: 16px 0 8px 0;
+  text-transform: uppercase;
+}
+
+.gta-passed-subtitle {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #00E5FF;
+  margin-bottom: 24px;
+}
+
+.gta-respect-badge {
+  display: inline-block;
+  padding: 8px 24px;
+  background: rgba(0, 230, 118, 0.15);
+  border: 2px solid #00E676;
+  border-radius: 30px;
+  font-family: var(--font-display, sans-serif);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: #00E676;
+  text-shadow: 0 0 15px rgba(0, 230, 118, 0.8);
+  margin-bottom: 28px;
+  animation: respectPulse 1.2s infinite alternate;
+}
+
+@keyframes respectPulse {
+  0% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 230, 118, 0.4); }
+  100% { transform: scale(1.08); box-shadow: 0 0 25px rgba(0, 230, 118, 0.9); }
+}
+
+.gta-passed-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.gta-stat-pill {
+  padding: 8px 18px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  color: #a0aec0;
+}
+
+.gta-stat-pill .highlight {
+  font-weight: 800;
+  color: #FFD166;
+}
+
+/* Time Jump Card */
+.gta-time-jump-card {
+  text-align: center;
+  max-width: 640px;
+  padding: 50px 30px;
+  cursor: pointer;
+}
+
+.gta-time-jump-caption {
+  font-family: var(--font-display, sans-serif);
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #FFFFFF;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 2px 2px 0 #000;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.gta-time-jump-subtext {
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  color: #FF2A6D;
+  margin-bottom: 36px;
+}
+
+.gta-time-jump-progress {
+  width: 240px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.gta-time-jump-progress-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #FF2A6D, #00E5FF);
+  animation: timeJumpProgress 2.6s linear forwards;
+}
+
+@keyframes timeJumpProgress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0%); }
+}
+
+/* GTA Wasted Stage */
+.gta-wasted-fullscreen-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: wastedFade 0.6s ease-out;
+}
+
+@keyframes wastedFade {
+  0% { opacity: 0; filter: blur(10px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+
+.gta-wasted-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(180, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.95) 80%);
+}
+
+.gta-wasted-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.gta-wasted-title,
+.gta-wasted-text {
+  font-family: "Pricedown", "Impact", var(--font-display, sans-serif);
+  font-size: 80px;
+  font-weight: 900;
+  color: #D32F2F;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 30px rgba(211, 47, 47, 0.9), 4px 4px 0 #5f0f0f, 6px 6px 0 #000;
+  margin: 0 0 10px 0;
+  animation: wastedThud 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes wastedThud {
+  0% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.gta-wasted-subtitle,
+.gta-wasted-sub {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #FFA5A5;
+  text-transform: uppercase;
+}
+
+

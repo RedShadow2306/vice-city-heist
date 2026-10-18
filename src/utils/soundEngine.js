@@ -183,13 +183,52 @@ class SoundEngine {
   }
 
   static playMissionFailed() {
+    this.playWasted();
+  }
+
+  static playWasted() {
     this.resume();
     const t = this._ctx?.currentTime ?? 0;
-    // Classic GTA Vice City deep brass doom hit
+    // Classic GTA Vice City deep brass doom hit with heavy reverberation
     this._osc('sawtooth', 130.81, t, t + 1.2, 0.4);
     this._osc('sawtooth', 98.0, t + 0.05, t + 1.4, 0.35);
     this._osc('sawtooth', 65.4, t + 0.1, t + 1.8, 0.38);
-    this._noise(1.2, t + 0.05, 0.2);
+    this._osc('sine', 45.0, t + 0.15, t + 2.2, 0.5);
+    this._noise(1.4, t + 0.05, 0.25);
+  }
+
+  static playMissionPassed() {
+    this.resume();
+    const t = this._ctx?.currentTime ?? 0;
+    // Authentic GTA Vice City celebratory synth chords + triumphant flourish
+    const chords = [
+      { f: 523.25, time: 0, dur: 0.28 },   // C5
+      { f: 659.25, time: 0.14, dur: 0.28 },// E5
+      { f: 783.99, time: 0.28, dur: 0.35 },// G5
+      { f: 1046.5, time: 0.42, dur: 0.6 }, // C6
+      { f: 1318.5, time: 0.60, dur: 0.75 },// E6
+      { f: 1567.98, time: 0.78, dur: 0.95 }// G6
+    ];
+    chords.forEach(({ f, time, dur }) => {
+      this._osc('sine', f, t + time, t + time + dur, 0.24);
+      this._osc('triangle', f / 2, t + time, t + time + dur, 0.18);
+    });
+  }
+
+  static playVaultClank() {
+    this.resume();
+    const t = this._ctx?.currentTime ?? 0;
+    // Heavy steel bank vault locking bolt disengaging
+    this._osc('triangle', 95, t, t + 0.35, 0.45);
+    this._osc('sawtooth', 160, t + 0.04, t + 0.25, 0.35);
+    this._osc('square', 320, t + 0.08, t + 0.18, 0.2);
+    this._noise(0.35, t + 0.02, 0.28);
+  }
+
+  static playTumblerClick() {
+    this.resume();
+    const t = this._ctx?.currentTime ?? 0;
+    this._osc('triangle', 1850 + Math.random() * 200, t, t + 0.018, 0.06);
   }
 
   static playSiren() {

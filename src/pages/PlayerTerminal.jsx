@@ -117,6 +117,103 @@ const CAMPAIGN_LEVELS = {
   },
 };
 
+/* ─── Story Intermissions Data for GTA Story Mode Slideshow ─── */
+const INTERMISSION_STORIES = {
+  1: {
+    timeJump: "THREE DAYS LATER IN VICE CITY...",
+    timeJumpSub: "TOMMY VERCETTI REFUSED TO ACCEPT DEFEAT!",
+    headline: "TOMMY VERCETTI REFUSED TO ACCEPT DEFEAT!",
+    location: "🌴 THREE DAYS LATER IN VICE CITY... 🌴",
+    story: "Word on Ocean Beach is Tommy Vercetti trashed the Malibu Club in a blind fury after being repelled at the Tellers Gate! He refused to accept defeat! He regrouped his syndicate, acquired high-yield thermal drills, and is storming the Executive Cash Corridors right now!",
+    mood: "ALARMED",
+    speech: '"ROOKIE! HE DIDN\'T ACCEPT HIS LOSS! He\'s drilling twice as fast—we need to make the password STRONGER, and FASTER than before! Move to Level 2 Executive Corridors NOW!"',
+    cta: "ENGAGE LEVEL 2 DEFENSE (FASTER DRILL) ➔",
+    targetLevel: 2,
+  },
+  2: {
+    timeJump: "ONE WEEK LATER... STARFISH ISLAND",
+    timeJumpSub: "VERCETTI'S ALL-OUT ASSAULT ON THE DEEP VAULT!",
+    headline: "THE FINAL SIEGE: VERCETTI'S ALL-OUT ASSAULT ON THE DEEP VAULT!",
+    location: "🌴 ONE WEEK LATER... STARFISH ISLAND 🌴",
+    story: "Furious after two failed attempts, Tommy Vercetti deployed an industrial laser drill directly into the Sub-Level Titanium Deep Vault! This is his last, most desperate heist attempt!",
+    mood: "DESPERATE",
+    speech: '"HOLD THE LINE, ASSISTANT! All 32 security layers must be locked simultaneously—and FASTER than ever! If you fail, the bank\'s entire gold reserve is his! SECURE THE TITANIUM VAULT!"',
+    cta: "DEPLOY LEVEL 3 MAXIMUM CIPHER ➔",
+    targetLevel: 3,
+  },
+  3: {
+    timeJump: "FORTY-EIGHT HOURS LATER: OMEGA CORE ALERT",
+    timeJumpSub: "CODE RED: OMEGA QUANTUM SANCTUM UNDER ATTACK!",
+    headline: "CODE RED: OMEGA QUANTUM CORE UNDER DIRECT ASSAULT!",
+    location: "🌴 MIDNIGHT IN VICE CITY... 🌴",
+    story: "Repelled from the Titanium Deep Vault, Tommy Vercetti deployed military-grade diamond plasma cutters and cyber-jamming arrays into the subterranean Omega Quantum Sanctum! If this final core breaches, Vice City's entire treasury will be wiped out!",
+    mood: "MAXIMUM CRISIS",
+    speech: '"OFFICER! HE PENETRATED THE OMEGA QUANTUM CORE! 45 ultra-cryptographic lock tumblers must now be calibrated simultaneously in under 10 minutes! His drill is operating at 240% overdrive! STAND FIRM AND ENGAGE THE OMEGA CIPHER!"',
+    cta: "ENGAGE LEVEL 4 OMEGA CIPHER ➔",
+    targetLevel: 4,
+  },
+};
+
+/* ─── Accessible Tech & Common Knowledge Riddles Pool (10th/+1/+2/General Tech) ─── */
+const TECH_COMMON_RIDDLES = [
+  {
+    prompt: "Where is user data from apps like Instagram and TikTok stored remotely? (5-letter word)",
+    ans: "cloud",
+    alt: ["cloud", "server"],
+    label: "Storage",
+    hint: "Think of internet-based remote storage: cloud (type directly, do not use quotes)."
+  },
+  {
+    prompt: "What is Tesla's famous automated driving capability? (9-letter word)",
+    ans: "autopilot",
+    alt: ["autopilot", "fsd"],
+    label: "Autopilot",
+    hint: "Tesla's autonomous driver-assistance system: autopilot (type directly, do not use quotes)."
+  },
+  {
+    prompt: "What is considered the central 'brain' of any computer or smartphone? (3-letter acronym)",
+    ans: "cpu",
+    alt: ["cpu", "processor"],
+    label: "CPU",
+    hint: "Central Processing Unit: cpu (type directly, do not use quotes)."
+  },
+  {
+    prompt: "What secure protocol shows a padlock icon in your web browser URL bar? (5-letter acronym)",
+    ans: "https",
+    alt: ["https", "ssl"],
+    label: "HTTPS",
+    hint: "Secure Hypertext Transfer Protocol: https (type directly, do not use quotes)."
+  },
+  {
+    prompt: "What global network of interconnected computers connects the whole world? (8-letter word)",
+    ans: "internet",
+    alt: ["internet", "web"],
+    label: "Internet",
+    hint: "The worldwide network: internet (type directly, do not use quotes)."
+  },
+  {
+    prompt: "What device in your home routes Wi-Fi signals to your phone and laptop? (6-letter word)",
+    ans: "router",
+    alt: ["router", "modem"],
+    label: "Router",
+    hint: "Directs network traffic: router (type directly, do not use quotes)."
+  },
+  {
+    prompt: "What Google mobile operating system is named after Android? (7-letter word)",
+    ans: "android",
+    alt: ["android"],
+    label: "Android",
+    hint: "Google's smartphone OS: android (type directly, do not use quotes)."
+  },
+  {
+    prompt: "What wireless technology connects your smartphone to earbuds or speakers? (9-letter word)",
+    ans: "bluetooth",
+    alt: ["bluetooth"],
+    label: "Bluetooth",
+    hint: "Short-range wireless standard: bluetooth (type directly, do not use quotes)."
+  }
+];
+
 /* ─── Session Randomizer Pools & Helper ─── */
 let lastSessionCache = null;
 
@@ -348,6 +445,7 @@ function createSessionData() {
     shaPhrase: pickNonRepeating(SHA_PHRASES, lastSessionCache?.shaPhrase, (s) => s.phrase),
     csFundamental,
     sponsor: csFundamental.word,
+    techCommon: pickNonRepeating(TECH_COMMON_RIDDLES, lastSessionCache?.techCommon, (t) => t.ans),
     geo: { country: "France", capital: "paris" },
     captcha,
   };
@@ -395,7 +493,7 @@ function buildAll45Rules(session, cfg) {
       id: 4,
       text: "Anti-repetition protocol: No two identical consecutive characters allowed",
       badge: (pw) => {
-        let sanitized = pw.replace(/255(?:\.255)*/g, "");
+        let sanitized = pw.replace(/["']/g, "").replace(/255(?:\.255)*/g, "");
         if (session.romanTarget?.roman) sanitized = sanitized.replace(new RegExp(session.romanTarget.roman, "gi"), "");
         if (session.shaPhrase?.short) sanitized = sanitized.replace(new RegExp(session.shaPhrase.short, "gi"), "");
         if (session.swatch?.hex) sanitized = sanitized.replace(new RegExp(session.swatch.hex, "gi"), "");
@@ -404,7 +502,7 @@ function buildAll45Rules(session, cfg) {
       },
       hint: "Ensure no adjacent matching characters like '00', '11', 'aa' (rule keywords with natural repeats are exempt).",
       check: (pw) => {
-        let sanitized = pw.replace(/255(?:\.255)*/g, "");
+        let sanitized = pw.replace(/["']/g, "").replace(/255(?:\.255)*/g, "");
         if (session.romanTarget?.roman) sanitized = sanitized.replace(new RegExp(session.romanTarget.roman, "gi"), "");
         if (session.shaPhrase?.short) sanitized = sanitized.replace(new RegExp(session.shaPhrase.short, "gi"), "");
         if (session.swatch?.hex) sanitized = sanitized.replace(new RegExp(session.swatch.hex, "gi"), "");
@@ -436,10 +534,10 @@ function buildAll45Rules(session, cfg) {
       id: 7,
       text: "Include a binary number representing decimal 10",
       badge: (pw) => (pw.includes("1010") ? "1010 ✓" : "Binary 10 ?"),
-      hint: 'Decimal 10 in binary is "1010". Type "1010".',
-      check: (pw) => pw.includes("1010"),
+      hint: "Decimal 10 in binary is 1010. Type 1010 (type directly, no quotes).",
+      check: (pw) => pw.replace(/["']/g, "").includes("1010"),
       headline: "BINARY REGISTER CONVERSION!",
-      managerSpeech: "Convert decimal 10 into its binary equivalent! In binary that's '1010'!",
+      managerSpeech: "Convert decimal 10 into its binary equivalent! In binary that's 1010 (no quotes)!",
     },
     {
       id: 8,
@@ -454,84 +552,92 @@ function buildAll45Rules(session, cfg) {
       id: 9,
       text: "Include the decimal representation of binary 1101",
       badge: (pw) => (pw.includes("13") ? "13 ✓" : "Decimal 1101 ?"),
-      hint: 'Binary 1101 in decimal is 8 + 4 + 0 + 1 = 13. Type "13".',
-      check: (pw) => pw.includes("13"),
+      hint: "Binary 1101 in decimal is 8 + 4 + 0 + 1 = 13. Type 13 (type directly, no quotes).",
+      check: (pw) => pw.replace(/["']/g, "").includes("13"),
       headline: "BINARY TO DECIMAL CONVERSION!",
-      managerSpeech: "Translate binary 1101 back to decimal! 8 plus 4 plus 1 gives decimal 13!",
+      managerSpeech: "Translate binary 1101 back to decimal! 8 plus 4 plus 1 gives decimal 13 (no quotes)!",
     },
     {
       id: 10,
-      text: "Include a valid file extension, such as .js",
-      badge: (pw) => (/\.(js|py|html|css|ts|json|cpp|java|sh|jsx|tsx|php|rb|go|rs|sql|md)\b/i.test(pw) ? "File Ext ✓" : "Extension ?"),
-      hint: 'Include a valid file extension like ".js", ".py", ".ts", or ".sh".',
-      check: (pw) => /\.(js|py|html|css|ts|json|cpp|java|sh|jsx|tsx|php|rb|go|rs|sql|md)\b/i.test(pw),
+      text: "Include a valid file extension, such as .js or .py",
+      badge: (pw) => (/\.(js|py|html|css|ts|json|cpp|java|sh|jsx|tsx|php|rb|go|rs|sql|md)/i.test(pw.replace(/["']/g, "")) ? "File Ext ✓" : "Extension ?"),
+      hint: "Include a valid file extension like .js, .py, or .ts (type directly, do NOT use quotes).",
+      check: (pw) => /\.(js|py|html|css|ts|json|cpp|java|sh|jsx|tsx|php|rb|go|rs|sql|md)/i.test(pw.replace(/["']/g, "")),
       headline: "FILE EXTENSION SPECIFICATION!",
-      managerSpeech: "The security program needs to register its script extension! Include a valid file extension like '.js' or '.py'!",
+      managerSpeech: "The security program needs to register its script extension! Include a valid file extension like .js or .py (no quotes needed)!",
     },
 
     /* ════ LEVEL 2: EXECUTIVE CASH CORRIDORS (Rules 11 - 20) ════ */
     {
       id: 11,
-      text: "Include the name of an operating system",
-      badge: (pw) => (/linux|windows|macos|ubuntu|unix|android|ios|debian|fedora|arch/i.test(pw) ? "OS ✓" : "OS Name ?"),
-      hint: 'Include a major OS name like "Linux", "Windows", "macOS", "Ubuntu", or "Unix".',
-      check: (pw) => /linux|windows|macos|ubuntu|unix|android|ios|debian|fedora|arch/i.test(pw),
-      headline: "OPERATING SYSTEM SPECIFICATION!",
-      managerSpeech: "Operating systems foundation! Enter a known OS name like 'Linux', 'macOS', or 'Windows'!",
+      isRiddle: true,
+      text: `🧩 TECH TRIVIA: ${session.techCommon?.prompt || "Where is user data from apps like Instagram stored? (5-letter word)"}`,
+      badge: (pw) => {
+        const alts = session.techCommon?.alt || ["cloud"];
+        const passed = alts.some((w) => new RegExp(w, "i").test(pw.replace(/["']/g, "")));
+        return passed ? `${session.techCommon?.label || "Tech"} ✓` : "Tech Trivia ?";
+      },
+      hint: `${session.techCommon?.hint || "Answer: cloud"} (type directly into password, do NOT use quotes).`,
+      check: (pw) => {
+        const alts = session.techCommon?.alt || ["cloud"];
+        return alts.some((w) => new RegExp(w, "i").test(pw.replace(/["']/g, "")));
+      },
+      headline: "POP-TECH INTELLIGENCE CHECK!",
+      managerSpeech: `Tech question from central intelligence! ${session.techCommon?.prompt || "Where is user data from apps like Instagram stored?"}`,
     },
     {
       id: 12,
       text: "Include a valid HTML tag",
-      badge: (pw) => (/<\s*(?:div|p|span|h[1-6]|a|b|i|u|button|input|form|table|tr|td|th|ul|ol|li|img|head|body|html|main|nav|header|footer|section|article|code|pre)\b[^>]*>/i.test(pw) || /<[a-zA-Z][a-zA-Z0-9]*>/i.test(pw) ? "HTML Tag ✓" : "HTML Tag ?"),
-      hint: 'Include an HTML tag like "<div>", "<p>", "<span>", or "<h1>".',
-      check: (pw) => /<\s*(?:div|p|span|h[1-6]|a|b|i|u|button|input|form|table|tr|td|th|ul|ol|li|img|head|body|html|main|nav|header|footer|section|article|code|pre)\b[^>]*>/i.test(pw) || /<[a-zA-Z][a-zA-Z0-9]*>/i.test(pw),
+      badge: (pw) => (/<\s*(?:div|p|span|h[1-6]|a|b|i|u|button|input|form|table|tr|td|th|ul|ol|li|img|head|body|html|main|nav|header|footer|section|article|code|pre)\b[^>]*>/i.test(pw.replace(/["']/g, "")) || /<[a-zA-Z][a-zA-Z0-9]*>/i.test(pw.replace(/["']/g, "")) ? "HTML Tag ✓" : "HTML Tag ?"),
+      hint: "Include an HTML tag like <div> or <p> (type directly, do NOT use quotes).",
+      check: (pw) => /<\s*(?:div|p|span|h[1-6]|a|b|i|u|button|input|form|table|tr|td|th|ul|ol|li|img|head|body|html|main|nav|header|footer|section|article|code|pre)\b[^>]*>/i.test(pw.replace(/["']/g, "")) || /<[a-zA-Z][a-zA-Z0-9]*>/i.test(pw.replace(/["']/g, "")),
       headline: "HTML MARKUP TAG!",
-      managerSpeech: "Structure the document DOM! Enclose a valid HTML markup tag like '<div>' or '<p>'!",
+      managerSpeech: "Structure the document DOM! Enclose a valid HTML markup tag like <div> or <p> (no quotes)!",
     },
     {
       id: 13,
       text: "Include a Python keyword",
-      badge: (pw) => (/\b(def|return|import|lambda|class|yield|async|await|while|pass|elif|from|with|raise|except|finally|assert|break|continue|global|nonlocal)\b/i.test(pw) ? "Python KW ✓" : "Python KW ?"),
-      hint: 'Include a Python reserved keyword like "def", "return", "lambda", "import", or "async".',
-      check: (pw) => /\b(def|return|import|lambda|class|yield|async|await|while|pass|elif|from|with|raise|except|finally|assert|break|continue|global|nonlocal)\b/i.test(pw),
+      badge: (pw) => (/(def|return|import|lambda|class|yield|async|await|while|elif|from|with|raise|except|finally|assert|break|continue|global|nonlocal)/i.test(pw.replace(/["']/g, "")) ? "Python KW ✓" : "Python KW ?"),
+      hint: "Include a Python reserved keyword like def, return, lambda, or import (type directly, do NOT use quotes).",
+      check: (pw) => /(def|return|import|lambda|class|yield|async|await|while|elif|from|with|raise|except|finally|assert|break|continue|global|nonlocal)/i.test(pw.replace(/["']/g, "")),
       headline: "PYTHON KEYWORD INJECTION!",
-      managerSpeech: "Authenticate backend scripts! Include a Python keyword like 'def', 'return', or 'import'!",
+      managerSpeech: "Authenticate backend scripts! Include a Python keyword like def, return, or import (no quotes needed)!",
     },
     {
       id: 14,
       text: "Include a Git command",
-      badge: (pw) => (/\b(commit|push|pull|checkout|branch|clone|status|merge|rebase|fetch|init|stash|reset|diff)\b/i.test(pw) ? "Git Cmd ✓" : "Git Cmd ?"),
-      hint: 'Include a Git command like "push", "commit", "pull", "branch", or "clone".',
-      check: (pw) => /\b(commit|push|pull|checkout|branch|clone|status|merge|rebase|fetch|init|stash|reset|diff)\b/i.test(pw),
+      badge: (pw) => (/(commit|push|pull|checkout|branch|clone|status|merge|rebase|fetch|stash|reset|diff)/i.test(pw.replace(/["']/g, "")) ? "Git Cmd ✓" : "Git Cmd ?"),
+      hint: "Include a Git command like commit, push, pull, or branch (type directly, do NOT use quotes).",
+      check: (pw) => /(commit|push|pull|checkout|branch|clone|status|merge|rebase|fetch|stash|reset|diff)/i.test(pw.replace(/["']/g, "")),
       headline: "VERSION CONTROL COMMAND!",
-      managerSpeech: "Version control sync! Include a common Git command like 'push', 'commit', or 'pull'!",
+      managerSpeech: "Version control sync! Include a common Git command like commit, push, or pull (no quotes needed)!",
     },
     {
       id: 15,
       text: "Include a valid IPv4 address",
-      badge: (pw) => (/\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/.test(pw) ? "IPv4 ✓" : "IPv4 ?"),
-      hint: 'Include a 4-octet IPv4 address like "192.168.1.1" or "10.0.0.1".',
-      check: (pw) => /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/.test(pw),
+      badge: (pw) => (/(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/.test(pw.replace(/["']/g, "")) ? "IPv4 ✓" : "IPv4 ?"),
+      hint: "Include a 4-octet IPv4 address like 192.168.1.1 or 10.0.0.1 (type directly, do NOT use quotes).",
+      check: (pw) => /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/.test(pw.replace(/["']/g, "")),
       headline: "IPV4 ADDRESS ROUTING!",
       managerSpeech: "Network interface configuration! Include a valid 4-octet IPv4 address like 192.168.1.1!",
     },
     {
       id: 16,
       text: "Parameter encapsulation: Enclose any token inside square brackets: [ ... ]",
-      badge: (pw) => (/\[[a-zA-Z0-9_\-!:]+\]/.test(pw) ? "[OK] ✓" : "[ ... ] ?"),
-      hint: 'Wrap any word or token in square brackets, e.g., "[1010]" or "[js]".',
-      check: (pw) => /\[[a-zA-Z0-9_\-!:]+\]/.test(pw),
+      badge: (pw) => (/\[[a-zA-Z0-9_\-!:]+\]/.test(pw.replace(/["']/g, "")) ? "[OK] ✓" : "[ ... ] ?"),
+      hint: "Wrap any word or token in square brackets like [1010] or [js] (type directly, do NOT use quotes).",
+      check: (pw) => /\[[a-zA-Z0-9_\-!:]+\]/.test(pw.replace(/["']/g, "")),
       headline: "ENCAPSULATE PARAMETERS!",
-      managerSpeech: "Security parameters must be bounded! Wrap any token inside square brackets like '[1010]'!",
+      managerSpeech: "Security parameters must be bounded! Wrap any token inside square brackets like [1010]!",
     },
     {
       id: 17,
       text: "Include a valid MAC address format",
-      badge: (pw) => (/(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/.test(pw) ? "MAC ✓" : "MAC Format ?"),
-      hint: 'Include 6 pairs of hex digits separated by colons or hyphens, e.g., "01:23:45:67:89:AB".',
-      check: (pw) => /(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/.test(pw),
+      badge: (pw) => (/(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/.test(pw.replace(/["']/g, "")) ? "MAC ✓" : "MAC Format ?"),
+      hint: "Include 6 pairs of hex digits separated by colons or hyphens, e.g. 01:23:45:67:89:AB (do NOT use quotes).",
+      check: (pw) => /(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/.test(pw.replace(/["']/g, "")),
       headline: "PHYSICAL MAC ADDRESS!",
-      managerSpeech: "Hardware NIC layer verification! Include a standard MAC address format like '01:23:45:67:89:AB'!",
+      managerSpeech: "Hardware NIC layer verification! Include a standard MAC address format like 01:23:45:67:89:AB!",
     },
     {
       id: 18,
@@ -546,20 +652,20 @@ function buildAll45Rules(session, cfg) {
       id: 19,
       isRiddle: true,
       text: `🧩 CIPHER: Include the word "${session.rot13.plain}" encoded with ROT13`,
-      badge: (pw) => (new RegExp(session.rot13.encoded, "i").test(pw) ? `${session.rot13.encoded} ✓` : "ROT13 ?"),
-      hint: `ROT13 of "${session.rot13.plain}" is "${session.rot13.encoded}".`,
-      check: (pw) => new RegExp(session.rot13.encoded, "i").test(pw),
+      badge: (pw) => (new RegExp(session.rot13.encoded, "i").test(pw.replace(/["']/g, "")) ? `${session.rot13.encoded} ✓` : "ROT13 ?"),
+      hint: `ROT13 of ${session.rot13.plain} is ${session.rot13.encoded} (type directly, do NOT use quotes).`,
+      check: (pw) => new RegExp(session.rot13.encoded, "i").test(pw.replace(/["']/g, "")),
       headline: "ROT13 CIPHER SHIFT!",
-      managerSpeech: `Classic ROT13 rotation cipher! Rotate '${session.rot13.plain}' by 13 alphabet positions to '${session.rot13.encoded}'!`,
+      managerSpeech: `Classic ROT13 rotation cipher! Rotate ${session.rot13.plain} by 13 alphabet positions to ${session.rot13.encoded}!`,
     },
     {
       id: 20,
       text: "Include a valid hexadecimal color code such as #48D5D0 or #A1B2C3",
-      badge: (pw) => (/#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/i.test(pw) ? "Hex Color ✓" : "Hex Color ?"),
-      hint: 'Include a 6-digit hex color starting with "#", like "#48D5D0" or "#A1B2C3".',
-      check: (pw) => /#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/i.test(pw),
+      badge: (pw) => (/#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})/i.test(pw.replace(/["']/g, "")) ? "Hex Color ✓" : "Hex Color ?"),
+      hint: "Include a 6-digit hex color starting with #, like #48D5D0 or #A1B2C3 (do NOT use quotes).",
+      check: (pw) => /#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})/i.test(pw.replace(/["']/g, "")),
       headline: "HEXADECIMAL COLOR CODE!",
-      managerSpeech: "Calibrate RGB chromatic sensors! Include a valid 6-character hex color code starting with '#' like '#48D5D0'!",
+      managerSpeech: "Calibrate RGB chromatic sensors! Include a valid 6-character hex color code starting with '#' like #48D5D0!",
     },
 
     /* ════ LEVEL 3: TITANIUM DEEP VAULT (Rules 21 - 32) ════ */
@@ -567,63 +673,66 @@ function buildAll45Rules(session, cfg) {
       id: 21,
       isRiddle: true,
       text: `🧩 CIPHER: Include Caesar cipher (+${session.caesar.shift} shift) encoding of the word "${session.caesar.word}"`,
-      badge: (pw) => (new RegExp(session.caesar.cipher, "i").test(pw) ? `${session.caesar.cipher} ✓` : "Caesar ?"),
-      hint: `Caesar shift +${session.caesar.shift} of "${session.caesar.word}" is "${session.caesar.cipher}".`,
-      check: (pw) => new RegExp(session.caesar.cipher, "i").test(pw),
+      badge: (pw) => (new RegExp(session.caesar.cipher, "i").test(pw.replace(/["']/g, "")) ? `${session.caesar.cipher} ✓` : "Caesar ?"),
+      hint: `Caesar shift +${session.caesar.shift} of ${session.caesar.word} is ${session.caesar.cipher} (type directly, no quotes).`,
+      check: (pw) => new RegExp(session.caesar.cipher, "i").test(pw.replace(/["']/g, "")),
       headline: "CAESAR CIPHER SHIFT!",
-      managerSpeech: `Shift the Roman alphabet by +${session.caesar.shift} for '${session.caesar.word}'! Enter '${session.caesar.cipher}'!`,
+      managerSpeech: `Shift the Roman alphabet by +${session.caesar.shift} for '${session.caesar.word}'! Enter ${session.caesar.cipher} (no quotes)!`,
     },
     {
       id: 22,
       text: "Include a valid timestamp in ISO 8601 format",
-      badge: (pw) => (/\b\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:Z|[+-]\d{2}:?\d{2})?)?\b/.test(pw) ? "ISO 8601 ✓" : "ISO 8601 ?"),
-      hint: 'Include an ISO 8601 timestamp, e.g., "2026-10-17" or "2026-10-17T12:00:00Z".',
-      check: (pw) => /\b\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:Z|[+-]\d{2}:?\d{2})?)?\b/.test(pw),
+      badge: (pw) => (/\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:Z|[+-]\d{2}:?\d{2})?)?/.test(pw.replace(/["']/g, "")) ? "ISO 8601 ✓" : "ISO 8601 ?"),
+      hint: "Include an ISO 8601 timestamp, e.g. 2026-10-17 or 2026-10-17T12:00:00Z (type directly, no quotes).",
+      check: (pw) => /\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:Z|[+-]\d{2}:?\d{2})?)?/.test(pw.replace(/["']/g, "")),
       headline: "ISO 8601 TIMESTAMP!",
-      managerSpeech: "Audit timestamp synchronization! Include a valid ISO 8601 date timestamp like '2026-10-17'!",
+      managerSpeech: "Audit timestamp synchronization! Include a valid ISO 8601 date timestamp like 2026-10-17 (no quotes)!",
     },
     {
       id: 23,
       text: "Include a valid HTTP request method and status code",
-      badge: (pw) => (/\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)[:_\-\s]?(100|[2345]\d{2})\b/i.test(pw) ? "HTTP Status ✓" : "HTTP Status ?"),
-      hint: 'Include an HTTP method and 3-digit status code without spaces, e.g., "POST:201", "GET:404", or "GET_201".',
-      check: (pw) => /\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)[:_\-\s]?(100|[2345]\d{2})\b/i.test(pw),
+      badge: (pw) => (/(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)[:_\-\s]?(100|[2345]\d{2})/i.test(pw.replace(/["']/g, "")) ? "HTTP Status ✓" : "HTTP Status ?"),
+      hint: "Include an HTTP method and 3-digit status code without spaces, e.g. POST:201 or GET:404 (type directly, no quotes).",
+      check: (pw) => /(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)[:_\-\s]?(100|[2345]\d{2})/i.test(pw.replace(/["']/g, "")),
       headline: "HTTP PROTOCOL STATUS!",
-      managerSpeech: "Web API response! Include a valid HTTP method and status code like 'POST:201' or 'GET:404' (no spaces allowed)!",
+      managerSpeech: "Web API response! Include a valid HTTP method and status code like POST:201 or GET:404 (no quotes, no spaces)!",
     },
     {
       id: 24,
       text: `Authorize with 5-letter biometric captcha: [${session.captcha}]`,
       isCaptcha: true,
-      badge: (pw) => (pw.includes(session.captcha) ? "Captcha ✓" : "Captcha ?"),
-      hint: `Enter "${session.captcha}" in exact uppercase.`,
-      check: (pw) => pw.includes(session.captcha),
+      badge: (pw) => (pw.replace(/["']/g, "").includes(session.captcha) ? "Captcha ✓" : "Captcha ?"),
+      hint: `Enter ${session.captcha} in exact uppercase (type directly, no quotes).`,
+      check: (pw) => pw.replace(/["']/g, "").includes(session.captcha),
       headline: "BIOMETRIC RETINAL SCAN!",
-      managerSpeech: `Retinal verification required! The terminal monitor displays "${session.captcha}"! Type it in exact uppercase!`,
+      managerSpeech: `Retinal verification required! The terminal monitor displays ${session.captcha}! Type it directly in exact uppercase!`,
     },
     {
       id: 25,
       text: "Include a palindrome whose length is a prime number",
       badge: (pw) => {
-        const words = pw.match(/[a-zA-Z]+/g) || [];
+        const sanitized = pw.replace(/["']/g, "");
+        const words = sanitized.match(/[a-zA-Z]+/g) || [];
         const primes = [3, 5, 7, 11, 13];
         const match = words.find((w) => primes.includes(w.length) && w.toLowerCase() === [...w.toLowerCase()].reverse().join(""));
         return match ? `${match} ✓` : "Prime Palindrome ?";
       },
-      hint: 'Include a prime-length palindrome (3, 5, or 7 letters), e.g., "radar", "kayak", "racecar", or "level".',
+      hint: "Include a prime-length palindrome (3, 5, or 7 letters), e.g. radar, kayak, racecar, or level (type directly, no quotes).",
       check: (pw) => {
-        const words = pw.match(/[a-zA-Z]+/g) || [];
+        const sanitized = pw.replace(/["']/g, "");
+        const words = sanitized.match(/[a-zA-Z]+/g) || [];
         const primes = [3, 5, 7, 11, 13];
         return words.some((w) => primes.includes(w.length) && w.toLowerCase() === [...w.toLowerCase()].reverse().join(""));
       },
       headline: "PRIME PALINDROME PROTOCOL!",
-      managerSpeech: "Symmetric mirror cipher! Include a palindrome whose letter count is a prime number, like 'radar' or 'kayak'!",
+      managerSpeech: "Symmetric mirror cipher! Include a palindrome whose letter count is a prime number, like radar or kayak!",
     },
     {
       id: 26,
       text: "Include two strings that are anagrams of one another",
       badge: (pw) => {
-        const words = (pw.match(/[a-zA-Z]{3,}/g) || []).map((w) => w.toLowerCase());
+        const sanitized = pw.replace(/["']/g, "");
+        const words = (sanitized.match(/[a-zA-Z]{3,}/g) || []).map((w) => w.toLowerCase());
         for (let i = 0; i < words.length; i++) {
           for (let j = i + 1; j < words.length; j++) {
             if (words[i] !== words[j] && words[i].length === words[j].length) {
@@ -640,9 +749,10 @@ function buildAll45Rules(session, cfg) {
         }
         return "Anagrams ?";
       },
-      hint: 'Include two anagram words (same letters rearranged), e.g., "silent_listen", "evil-vile", or "silentlisten".',
+      hint: "Include two anagram words (same letters rearranged), e.g. silent_listen, evil-vile, or silentlisten (no quotes).",
       check: (pw) => {
-        const words = (pw.match(/[a-zA-Z]{3,}/g) || []).map((w) => w.toLowerCase());
+        const sanitized = pw.replace(/["']/g, "");
+        const words = (sanitized.match(/[a-zA-Z]{3,}/g) || []).map((w) => w.toLowerCase());
         for (let i = 0; i < words.length; i++) {
           for (let j = i + 1; j < words.length; j++) {
             if (words[i] !== words[j] && words[i].length === words[j].length) {
@@ -660,18 +770,18 @@ function buildAll45Rules(session, cfg) {
         return false;
       },
       headline: "ANAGRAM DUALITY LOCK!",
-      managerSpeech: "Letter transposition cipher! Include two different words that are anagrams of each other, like 'silent_listen' or 'evil-vile'!",
+      managerSpeech: "Letter transposition cipher! Include two different words that are anagrams of each other, like silent_listen or evil-vile!",
     },
     {
       id: 27,
       text: "Include two semantic versions in ascending order",
       badge: (pw) => {
-        const matches = [...pw.matchAll(/\b(?:v)?(\d+)\.(\d+)\.(\d+)\b/gi)];
+        const matches = [...pw.replace(/["']/g, "").matchAll(/(?:v)?(\d+)\.(\d+)\.(\d+)/gi)];
         return matches.length >= 2 ? "SemVer Order ✓" : "SemVer Order ?";
       },
-      hint: 'Include two SemVer versions in order (smaller then larger), e.g., "1.0.1" then "1.0.2".',
+      hint: "Include two SemVer versions in order (smaller then larger), e.g. 1.0.1 then 1.0.2 (no quotes).",
       check: (pw) => {
-        const matches = [...pw.matchAll(/\b(?:v)?(\d+)\.(\d+)\.(\d+)\b/gi)];
+        const matches = [...pw.replace(/["']/g, "").matchAll(/(?:v)?(\d+)\.(\d+)\.(\d+)/gi)];
         if (matches.length < 2) return false;
         for (let i = 0; i < matches.length - 1; i++) {
           const v1 = [Number(matches[i][1]), Number(matches[i][2]), Number(matches[i][3])];
@@ -683,75 +793,77 @@ function buildAll45Rules(session, cfg) {
         return false;
       },
       headline: "SEMANTIC VERSION HIERARCHY!",
-      managerSpeech: "Software release progression! Include two semantic versions in ascending order, like '1.0.1' followed by '1.0.2'!",
+      managerSpeech: "Software release progression! Include two semantic versions in ascending order, like 1.0.1 followed by 1.0.2!",
     },
     {
       id: 28,
       text: "Include a valid IPv4 address and its correct subnet mask",
       badge: (pw) => {
-        const hasIp = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/.test(pw);
-        const hasMask = /\b(?:255\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255))\b/.test(pw) || /\/(?:3[0-2]|[12]?\d)\b/.test(pw);
+        const sanitized = pw.replace(/["']/g, "");
+        const hasIp = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/.test(sanitized);
+        const hasMask = /(?:255\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255))/.test(sanitized) || /\/(?:3[0-2]|[12]?\d)/.test(sanitized);
         return hasIp && hasMask ? "IPv4 + Mask ✓" : "IP + Mask ?";
       },
-      hint: 'Include an IPv4 address and subnet prefix without spaces, e.g., "192.168.1.1/24" or "10.0.0.1/8".',
+      hint: "Include an IPv4 address and subnet prefix without spaces, e.g. 192.168.1.1/24 or 10.0.0.1/8 (no quotes).",
       check: (pw) => {
-        const hasIp = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/.test(pw);
-        const hasMask = /\b(?:255\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255))\b/.test(pw) || /\/(?:3[0-2]|[12]?\d)\b/.test(pw);
+        const sanitized = pw.replace(/["']/g, "");
+        const hasIp = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/.test(sanitized);
+        const hasMask = /(?:255\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255)\.(?:0|128|192|224|240|248|252|254|255))/.test(sanitized) || /\/(?:3[0-2]|[12]?\d)/.test(sanitized);
         return hasIp && hasMask;
       },
       headline: "IPV4 & SUBNET MASK PAIR!",
-      managerSpeech: "Subnet routing configuration! Include both a valid IPv4 address and its CIDR prefix without spaces, like '192.168.1.1/24'!",
+      managerSpeech: "Subnet routing configuration! Include both a valid IPv4 address and its CIDR prefix without spaces, like 192.168.1.1/24!",
     },
     {
       id: 29,
       isRiddle: true,
-      text: '🧩 COMPUTER HARDWARE: "Known as the silicon \'Brain of the Computer\' housing the Arithmetic Logic Unit and control circuits. What 3-letter acronym am I?"',
-      badge: (pw) => (/CPU/.test(pw) ? "CPU ✓" : "Hardware ?"),
-      hint: 'Central Processing Unit: "CPU".',
-      check: (pw) => /CPU/.test(pw),
+      text: '🧩 COMPUTER HARDWARE: Known as the silicon "Brain of the Computer" housing the Arithmetic Logic Unit and control circuits. What 3-letter acronym am I?',
+      badge: (pw) => (/CPU/i.test(pw.replace(/["']/g, "")) ? "CPU ✓" : "Hardware ?"),
+      hint: "Central Processing Unit: CPU (type directly, do NOT use quotes).",
+      check: (pw) => /CPU/i.test(pw.replace(/["']/g, "")),
       headline: "HARDWARE PROCESSOR RIDDLE!",
-      managerSpeech: "The silicon brain! What is the 3-letter hardware processor acronym?",
+      managerSpeech: "The silicon brain! What is the 3-letter hardware processor acronym? Type CPU (no quotes)!",
     },
     {
       id: 30,
       text: "Scoped code block: Enclose any token inside curly brackets: { ... }",
-      badge: (pw) => (/\{[^{}]+\}/.test(pw) ? "{OK} ✓" : "{ ... } ?"),
-      hint: 'Wrap any character or token in curly braces, e.g., "{CPU}" or "{404}".',
-      check: (pw) => /\{[^{}]+\}/.test(pw),
+      badge: (pw) => (/\{[^{}]+\}/.test(pw.replace(/["']/g, "")) ? "{OK} ✓" : "{ ... } ?"),
+      hint: "Wrap any character or token in curly braces, e.g. {CPU} or {404} (no quotes).",
+      check: (pw) => /\{[^{}]+\}/.test(pw.replace(/["']/g, "")),
       headline: "ENCLOSE FUNCTION SCOPE!",
-      managerSpeech: "Scope the security routine! Wrap any token inside curly braces like '{CPU}'!",
+      managerSpeech: "Scope the security routine! Wrap any token inside curly braces like {CPU}!",
     },
     {
       id: 31,
       isRiddle: true,
-      text: '🧩 SOFTWARE ENGINEERING: "In OOP design patterns, I ensure that a class has only ONE solitary instance throughout the program execution. What 9-letter pattern am I?"',
-      badge: (pw) => (/singleton/i.test(pw) ? "singleton ✓" : "Pattern ?"),
-      hint: 'One-instance design pattern: "singleton".',
-      check: (pw) => /singleton/i.test(pw),
+      text: '🧩 SOFTWARE ENGINEERING: In OOP design patterns, I ensure that a class has only ONE solitary instance throughout program execution. What 9-letter pattern am I?',
+      badge: (pw) => (/singleton/i.test(pw.replace(/["']/g, "")) ? "singleton ✓" : "Pattern ?"),
+      hint: "One-instance design pattern: singleton (type directly, do NOT use quotes).",
+      check: (pw) => /singleton/i.test(pw.replace(/["']/g, "")),
       headline: "DESIGN PATTERN RIDDLE!",
-      managerSpeech: "Only one single instance allowed! What GoF design pattern is that?",
+      managerSpeech: "Only one single instance allowed! What GoF design pattern is that? Enter singleton (no quotes)!",
     },
     {
       id: 32,
       isRiddle: true,
-      text: '🧩 ALGORITHMS: "What 6-letter divide-and-conquer search algorithm finds an element in a sorted list in O(log n) time by halving the search space?"',
-      badge: (pw) => (/binary/i.test(pw) ? "binary ✓" : "Algorithm ?"),
-      hint: 'Divide-and-conquer search: "binary" search.',
-      check: (pw) => /binary/i.test(pw),
+      text: '🧩 ALGORITHMS: What 6-letter divide-and-conquer search algorithm finds an element in a sorted list in O(log n) time by halving the search space?',
+      badge: (pw) => (/binary/i.test(pw.replace(/["']/g, "")) ? "binary ✓" : "Algorithm ?"),
+      hint: "Divide-and-conquer search: binary (type directly, do NOT use quotes).",
+      check: (pw) => /binary/i.test(pw.replace(/["']/g, "")),
       headline: "SEARCH ALGORITHM RIDDLE!",
-      managerSpeech: "Logarithmic search algorithm! What 6-letter search divides the array in half each step?",
+      managerSpeech: "Logarithmic search algorithm! What 6-letter search divides the array in half each step? Enter binary (no quotes)!",
     },
 
     /* ════ LEVEL 4: OMEGA QUANTUM CORE (Rules 33 - 45) ════ */
     {
       id: 33,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "I am the universal boolean logic gate that outputs 0 ONLY when both inputs are 1. Any digital gate can be forged from me. What 4-letter gate am I?"',
-      badge: (pw) => (/NAND/.test(pw) ? "NAND ✓" : "Logic Gate ?"),
-      hint: 'Universal logic gate: "NAND".',
-      check: (pw) => /NAND/.test(pw),
+      text: '🧩 TECH RIDDLE: I am the universal boolean logic gate that outputs 0 ONLY when both inputs are 1. Any digital gate can be forged from me. What 4-letter gate am I?',
+      badge: (pw) => (/NAND/i.test(pw.replace(/["']/g, "")) ? "NAND ✓" : "Logic Gate ?"),
+      hint: "Universal logic gate: NAND (type directly, do NOT use quotes).",
+      check: (pw) => /NAND/i.test(pw.replace(/["']/g, "")),
       headline: "UNIVERSAL GATE RIDDLE!",
-      managerSpeech: "The universal circuit gate! What gate produces 0 only on two 1s?",
+      managerSpeech: "The universal circuit gate! What gate produces 0 only on two 1s? Enter NAND (no quotes)!",
     },
     {
       id: 34,
@@ -765,10 +877,10 @@ function buildAll45Rules(session, cfg) {
     {
       id: 35,
       isRiddle: true,
-      text: `🧩 TECH RIDDLE: "In standard IPv4 subnetting with subnet mask ${session.cidrTarget.mask}, what is the slash-prefix notation for these ${session.cidrTarget.bits} network bits?"`,
-      badge: (pw) => (pw.includes(session.cidrTarget.prefix) ? `${session.cidrTarget.prefix} ✓` : "CIDR ?"),
-      hint: `Subnet mask ${session.cidrTarget.mask} uses prefix "${session.cidrTarget.prefix}". Type "${session.cidrTarget.prefix}".`,
-      check: (pw) => pw.includes(session.cidrTarget.prefix),
+      text: `🧩 TECH RIDDLE: In standard IPv4 subnetting with subnet mask ${session.cidrTarget.mask}, what is the slash-prefix notation for these ${session.cidrTarget.bits} network bits?`,
+      badge: (pw) => (pw.replace(/["']/g, "").includes(session.cidrTarget.prefix) ? `${session.cidrTarget.prefix} ✓` : "CIDR ?"),
+      hint: `Subnet mask ${session.cidrTarget.mask} uses prefix ${session.cidrTarget.prefix}. Type ${session.cidrTarget.prefix} (no quotes).`,
+      check: (pw) => pw.replace(/["']/g, "").includes(session.cidrTarget.prefix),
       headline: "CIDR SUBNET RIDDLE!",
       managerSpeech: `Network bits calculation! For subnet mask ${session.cidrTarget.mask}, what is the slash prefix notation?`,
     },
@@ -790,9 +902,9 @@ function buildAll45Rules(session, cfg) {
     {
       id: 37,
       isRiddle: true,
-      text: `🧩 CRYPTO HASH: Include the SHA-256 hash (or 8-char digest prefix: "${session.shaPhrase.short}") of phrase "${session.shaPhrase.phrase}"`,
+      text: `🧩 CRYPTO HASH: Include the SHA-256 hash (or 8-char digest prefix: ${session.shaPhrase.short}) of phrase "${session.shaPhrase.phrase}"`,
       badge: (pw) => (pw.toLowerCase().includes(session.shaPhrase.short) || /[a-f0-9]{64}/i.test(pw) ? "SHA256 ✓" : "SHA256 ?"),
-      hint: `SHA-256 8-char prefix for "${session.shaPhrase.phrase}" is "${session.shaPhrase.short}".`,
+      hint: `SHA-256 8-char prefix for ${session.shaPhrase.phrase} is ${session.shaPhrase.short} (type directly, no quotes).`,
       check: (pw) => pw.toLowerCase().includes(session.shaPhrase.short) || pw.toLowerCase().includes(session.shaPhrase.hash) || /[a-f0-9]{64}/i.test(pw),
       headline: "CRYPTOGRAPHIC HASH DIGEST!",
       managerSpeech: `Cryptographic integrity check! Include the SHA-256 digest prefix '${session.shaPhrase.short}' for '${session.shaPhrase.phrase}'!`,
@@ -801,7 +913,7 @@ function buildAll45Rules(session, cfg) {
       id: 38,
       text: "Prime security factor: Include at least one 2-digit prime number (greater than 10, divisible only by 1 and itself)",
       badge: (pw) => (/13|17|19|23|29|31|37|41|43|47|53|59|61|67|71|73|79|83|89|97/.test(pw) ? "Prime ✓" : "2-Digit Prime ?"),
-      hint: "2-digit prime numbers include: 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97.",
+      hint: "2-digit prime numbers include: 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 (no quotes).",
       check: (pw) => /13|17|19|23|29|31|37|41|43|47|53|59|61|67|71|73|79|83|89|97/.test(pw),
       headline: "PRIME NUMBER ENCRYPTION!",
       managerSpeech: "RSA cryptographic circuit requires primes! Include a 2-digit prime number!",
@@ -809,33 +921,33 @@ function buildAll45Rules(session, cfg) {
     {
       id: 39,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "Algorithmic Complexity: In Big-O asymptotic notation, what is the quadratic worst-case runtime complexity of standard unbalanced Quicksort?"',
-      badge: (pw) => (/O\(n\^?2\)/i.test(pw) ? "O(n²) ✓" : "Big-O ?"),
-      hint: 'Quicksort worst-case occurs on sorted arrays: quadratic "O(n2)" or "O(n^2)".',
-      check: (pw) => /O\(n\^?2\)/i.test(pw),
+      text: '🧩 TECH RIDDLE: Algorithmic Complexity: In Big-O asymptotic notation, what is the quadratic worst-case runtime complexity of standard unbalanced Quicksort?',
+      badge: (pw) => (/O\(n\^?2\)/i.test(pw.replace(/["']/g, "")) ? "O(n²) ✓" : "Big-O ?"),
+      hint: "Quicksort worst-case occurs on sorted arrays: quadratic O(n2) or O(n^2) (type directly, no quotes).",
+      check: (pw) => /O\(n\^?2\)/i.test(pw.replace(/["']/g, "")),
       headline: "ASYMPTOTIC COMPLEXITY RIDDLE!",
-      managerSpeech: "Quicksort worst-case pivot breakdown! What is the quadratic asymptotic upper bound in Big-O?",
+      managerSpeech: "Quicksort worst-case pivot breakdown! What is the quadratic asymptotic upper bound in Big-O? Enter O(n2) or O(n^2) (no quotes)!",
     },
     {
       id: 40,
       text: "Include 3-character uppercase hex code for vault color swatch",
       isSwatch: true,
       swatchColor: session.swatch.css,
-      badge: (pw) => (pw.includes(session.swatch.hex) ? `${session.swatch.hex} ✓` : "Hex Code ?"),
-      hint: `Color swatch hex code is "${session.swatch.hex}".`,
-      check: (pw) => pw.includes(session.swatch.hex),
+      badge: (pw) => (pw.replace(/["']/g, "").includes(session.swatch.hex) ? `${session.swatch.hex} ✓` : "Hex Code ?"),
+      hint: `Color swatch hex code is ${session.swatch.hex} (type directly, no quotes).`,
+      check: (pw) => pw.replace(/["']/g, "").includes(session.swatch.hex),
       headline: "OPTICAL SWATCH CALIBRATION!",
       managerSpeech: "Calibrate the laser sensors! Type the 3-character hex code for our color swatch!",
     },
     {
       id: 41,
       isRiddle: true,
-      text: '🧩 TECH RIDDLE: "Deadlock Avoidance: What 6-letter algorithm name, formulated by Edsger Dijkstra, tests resource allocation safety before granting claims to avoid deadlocks?"',
-      badge: (pw) => (/banker/i.test(pw) ? "banker ✓" : "Algorithm ?"),
-      hint: 'Dijkstra\'s deadlock avoidance algorithm: "banker".',
-      check: (pw) => /banker/i.test(pw),
+      text: '🧩 TECH RIDDLE: Deadlock Avoidance: What 6-letter algorithm name, formulated by Edsger Dijkstra, tests resource allocation safety before granting claims to avoid deadlocks?',
+      badge: (pw) => (/banker/i.test(pw.replace(/["']/g, "")) ? "banker ✓" : "Algorithm ?"),
+      hint: "Dijkstra's deadlock avoidance algorithm: banker (type directly, no quotes).",
+      check: (pw) => /banker/i.test(pw.replace(/["']/g, "")),
       headline: "DEADLOCK AVOIDANCE RIDDLE!",
-      managerSpeech: "Operating systems resource matrix! What algorithm formulated by Dijkstra tests safe states to prevent deadlock?",
+      managerSpeech: "Operating systems resource matrix! What algorithm formulated by Dijkstra tests safe states to prevent deadlock? Enter banker (no quotes)!",
     },
     {
       id: 42,
@@ -925,6 +1037,40 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const [isEjected, setIsEjected] = useState(() => localStorage.getItem("vch_ejected") === "true");
   const [isPlayerFrozen, setIsPlayerFrozen] = useState(false);
   const [breachReason, setBreachReason] = useState(() => localStorage.getItem("vch_breach_reason") || "");
+
+  /* 3D Vault & Story Slideshow State */
+  const [vaultDoorState, setVaultDoorState] = useState("locked"); // "locked" | "opening" | "unlocked"
+  const [storySlideshow, setStorySlideshow] = useState({
+    active: false,
+    stage: "splash", // "splash" | "time_jump" | "briefing"
+    levelCleared: 1,
+    nextLevel: 2,
+    scoreEarned: 1500,
+    timeBonus: 25000,
+  });
+
+  /* Auto-advance GTA Slideshow Stages */
+  useEffect(() => {
+    if (screen === "story_slideshow") {
+      if (storySlideshow.stage === "splash") {
+        const timer = setTimeout(() => {
+          setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
+          if (soundEnabled) SoundEngine.playRadioChirp();
+        }, 3400);
+        return () => clearTimeout(timer);
+      }
+      if (storySlideshow.stage === "time_jump") {
+        const timer = setTimeout(() => {
+          setStorySlideshow((prev) => ({ ...prev, stage: "briefing" }));
+          if (soundEnabled) SoundEngine.playUnlock();
+        }, 2600);
+        return () => clearTimeout(timer);
+      }
+    } else if (screen === "wasted_slideshow") {
+      const timer = setTimeout(() => setScreen("mission_failed"), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [screen, storySlideshow.stage, soundEnabled]);
 
   /* Fullscreen Grace Countdown & Filter States */
   const [fullscreenGraceCountdown, setFullscreenGraceCountdown] = useState(null);
@@ -1243,12 +1389,17 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* ── Launch Story Mode from Lobby ── */
   const launchStoryMode = useCallback(() => {
     SoundEngine.init();
-    SoundEngine.playClick();
-    SoundEngine.playWantedStar();
-    requestFullscreenSafe();
-    setScreen("cutscene");
-    setCurrentLevel(1);
-    reportToAdmin({ status: "STORY_CUTSCENE", currentLevel: 1 });
+    SoundEngine.playVaultClank();
+    SoundEngine.playTumblerClick();
+    setVaultDoorState("opening");
+    setTimeout(() => {
+      SoundEngine.playWantedStar();
+      requestFullscreenSafe();
+      setScreen("cutscene");
+      setCurrentLevel(1);
+      setVaultDoorState("locked");
+      reportToAdmin({ status: "STORY_CUTSCENE", currentLevel: 1 });
+    }, 1800);
   }, [reportToAdmin]);
 
   /* ── Advance to specific level ── */
@@ -1642,19 +1793,21 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
       if (!won) {
         // Mission Failed!
-        if (soundEnabled) SoundEngine.playMissionFailed();
+        if (soundEnabled) {
+          SoundEngine.playWasted();
+        }
         setIsLockedBreach(true);
         setBreachReason("THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000");
         localStorage.setItem("vch_locked_breach", "true");
         localStorage.setItem("vch_breach_reason", "THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000");
-        setScreen("mission_failed");
+        setScreen("wasted_slideshow");
         reportToAdmin({ status: "LOCKED_FAILED", isBreached: true });
         return;
       }
 
       // Level Cleared Successfully!
       if (soundEnabled) {
-        SoundEngine.playSuccess();
+        SoundEngine.playMissionPassed();
         try {
           confetti({
             particleCount: 130,
@@ -1668,6 +1821,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       const levelScore = Math.round(
         survivedSecondsRef.current * 15 + cfg.rules * 160 + timeLeftRef.current * 20
       );
+      const timeBonus = timeLeftRef.current * 250;
 
       const updatedLevelScores = { ...levelScores, [currentLevel]: levelScore };
       const updatedLevelTimes = { ...levelTimes, [currentLevel]: survivedSecondsRef.current };
@@ -1678,15 +1832,17 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       } catch (_) {}
 
       // Story Intermission Transitions
-      if (currentLevel === 1) {
-        setScreen("story_intermission_1");
-        reportToAdmin({ status: "CLEARED_LEVEL_1", currentLevel: 2, levelTimes: updatedLevelTimes });
-      } else if (currentLevel === 2) {
-        setScreen("story_intermission_2");
-        reportToAdmin({ status: "CLEARED_LEVEL_2", currentLevel: 3, levelTimes: updatedLevelTimes });
-      } else if (currentLevel === 3) {
-        setScreen("story_intermission_3");
-        reportToAdmin({ status: "CLEARED_LEVEL_3", currentLevel: 4, levelTimes: updatedLevelTimes });
+      if (currentLevel < 4) {
+        setStorySlideshow({
+          active: true,
+          stage: "splash",
+          levelCleared: currentLevel,
+          nextLevel: currentLevel + 1,
+          scoreEarned: levelScore,
+          timeBonus: timeBonus,
+        });
+        setScreen("story_slideshow");
+        reportToAdmin({ status: `CLEARED_LEVEL_${currentLevel}`, currentLevel: currentLevel + 1, levelTimes: updatedLevelTimes });
       } else {
         // Grand Victory on Level 4!
         exitFullscreenSafe();
@@ -2137,21 +2293,71 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             ) : (
               /* Waiting Lounge View */
               <div className="lobby-waiting-view">
-                <div className="vault-rotary-lock" title="Central Vault Combination Dial">
-                  <div className="vault-dial-ring">
-                    <div className="vault-dial-tick tick-0"></div>
-                    <div className="vault-dial-tick tick-20"></div>
-                    <div className="vault-dial-tick tick-40"></div>
-                    <div className="vault-dial-tick tick-60"></div>
-                    <div className="vault-dial-tick tick-80"></div>
-                  </div>
-                  <div className="vault-wheel-spinner">
-                    <div className="vault-spoke spoke-vert"></div>
-                    <div className="vault-spoke spoke-horiz"></div>
-                    <div className="vault-spoke spoke-diag1"></div>
-                    <div className="vault-spoke spoke-diag2"></div>
-                    <div className="vault-center-hub">
-                      <div className="vault-hub-laser"></div>
+                {/* 3D Bank Vault Safe Door & Tumbler Box */}
+                <div className="vault-3d-stage">
+                  <div className={`vault-3d-box ${vaultDoorState}`}>
+                    {/* Outer Steel Vault Portal Frame */}
+                    <div className="vault-outer-frame">
+                      <div className="vault-frame-rivet top-left" />
+                      <div className="vault-frame-rivet top-right" />
+                      <div className="vault-frame-rivet btm-left" />
+                      <div className="vault-frame-rivet btm-right" />
+                      <div className="vault-frame-header">
+                        <span className="vault-security-chip">TITANIUM CLASS-IV VAULT</span>
+                        <span className={`vault-status-indicator ${vaultDoorState}`}>
+                          {vaultDoorState === "opening" ? "UNLOCKING..." : "ARMED & SEALED"}
+                        </span>
+                      </div>
+
+                      {/* Interior Gold Vault Chamber (revealed when door swings open) */}
+                      <div className="vault-interior-chamber">
+                        <div className="vault-gold-rays" />
+                        <div className="vault-cash-stacks">
+                          <div className="gold-ingots-pile">💰 $3,000,000 RESERVE</div>
+                          <div className="vault-laser-grid" />
+                        </div>
+                      </div>
+
+                      {/* Heavy 3D Safe Door swinging on left hinge */}
+                      <div className={`vault-heavy-door ${vaultDoorState}`}>
+                        {/* Hydraulic Locking Bolts */}
+                        <div className="vault-bolt bolt-top" />
+                        <div className="vault-bolt bolt-right-1" />
+                        <div className="vault-bolt bolt-right-2" />
+                        <div className="vault-bolt bolt-btm" />
+
+                        {/* Heavy Steel Hinges */}
+                        <div className="vault-hinge hinge-top" />
+                        <div className="vault-hinge hinge-bottom" />
+
+                        {/* Door Faceplate & Mechanical Combination Dial */}
+                        <div className="vault-door-faceplate">
+                          <div className="vault-dial-housing">
+                            <div className="vault-dial-bezel">
+                              <div className="vault-combination-wheel safecracker-spinning">
+                                <div className="dial-notch notch-0">0</div>
+                                <div className="dial-notch notch-20">20</div>
+                                <div className="dial-notch notch-40">40</div>
+                                <div className="dial-notch notch-60">60</div>
+                                <div className="dial-notch notch-80">80</div>
+                                <div className="dial-crosshair" />
+                              </div>
+                            </div>
+                            {/* Heavy 3-Spoke Wheel Handle */}
+                            <div className={`vault-spoke-handle ${vaultDoorState === "opening" ? "handle-turned" : ""}`}>
+                              <div className="spoke spoke-1" />
+                              <div className="spoke spoke-2" />
+                              <div className="spoke spoke-3" />
+                              <div className="handle-hub" />
+                            </div>
+                          </div>
+
+                          <div className="vault-door-plate-label">
+                            <span>VICE CITY SAVINGS & LOAN</span>
+                            <small>BIOMETRIC MULTI-LAYER KEY VAULT</small>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2604,156 +2810,145 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         </section>
       )}
 
-      {/* ── SCREEN 5: STORY INTERMISSION 1 (Tommy Didn't Accept Defeat) ── */}
-      {screen === "story_intermission_1" && (
-        <section className="intermission-fullscreen-stage">
-          <div className="intermission-card">
-            <div className="intermission-newspaper-header">
-              <span className="newspaper-date">🌴 THREE DAYS LATER IN VICE CITY... 🌴</span>
-              <h2 className="vice-display-lg newspaper-headline">
-                TOMMY VERCETTI REFUSED TO ACCEPT DEFEAT!
-              </h2>
-            </div>
-
-            <div className="intermission-story-box">
-              <p>
-                Word on Ocean Beach is Tommy Vercetti trashed the Malibu Club in a blind fury after being repelled at the Tellers Gate! He refused to accept defeat! He regrouped his syndicate, acquired high-yield thermal drills, and is storming the Executive Cash Corridors right now!
-              </p>
-            </div>
-
-            <div className="gba-interactive-wrapper briefing-gba">
-              <div className="gba-manager-slide-container slide-in">
-                <div className="manager-portrait-frame speaking">
-                  <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
-                </div>
-              </div>
-
-              <div className="gba-dialogue-box">
-                <div className="gba-nameplate">
-                  <span>👔 MANAGER GORDON BENNETT</span>
-                  <span className="gba-mood-chip urgent">ALARMED</span>
-                </div>
-                <div className="gba-text-content">
-                  <p className="gba-typewriter-text">
-                    "ROOKIE! HE DIDN'T ACCEPT HIS LOSS! He's drilling twice as fast—we need to make the password STRONGER, and FASTER than before! Move to Level 2 Executive Corridors NOW!"
-                  </p>
-                </div>
-                <div className="gba-prompt-arrow blink">▼</div>
-              </div>
-            </div>
-
-            <div className="action-row center-actions">
-              <button
-                type="button"
-                className="vice-btn primary-btn large-cta"
-                onClick={() => handleStartActiveDefense(2)}
-              >
-                ENGAGE LEVEL 2 DEFENSE (FASTER DRILL) ➔
-              </button>
-            </div>
+      {/* ── SCREEN: GTA WASTED CINEMATIC SPLASH ── */}
+      {screen === "wasted_slideshow" && (
+        <section
+          className="gta-wasted-stage"
+          onClick={() => setScreen("mission_failed")}
+          title="Click to proceed to debrief"
+        >
+          <div className="gta-wasted-card">
+            <h1 className="gta-wasted-title">WASTED</h1>
+            <p className="gta-wasted-subtitle">VAULT COMPROMISED // THERMAL DRILL BREACH</p>
+            <span className="footer-legend-tag">[CLICK ANYWHERE TO VIEW SECURITY REPORT]</span>
           </div>
         </section>
       )}
 
-      {/* ── SCREEN 6: STORY INTERMISSION 2 (Final Siege) ── */}
-      {screen === "story_intermission_2" && (
-        <section className="intermission-fullscreen-stage">
-          <div className="intermission-card">
-            <div className="intermission-newspaper-header">
-              <span className="newspaper-date">🌴 ONE WEEK LATER... STARFISH ISLAND 🌴</span>
-              <h2 className="vice-display-lg newspaper-headline">
-                THE FINAL SIEGE: VERCETTI'S ALL-OUT ASSAULT ON THE DEEP VAULT!
-              </h2>
-            </div>
+      {/* ── SCREEN: GTA STORY MODE SLIDESHOW (Passed Splash -> Time Jump -> Briefing) ── */}
+      {screen === "story_slideshow" && (
+        <section className="gta-slideshow-fullscreen-stage">
+          {/* Cinema Letterbox Widescreen Bars */}
+          <div className="gta-cinema-bars top" />
+          <div className="gta-cinema-bars bottom" />
 
-            <div className="intermission-story-box">
-              <p>
-                Furious after two failed attempts, Tommy Vercetti deployed an industrial laser drill directly into the Sub-Level Titanium Deep Vault! This is his last, most desperate heist attempt!
+          {/* SLIDE 1: CLASSIC GTA MISSION PASSED + RESPECT */}
+          {storySlideshow.stage === "splash" && (
+            <div
+              className="gta-passed-splash-card"
+              onClick={() => {
+                setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
+                if (soundEnabled) SoundEngine.playRadioChirp();
+              }}
+              title="Click to continue story"
+            >
+              <div className="lobby-badge">🌴 VAULT DEFENSE PROTOCOL · LEVEL 0{storySlideshow.levelCleared} COMPLETE 🌴</div>
+              <h1 className="gta-passed-title">MISSION PASSED!</h1>
+              <p className="gta-passed-subtitle">
+                VAULT SECURED // {CAMPAIGN_LEVELS[storySlideshow.levelCleared]?.shortName?.toUpperCase()} LOCKED
               </p>
-            </div>
 
-            <div className="gba-interactive-wrapper briefing-gba">
-              <div className="gba-manager-slide-container slide-in">
-                <div className="manager-portrait-frame speaking">
-                  <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
+              <div className="gta-respect-badge">RESPECT +</div>
+
+              <div className="gta-passed-stats-row">
+                <div className="gta-stat-pill">
+                  SCORE: <span className="highlight">+{storySlideshow.scoreEarned} PTS</span>
+                </div>
+                <div className="gta-stat-pill">
+                  TIME BONUS: <span className="highlight">+${storySlideshow.timeBonus.toLocaleString()}</span>
+                </div>
+                <div className="gta-stat-pill">
+                  STATUS: <span className="highlight" style={{ color: "#00E676" }}>100% SECURE</span>
                 </div>
               </div>
 
-              <div className="gba-dialogue-box">
-                <div className="gba-nameplate">
-                  <span>👔 MANAGER GORDON BENNETT</span>
-                  <span className="gba-mood-chip urgent">DESPERATE</span>
-                </div>
-                <div className="gba-text-content">
-                  <p className="gba-typewriter-text">
-                    "HOLD THE LINE, ASSISTANT! All 32 security layers must be locked simultaneously—and FASTER than ever! If you fail, the bank's entire gold reserve is his! SECURE THE TITANIUM VAULT!"
-                  </p>
-                </div>
-                <div className="gba-prompt-arrow blink">▼</div>
-              </div>
-            </div>
-
-            <div className="action-row center-actions">
               <button
                 type="button"
-                className="vice-btn primary-btn large-cta"
-                onClick={() => handleStartActiveDefense(3)}
+                className="vice-btn primary-btn"
+                style={{ padding: "12px 32px", fontSize: "14px" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
+                  if (soundEnabled) SoundEngine.playRadioChirp();
+                }}
               >
-                DEPLOY LEVEL 3 MAXIMUM CIPHER ➔
+                CONTINUE STORY SEQUENCE ➔
               </button>
             </div>
-          </div>
-        </section>
-      )}
+          )}
 
-      {/* ── SCREEN 6B: STORY INTERMISSION 3 (Omega Core Lockdown) ── */}
-      {screen === "story_intermission_3" && (
-        <section className="intermission-fullscreen-stage">
-          <div className="intermission-card">
-            <div className="intermission-newspaper-header">
-              <span className="newspaper-date">🌴 MIDNIGHT IN VICE CITY... 🌴</span>
-              <h2 className="vice-display-lg newspaper-headline">
-                CODE RED: OMEGA QUANTUM CORE UNDER DIRECT ASSAULT!
-              </h2>
-            </div>
-
-            <div className="intermission-story-box">
-              <p>
-                Repelled from the Titanium Deep Vault, Tommy Vercetti deployed military-grade diamond plasma cutters and cyber-jamming arrays into the subterranean Omega Quantum Sanctum! If this final core breaches, Vice City's entire treasury will be wiped out!
+          {/* SLIDE 2: CINEMATIC TIME JUMP (THREE DAYS LATER...) */}
+          {storySlideshow.stage === "time_jump" && (
+            <div
+              className="gta-time-jump-card"
+              onClick={() => {
+                setStorySlideshow((prev) => ({ ...prev, stage: "briefing" }));
+                if (soundEnabled) SoundEngine.playUnlock();
+              }}
+              title="Click to skip time transition"
+            >
+              <h1 className="gta-time-jump-caption">
+                "{INTERMISSION_STORIES[storySlideshow.levelCleared]?.timeJump || "A SHORT TIME LATER IN VICE CITY..."}"
+              </h1>
+              <p className="gta-time-jump-subtext">
+                {INTERMISSION_STORIES[storySlideshow.levelCleared]?.timeJumpSub || "THE SYNDICATE STRIKES BACK!"}
               </p>
+              <div className="gta-time-jump-progress">
+                <div className="gta-time-jump-progress-fill" />
+              </div>
             </div>
+          )}
 
-            <div className="gba-interactive-wrapper briefing-gba">
-              <div className="gba-manager-slide-container slide-in">
-                <div className="manager-portrait-frame speaking">
-                  <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
+          {/* SLIDE 3: STORY BRIEFING & MANAGER GORDON BENNETT */}
+          {storySlideshow.stage === "briefing" && (
+            <div className="intermission-card" style={{ maxWidth: "780px" }}>
+              <div className="intermission-newspaper-header">
+                <span className="newspaper-date">
+                  {INTERMISSION_STORIES[storySlideshow.levelCleared]?.location}
+                </span>
+                <h2 className="vice-display-lg newspaper-headline">
+                  {INTERMISSION_STORIES[storySlideshow.levelCleared]?.headline}
+                </h2>
+              </div>
+
+              <div className="intermission-story-box">
+                <p>{INTERMISSION_STORIES[storySlideshow.levelCleared]?.story}</p>
+              </div>
+
+              <div className="gba-interactive-wrapper briefing-gba">
+                <div className="gba-manager-slide-container slide-in">
+                  <div className="manager-portrait-frame speaking">
+                    <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
+                  </div>
+                </div>
+
+                <div className="gba-dialogue-box">
+                  <div className="gba-nameplate">
+                    <span>👔 MANAGER GORDON BENNETT</span>
+                    <span className="gba-mood-chip urgent">
+                      {INTERMISSION_STORIES[storySlideshow.levelCleared]?.mood}
+                    </span>
+                  </div>
+                  <div className="gba-text-content">
+                    <p className="gba-typewriter-text">
+                      {INTERMISSION_STORIES[storySlideshow.levelCleared]?.speech}
+                    </p>
+                  </div>
+                  <div className="gba-prompt-arrow blink">▼</div>
                 </div>
               </div>
 
-              <div className="gba-dialogue-box">
-                <div className="gba-nameplate">
-                  <span>👔 MANAGER GORDON BENNETT</span>
-                  <span className="gba-mood-chip urgent">MAXIMUM CRISIS</span>
-                </div>
-                <div className="gba-text-content">
-                  <p className="gba-typewriter-text">
-                    "OFFICER! HE PENETRATED THE OMEGA QUANTUM CORE! 45 ultra-cryptographic lock tumblers must now be calibrated simultaneously in under 10 minutes! His drill is operating at 240% overdrive! STAND FIRM AND ENGAGE THE OMEGA CIPHER!"
-                  </p>
-                </div>
-                <div className="gba-prompt-arrow blink">▼</div>
+              <div className="action-row center-actions">
+                <button
+                  type="button"
+                  className="vice-btn primary-btn large-cta"
+                  onClick={() => handleStartActiveDefense(INTERMISSION_STORIES[storySlideshow.levelCleared]?.targetLevel || 2)}
+                >
+                  {INTERMISSION_STORIES[storySlideshow.levelCleared]?.cta}
+                </button>
               </div>
             </div>
-
-            <div className="action-row center-actions">
-              <button
-                type="button"
-                className="vice-btn primary-btn large-cta"
-                onClick={() => handleStartActiveDefense(4)}
-              >
-                ENGAGE LEVEL 4 OMEGA CIPHER ➔
-              </button>
-            </div>
-          </div>
+          )}
         </section>
       )}
 
