@@ -3,12 +3,16 @@
  * Built entirely with Web Audio API for zero-latency, authentic retro synth sounds.
  */
 
+import { getAssetUrl } from "./assetPath";
+
 class SoundEngine {
   static _ctx = null;
   static _masterGain = null;
   static _muted = false;
   static _droneOsc = null;
   static _droneGain = null;
+  static _passedAudio = null;
+  static _wastedAudio = null;
 
   static init() {
     if (this._ctx) {
@@ -188,6 +192,23 @@ class SoundEngine {
 
   static playWasted() {
     this.resume();
+    if (!this._muted) {
+      try {
+        if (!this._wastedAudio) {
+          this._wastedAudio = new Audio(getAssetUrl("/audio/wasted.m4a"));
+        }
+        this._wastedAudio.currentTime = 0;
+        this._wastedAudio.volume = 0.95;
+        this._wastedAudio.play().catch(() => this._playWastedSynth());
+      } catch (_) {
+        this._playWastedSynth();
+      }
+    } else {
+      this._playWastedSynth();
+    }
+  }
+
+  static _playWastedSynth() {
     const t = this._ctx?.currentTime ?? 0;
     // Classic GTA Vice City deep brass doom hit with heavy reverberation
     this._osc('sawtooth', 130.81, t, t + 1.2, 0.4);
@@ -199,6 +220,23 @@ class SoundEngine {
 
   static playMissionPassed() {
     this.resume();
+    if (!this._muted) {
+      try {
+        if (!this._passedAudio) {
+          this._passedAudio = new Audio(getAssetUrl("/audio/mission_passed.m4a"));
+        }
+        this._passedAudio.currentTime = 0;
+        this._passedAudio.volume = 0.95;
+        this._passedAudio.play().catch(() => this._playMissionPassedSynth());
+      } catch (_) {
+        this._playMissionPassedSynth();
+      }
+    } else {
+      this._playMissionPassedSynth();
+    }
+  }
+
+  static _playMissionPassedSynth() {
     const t = this._ctx?.currentTime ?? 0;
     // Authentic GTA Vice City celebratory synth chords + triumphant flourish
     const chords = [
@@ -213,6 +251,19 @@ class SoundEngine {
       this._osc('sine', f, t + time, t + time + dur, 0.24);
       this._osc('triangle', f / 2, t + time, t + time + dur, 0.18);
     });
+  }
+
+  static playCameraClick() {
+    this.resume();
+    const t = this._ctx?.currentTime ?? 0;
+    this._noise(0.06, t, 0.3);
+    this._osc('triangle', 1850, t, t + 0.03, 0.18);
+  }
+
+  static playCashCount() {
+    this.resume();
+    const t = this._ctx?.currentTime ?? 0;
+    this._osc('triangle', 987.77, t, t + 0.04, 0.12);
   }
 
   static playVaultClank() {

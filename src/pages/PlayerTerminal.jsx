@@ -155,6 +155,35 @@ const INTERMISSION_STORIES = {
   },
 };
 
+/* ─── Vault Breach Surveillance Snapshots (GTA Wasted Sequence) ─── */
+const BREACH_SNAPSHOTS = [
+  {
+    img: "/images/vault_door.jpg",
+    tag: "CAM 01 // AIRLOCK IMPACT",
+    title: "TITANIUM VAULT AIRLOCK FORCED",
+    sub: "THERMAL DRILL HAS PIERCED HEAVY LOCKING MECHANISM",
+  },
+  {
+    img: "/images/vice-hero.jpg",
+    tag: "CAM 04 // PERIMETER INVASION",
+    title: "TOMMY VERCETTI GANG BREACHES VAULT",
+    sub: "SYNDICATE FORCES OVERRUN SUB-LEVEL ENTRANCE",
+  },
+  {
+    img: "/images/vault_lockers.jpg",
+    hasManager: true,
+    tag: "CAM 09 // EXECUTIVE LOCKERS",
+    title: "BANK MANAGER GORDON BENNETT IN CUSTODY",
+    sub: "MANAGEMENT SUBDUED · MASTER CIPHERS EXTRACTED UNDER DURESS",
+  },
+  {
+    img: "/images/vault_neon_bg.jpg",
+    tag: "CAM 12 // CORE VAULT LOOTED",
+    title: "TOTAL ASSET DRAIN // VAULT OVERRUN",
+    sub: "RESERVES OF EL BANCO CORRUPTO GRANDE COMPLETELY EMPTIED",
+  },
+];
+
 /* ─── Accessible Tech & Common Knowledge Riddles Pool (10th/+1/+2/General Tech) ─── */
 const TECH_COMMON_RIDDLES = [
   {
@@ -1051,6 +1080,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     timeBonus: 25000,
   });
 
+  /* GTA Wasted Cinematic State */
+  const [wastedPhase, setWastedPhase] = useState("snapshots"); // "snapshots" | "wasted_text"
+  const [wastedSnapIndex, setWastedSnapIndex] = useState(0);
+
   /* Video Preload & Cache State */
   const [videoPreload, setVideoPreload] = useState(() => ({
     status: videoPreloader.status,
@@ -1074,21 +1107,40 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         const timer = setTimeout(() => {
           setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
           if (soundEnabled) SoundEngine.playRadioChirp();
-        }, 3400);
+        }, 4500);
         return () => clearTimeout(timer);
       }
       if (storySlideshow.stage === "time_jump") {
         const timer = setTimeout(() => {
           setStorySlideshow((prev) => ({ ...prev, stage: "briefing" }));
           if (soundEnabled) SoundEngine.playUnlock();
-        }, 2600);
+        }, 2800);
         return () => clearTimeout(timer);
       }
     } else if (screen === "wasted_slideshow") {
-      const timer = setTimeout(() => setScreen("mission_failed"), 3000);
-      return () => clearTimeout(timer);
+      if (wastedPhase === "snapshots") {
+        const snapTimer = setInterval(() => {
+          setWastedSnapIndex((idx) => {
+            if (idx < BREACH_SNAPSHOTS.length - 1) {
+              if (soundEnabled) SoundEngine.playCameraClick();
+              return idx + 1;
+            } else {
+              clearInterval(snapTimer);
+              setWastedPhase("wasted_text");
+              if (soundEnabled) SoundEngine.playWasted();
+              return idx;
+            }
+          });
+        }, 340);
+        return () => clearInterval(snapTimer);
+      } else if (wastedPhase === "wasted_text") {
+        const endTimer = setTimeout(() => {
+          setScreen("mission_failed");
+        }, 6000);
+        return () => clearTimeout(endTimer);
+      }
     }
-  }, [screen, storySlideshow.stage, soundEnabled]);
+  }, [screen, storySlideshow.stage, wastedPhase, soundEnabled]);
 
   /* Timer Ref & Fullscreen Helpers */
   const timerRef = useRef(null);
@@ -1808,15 +1860,15 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       if (soundEnabled) SoundEngine.stopDrone();
 
       if (!won) {
-        // Mission Failed!
-        if (soundEnabled) {
-          SoundEngine.playWasted();
-        }
+        // Mission Failed / Vault Breached!
         setIsLockedBreach(true);
         setBreachReason("THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000");
         localStorage.setItem("vch_locked_breach", "true");
         localStorage.setItem("vch_breach_reason", "THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000");
+        setWastedPhase("snapshots");
+        setWastedSnapIndex(0);
         setScreen("wasted_slideshow");
+        if (soundEnabled) SoundEngine.playCameraClick();
         reportToAdmin({ status: "LOCKED_FAILED", isBreached: true });
         return;
       }
@@ -2867,17 +2919,72 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       )}
 
       {/* ── SCREEN: GTA WASTED CINEMATIC SPLASH ── */}
+      {/* ── SCREEN: GTA WASTED / VAULT BREACHED CINEMATIC ── */}
       {screen === "wasted_slideshow" && (
         <section
-          className="gta-wasted-stage"
-          onClick={() => setScreen("mission_failed")}
-          title="Click to proceed to debrief"
+          className="gta-wasted-fullscreen-stage"
+          onClick={() => {
+            if (wastedPhase === "snapshots") {
+              setWastedPhase("wasted_text");
+              if (soundEnabled) SoundEngine.playWasted();
+            } else {
+              setScreen("mission_failed");
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-label="Click anywhere or press any key to view incident report"
         >
-          <div className="gta-wasted-card">
-            <h1 className="gta-wasted-title">WASTED</h1>
-            <p className="gta-wasted-subtitle">VAULT COMPROMISED // THERMAL DRILL BREACH</p>
-            <span className="footer-legend-tag">[CLICK ANYWHERE TO VIEW SECURITY REPORT]</span>
-          </div>
+          {wastedPhase === "snapshots" ? (
+            /* Phase 1: Rapid Snapshots ("sudden pictures changing" effect) */
+            <div className="wasted-snapshots-stage">
+              <div className="wasted-snap-flash" key={`flash-${wastedSnapIndex}`} />
+              <img
+                src={getAssetUrl(BREACH_SNAPSHOTS[wastedSnapIndex]?.img || "/images/vault_door.jpg")}
+                alt="Breach Surveillance Feed"
+                className="wasted-snap-img"
+              />
+              <div className="wasted-snap-overlay-red" />
+              <div className="wasted-snap-scanlines" />
+
+              {BREACH_SNAPSHOTS[wastedSnapIndex]?.hasManager && (
+                <div className="wasted-snap-manager-captured">
+                  <img src={getAssetUrl("/images/manager_cutout.png")} alt="Manager in custody" className="wasted-snap-manager-img" />
+                  <div className="wasted-snap-custody-label">⚠️ IN CUSTODY // HOSTAGE SITUATION</div>
+                </div>
+              )}
+
+              <div className="wasted-snap-hud">
+                <div className="wasted-snap-rec-dot" />
+                <div className="wasted-snap-title">{BREACH_SNAPSHOTS[wastedSnapIndex]?.title}</div>
+                <div className="wasted-snap-sub">{BREACH_SNAPSHOTS[wastedSnapIndex]?.sub}</div>
+              </div>
+            </div>
+          ) : (
+            /* Phase 2: Authentic GTA Wasted / Vault Breached Impact */
+            <div className="gta-wasted-card-wrap">
+              <div className="gta-wasted-bg-desaturated">
+                <img
+                  src={getAssetUrl("/images/vault_neon_bg.jpg")}
+                  alt="Vault Breached"
+                  className="gta-wasted-bg-img"
+                />
+                <div className="gta-wasted-red-vignette" />
+              </div>
+
+              <div className="gta-wasted-card">
+                <h1 className="gta-wasted-title">WASTED</h1>
+                <div className="gta-wasted-breached-banner">VAULT BREACHED</div>
+                <p className="gta-wasted-subtitle">
+                  VERCETTI SYNDICATE HAS INFILTRATED AND EMPTIED THE RESERVES
+                </p>
+                <div className="gta-wasted-custody-notice">
+                  👔 BANK MANAGER GORDON BENNETT & VAULT STAFF ARE IN CUSTODY
+                </div>
+                <span className="gta-wasted-legend-tag">[PRESS ANY KEY OR CLICK ANYWHERE TO VIEW INCIDENT REPORT]</span>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -2898,38 +3005,52 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               }}
               title="Click to continue story"
             >
-              <div className="lobby-badge">🌴 VAULT DEFENSE PROTOCOL · LEVEL 0{storySlideshow.levelCleared} COMPLETE 🌴</div>
-              <h1 className="gta-passed-title">MISSION PASSED!</h1>
-              <p className="gta-passed-subtitle">
-                VAULT SECURED // {CAMPAIGN_LEVELS[storySlideshow.levelCleared]?.shortName?.toUpperCase()} LOCKED
-              </p>
-
-              <div className="gta-respect-badge">RESPECT +</div>
-
-              <div className="gta-passed-stats-row">
-                <div className="gta-stat-pill">
-                  SCORE: <span className="highlight">+{storySlideshow.scoreEarned} PTS</span>
-                </div>
-                <div className="gta-stat-pill">
-                  TIME BONUS: <span className="highlight">+${storySlideshow.timeBonus.toLocaleString()}</span>
-                </div>
-                <div className="gta-stat-pill">
-                  STATUS: <span className="highlight" style={{ color: "#00E676" }}>100% SECURE</span>
-                </div>
+              {/* Game Theme Vice City Sunset & Vault Background (NO GREEN SCREEN) */}
+              <div className="gta-passed-theme-bg" aria-hidden="true">
+                <img
+                  src={getAssetUrl("/images/vault_neon_bg.jpg")}
+                  alt="Vice City Vault Defense Theme"
+                  className="gta-passed-bg-img"
+                />
+                <div className="gta-passed-sunburst" />
+                <div className="gta-passed-vignette" />
+                <div className="gta-passed-scanlines" />
               </div>
 
-              <button
-                type="button"
-                className="vice-btn primary-btn"
-                style={{ padding: "12px 32px", fontSize: "14px" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
-                  if (soundEnabled) SoundEngine.playRadioChirp();
-                }}
-              >
-                CONTINUE STORY SEQUENCE ➔
-              </button>
+              <div className="gta-passed-content">
+                <div className="gta-passed-badge">🌴 VAULT DEFENSE PROTOCOL · LEVEL 0{storySlideshow.levelCleared} COMPLETE 🌴</div>
+                <h1 className="gta-passed-title">MISSION PASSED!</h1>
+                <div className="gta-respect-badge">RESPECT +</div>
+
+                <p className="gta-passed-subtitle">
+                  VAULT SECURED // {CAMPAIGN_LEVELS[storySlideshow.levelCleared]?.shortName?.toUpperCase()} LOCKED
+                </p>
+
+                <div className="gta-passed-stats-row">
+                  <div className="gta-stat-pill">
+                    SCORE: <span className="highlight">+{storySlideshow.scoreEarned} PTS</span>
+                  </div>
+                  <div className="gta-stat-pill">
+                    TIME BONUS: <span className="highlight" style={{ color: "#00E676" }}>+${storySlideshow.timeBonus.toLocaleString()}</span>
+                  </div>
+                  <div className="gta-stat-pill">
+                    STATUS: <span className="highlight" style={{ color: "#00E676" }}>100% SECURE</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="vice-btn primary-btn"
+                  style={{ padding: "12px 34px", fontSize: "14px", marginTop: "12px", boxShadow: "0 0 25px rgba(255, 42, 109, 0.6)" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setStorySlideshow((prev) => ({ ...prev, stage: "time_jump" }));
+                    if (soundEnabled) SoundEngine.playRadioChirp();
+                  }}
+                >
+                  CONTINUE STORY SEQUENCE ➔
+                </button>
+              </div>
             </div>
           )}
 
