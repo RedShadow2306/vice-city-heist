@@ -24,6 +24,28 @@ import {
 } from "../utils/supabaseClient";
 
 import confetti from "canvas-confetti";
+import {
+  CAMPAIGN_LEVELS,
+  buildAll45Rules,
+  createSessionData,
+  saveSessionData,
+  loadSavedSessionData,
+  RULES_CHANNEL,
+  pickNonRepeating,
+  CODE_SNIPPET_PUZZLES,
+  TECH_COMMON_RIDDLES,
+  BINARY_OPTIONS,
+  ROMAN_OPTIONS,
+  ROT13_OPTIONS,
+  CAESAR_OPTIONS,
+  SHA_PHRASES,
+  SYS_TECH_RIDDLES,
+  SQL_KEYWORD_OPTIONS,
+  NET_PORT_OPTIONS,
+  CS_PIONEERS,
+  SWATCH_OPTIONS,
+  CS_FUNDAMENTALS,
+} from "../utils/gameRules";
 import "./PlayerTerminal.css";
 import "./AdminCommand.css";
 
@@ -196,6 +218,227 @@ function AdminDashboard() {
   const [violationFilter, setViolationFilter] = useState("ALL");
   const [adminPreviewCinematic, setAdminPreviewCinematic] = useState(null); // "wasted" | "passed" | null
 
+  /* Executive Log & Broadcast Refs (Declared early to prevent TDZ ReferenceError) */
+  const [log, setLog] = useState([
+    `[${new Date().toLocaleTimeString()}] Managing Director Gordon Bennett assumed active vault supervision.`,
+    `[${new Date().toLocaleTimeString()}] 4-Floor Defense Protocol armed across all network stations.`,
+  ]);
+  const busRef = useRef(null);
+  const logRef = useRef(null);
+  const managerImgSrc = getAssetPath("manager_cutout.png");
+
+  const addLog = useCallback((msg) => {
+    setLog((l) => [...l.slice(-99), `[${new Date().toLocaleTimeString()}] ${msg}`]);
+  }, []);
+
+  const broadcast = useCallback((payload) => {
+    busRef.current?.postMessage(payload);
+  }, []);
+
+  /* ── Cipher Questions & Conditions Inspector State ── */
+  const [adminSession, setAdminSession] = useState(() => loadSavedSessionData() || createSessionData());
+  const [showRulesInspector, setShowRulesInspector] = useState(false);
+  const [rulesFloorFilter, setRulesFloorFilter] = useState("ALL"); // "ALL" | 1 | 2 | 3 | 4
+  const [rulesSearch, setRulesSearch] = useState("");
+  const [editingRuleId, setEditingRuleId] = useState(null);
+  const [customEdits, setCustomEdits] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("vch_custom_rule_edits") || "{}");
+    } catch (_) {
+      return {};
+    }
+  });
+  const [editFormData, setEditFormData] = useState({ text: "", expectedAnswer: "", hint: "" });
+  const [copiedRulesSummary, setCopiedRulesSummary] = useState(false);
+
+  /* Listen for session updates from other admin windows or sync channels */
+  useEffect(() => {
+    if (typeof BroadcastChannel === "undefined") return;
+    const bus = new BroadcastChannel(RULES_CHANNEL);
+    bus.onmessage = (evt) => {
+      if (evt.data?.type === "session_data_updated" && evt.data?.session) {
+        setAdminSession(evt.data.session);
+      }
+    };
+    return () => bus.close();
+  }, []);
+
+  /* Build all 45 rules with live session & any director customizations */
+  const all45Rules = useMemo(() => {
+    const base = buildAll45Rules(adminSession);
+    return base.map((r) => {
+      const custom = customEdits[r.id];
+      if (!custom) return r;
+      return {
+        ...r,
+        text: custom.text !== undefined && custom.text.trim() ? custom.text : r.text,
+        expectedAnswer: custom.expectedAnswer !== undefined && custom.expectedAnswer.trim() ? custom.expectedAnswer : r.expectedAnswer,
+        hint: custom.hint !== undefined && custom.hint.trim() ? custom.hint : r.hint,
+        isCustomized: true,
+      };
+    });
+  }, [adminSession, customEdits]);
+
+  /* Filter rules based on floor tab & search keyword */
+  const filteredRules = useMemo(() => {
+    return all45Rules.filter((r) => {
+      if (rulesFloorFilter !== "ALL" && r.level !== Number(rulesFloorFilter)) {
+        return false;
+      }
+      if (rulesSearch.trim()) {
+        const q = rulesSearch.toLowerCase();
+        const textMatch = (r.text || "").toLowerCase().includes(q);
+        const categoryMatch = (r.category || "").toLowerCase().includes(q);
+        const answerMatch = String(r.expectedAnswer || "").toLowerCase().includes(q);
+        const hintMatch = typeof r.hint === "string" && r.hint.toLowerCase().includes(q);
+        const ruleIdMatch = String(r.id) === q;
+        return textMatch || categoryMatch || answerMatch || hintMatch || ruleIdMatch;
+      }
+      return true;
+    });
+  }, [all45Rules, rulesFloorFilter, rulesSearch]);
+
+  /* Reroll individual dynamic question from its pool */
+  const handleRerollQuestion = useCallback((rule) => {
+    SoundEngine.init();
+    SoundEngine.playClick();
+    const updated = { ...adminSession };
+
+    if (rule.poolCategory === "codeSnippet") {
+      updated.codeSnippet = pickNonRepeating("codeSnippet", CODE_SNIPPET_PUZZLES, (c) => c.id);
+      addLog(`Rerolled Level 1 Code Fill-in-the-Blank: now "${updated.codeSnippet.blank}" (${updated.codeSnippet.lang})`);
+    } else if (rule.poolCategory === "binaryTarget") {
+      updated.binaryTarget = pickNonRepeating("binaryTarget", BINARY_OPTIONS, (b) => b.dec);
+      addLog(`Rerolled Level 1 Binary Target: decimal ${updated.binaryTarget.dec} -> ${updated.binaryTarget.bin}`);
+    } else if (rule.poolCategory === "romanTarget") {
+      updated.romanTarget = pickNonRepeating("romanTarget", ROMAN_OPTIONS, (r) => r.num);
+      addLog(`Rerolled Level 1 Roman Numeral: integer ${updated.romanTarget.num} -> ${updated.romanTarget.roman}`);
+    } else if (rule.poolCategory === "techCommon") {
+      updated.techCommon = pickNonRepeating("techCommon", TECH_COMMON_RIDDLES, (t) => t.ans);
+      addLog(`Rerolled Level 2 Tech Trivia: "${updated.techCommon.prompt}" -> ${updated.techCommon.ans}`);
+    } else if (rule.poolCategory === "rot13") {
+      updated.rot13 = pickNonRepeating("rot13", ROT13_OPTIONS, (r) => r.plain);
+      addLog(`Rerolled Level 2 ROT13 Cipher: "${updated.rot13.plain}" -> ${updated.rot13.encoded}`);
+    } else if (rule.poolCategory === "caesar") {
+      updated.caesar = pickNonRepeating("caesar", CAESAR_OPTIONS, (c) => c.word);
+      addLog(`Rerolled Level 3 Caesar Cipher: "${updated.caesar.word}" (+${updated.caesar.shift}) -> ${updated.caesar.cipher}`);
+    } else if (rule.poolCategory === "sqlKeyword") {
+      updated.sqlKeyword = pickNonRepeating("sqlKeyword", SQL_KEYWORD_OPTIONS, (s) => s.word);
+      addLog(`Rerolled Level 3 SQL Keyword: "${updated.sqlKeyword.word}"`);
+    } else if (rule.poolCategory === "sysTech") {
+      updated.sysTech = pickNonRepeating("sysTech", SYS_TECH_RIDDLES, (s) => s.word);
+      addLog(`Rerolled Level 3 Systems Architecture: "${updated.sysTech.word}"`);
+    } else if (rule.poolCategory === "csFundamental") {
+      updated.csFundamental = pickNonRepeating("csFundamental", CS_FUNDAMENTALS, (s) => s.word);
+      addLog(`Rerolled Level 3 CS Fundamental: "${updated.csFundamental.word}"`);
+    } else if (rule.poolCategory === "netPort") {
+      updated.netPort = pickNonRepeating("netPort", NET_PORT_OPTIONS, (n) => n.port);
+      addLog(`Rerolled Level 4 Network Port: ${updated.netPort.name} -> Port ${updated.netPort.port}`);
+    } else if (rule.poolCategory === "shaPhrase") {
+      updated.shaPhrase = pickNonRepeating("shaPhrase", SHA_PHRASES, (s) => s.phrase);
+      addLog(`Rerolled Level 4 SHA-256 Digest: "${updated.shaPhrase.phrase}" -> ${updated.shaPhrase.short}`);
+    } else if (rule.poolCategory === "swatch") {
+      updated.swatch = pickNonRepeating("swatch", SWATCH_OPTIONS, (s) => s.hex);
+      addLog(`Rerolled Level 4 Optical Swatch: ${updated.swatch.name} (${updated.swatch.hex})`);
+    } else if (rule.poolCategory === "csPioneer") {
+      updated.csPioneer = pickNonRepeating("csPioneer", CS_PIONEERS, (c) => c.code);
+      addLog(`Rerolled Level 4 CS Pioneer: ${updated.csPioneer.name} -> ${updated.csPioneer.code}`);
+    } else {
+      addLog(`Rule #${rule.id} is a structural cryptographic condition and is not pooled.`);
+      return;
+    }
+
+    setAdminSession(updated);
+    saveSessionData(updated);
+    SoundEngine.playSuccess();
+  }, [adminSession, addLog]);
+
+  /* Randomize all questions across all 4 levels */
+  const handleRandomizeAllQuestions = useCallback(() => {
+    if (!window.confirm("Director Bennett: Randomize ALL dynamic questions and cipher conditions across all 4 levels? New questions will be dispatched instantly to all player terminals.")) {
+      return;
+    }
+    SoundEngine.init();
+    SoundEngine.playUnlock();
+    const fresh = createSessionData();
+    setAdminSession(fresh);
+    saveSessionData(fresh);
+    addLog("Chief Director Bennett randomized all 45 vault cipher questions & riddles across all 4 levels.");
+  }, [addLog]);
+
+  /* Custom Rule Edit Handlers */
+  const handleStartEditRule = (rule) => {
+    setEditingRuleId(rule.id);
+    const existing = customEdits[rule.id] || {};
+    setEditFormData({
+      text: existing.text !== undefined ? existing.text : rule.text,
+      expectedAnswer: existing.expectedAnswer !== undefined ? existing.expectedAnswer : rule.expectedAnswer,
+      hint: existing.hint !== undefined ? existing.hint : (typeof rule.hint === "string" ? rule.hint : ""),
+    });
+  };
+
+  const handleSaveRuleEdit = (ruleId) => {
+    SoundEngine.init();
+    SoundEngine.playSuccess();
+    const updated = {
+      ...customEdits,
+      [ruleId]: { ...editFormData },
+    };
+    setCustomEdits(updated);
+    try {
+      localStorage.setItem("vch_custom_rule_edits", JSON.stringify(updated));
+    } catch (_) {}
+    setEditingRuleId(null);
+    addLog(`Director Bennett applied custom prompt & answer for Rule #${ruleId}`);
+  };
+
+  const handleResetRuleEdit = (ruleId) => {
+    SoundEngine.init();
+    SoundEngine.playClick();
+    const updated = { ...customEdits };
+    delete updated[ruleId];
+    setCustomEdits(updated);
+    try {
+      localStorage.setItem("vch_custom_rule_edits", JSON.stringify(updated));
+    } catch (_) {}
+    setEditingRuleId(null);
+    addLog(`Reset Rule #${ruleId} to standard vault protocol`);
+  };
+
+  /* Copy All 45 Questions and Solutions to Clipboard */
+  const copyAllRulesSummary = () => {
+    SoundEngine.init();
+    SoundEngine.playClick();
+    const fullRules = buildAll45Rules(adminSession);
+    let summary = "EL BANCO CORRUPTO GRANDE — ALL 45 VAULT CIPHER CONDITIONS & QUESTIONS\n";
+    summary += "Supervised by Chief Vault Overseer: Gordon Bennett\n";
+    summary += "Generated: " + new Date().toLocaleString() + "\n\n";
+
+    [1, 2, 3, 4].forEach((lvl) => {
+      const cfg = CAMPAIGN_LEVELS[lvl];
+      summary += "══════════════════════════════════════════════════════════════════════════\n";
+      summary += `LEVEL ${lvl}: ${cfg.title} (Timer: ${Math.floor(cfg.startSeconds / 60)} Minutes | Rules: 1 to ${cfg.rules})\n`;
+      summary += "══════════════════════════════════════════════════════════════════════════\n";
+      const lvlRules = fullRules.filter((r) => r.level === lvl);
+      lvlRules.forEach((r) => {
+        const custom = customEdits[r.id];
+        const text = custom?.text || r.text;
+        const ans = custom?.expectedAnswer || r.expectedAnswer;
+        summary += `[Rule #${String(r.id).padStart(2, "0")}] [${r.category}]\n`;
+        summary += `  Condition / Question: ${text}\n`;
+        summary += `  Expected Answer: ${ans}\n`;
+        if (r.hint && typeof r.hint === "string") summary += `  Hint / Clue: ${r.hint}\n`;
+        summary += "\n";
+      });
+    });
+
+    navigator.clipboard.writeText(summary).then(() => {
+      setCopiedRulesSummary(true);
+      setTimeout(() => setCopiedRulesSummary(false), 3000);
+      SoundEngine.playSuccess();
+    });
+  };
+
   const handleTriggerAdminPreview = useCallback((type) => {
     setAdminPreviewCinematic(type);
     SoundEngine.init();
@@ -216,22 +459,6 @@ function AdminDashboard() {
 
   const handleCloseAdminPreview = useCallback(() => {
     setAdminPreviewCinematic(null);
-  }, []);
-
-  const [log, setLog] = useState([
-    `[${new Date().toLocaleTimeString()}] Managing Director Gordon Bennett assumed active vault supervision.`,
-    `[${new Date().toLocaleTimeString()}] 4-Floor Defense Protocol armed across all network stations.`,
-  ]);
-  const busRef = useRef(null);
-  const logRef = useRef(null);
-  const managerImgSrc = getAssetPath("manager_cutout.png");
-
-  const addLog = useCallback((msg) => {
-    setLog(l => [...l.slice(-99), `[${new Date().toLocaleTimeString()}] ${msg}`]);
-  }, []);
-
-  const broadcast = useCallback((payload) => {
-    busRef.current?.postMessage(payload);
   }, []);
 
   /* Helper to normalize player data from any incoming source */
@@ -1167,6 +1394,27 @@ function AdminDashboard() {
           </button>
 
           <button
+            id="cipher-questions-inspector-btn"
+            type="button"
+            className="boss-btn"
+            style={{
+              borderColor: "#48D5D0",
+              background: "rgba(72, 213, 208, 0.18)",
+              color: "#48D5D0",
+              fontWeight: 800,
+            }}
+            onClick={() => {
+              SoundEngine.init();
+              SoundEngine.playClick();
+              setShowRulesInspector(true);
+            }}
+            title="Inspect all 45 vault questions and conditions in level order, reroll riddles, and customize questions"
+          >
+            <span className="btn-icon">📜</span>
+            <span className="btn-text">CIPHER QUESTIONS (45)</span>
+          </button>
+
+          <button
             id="reset-ejected-btn"
             type="button"
             className="boss-btn boss-btn-nameinput"
@@ -1965,6 +2213,295 @@ function AdminDashboard() {
           <span>OFFICIAL CONSOLE OF MANAGING DIRECTOR GORDON BENNETT // EST. 1986</span>
         </div>
       </footer>
+
+      {/* ── CIPHER QUESTIONS & CONDITIONS INSPECTOR MODAL ── */}
+      {showRulesInspector && (
+        <div className="boss-modal-overlay" onClick={() => setShowRulesInspector(false)}>
+          <div
+            className="boss-rules-inspector-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label="Executive Cipher Questions Inspector"
+          >
+            {/* Modal Header */}
+            <div className="inspector-modal-header">
+              <div className="inspector-title-group">
+                <span className="inspector-crown-icon">📜</span>
+                <div>
+                  <h2 className="inspector-modal-title">
+                    EXECUTIVE CIPHER QUESTIONS & PROTOCOLS INSPECTOR
+                  </h2>
+                  <p className="inspector-modal-subtitle">
+                    Floor-by-floor breakdown of all 45 sequential conditions and riddles. Oversee, reroll, or customize active questions in real-time.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="inspector-close-btn"
+                onClick={() => setShowRulesInspector(false)}
+                title="Close Inspector"
+              >
+                ✕ CLOSE
+              </button>
+            </div>
+
+            {/* Quick Actions & Level Filter Bar */}
+            <div className="inspector-toolbar-row">
+              <div className="inspector-filter-tabs">
+                <button
+                  type="button"
+                  className={`inspector-tab-btn ${rulesFloorFilter === "ALL" ? "active" : ""}`}
+                  onClick={() => setRulesFloorFilter("ALL")}
+                >
+                  ALL FLOORS (45)
+                </button>
+                <button
+                  type="button"
+                  className={`inspector-tab-btn fl1-tab ${rulesFloorFilter === 1 ? "active" : ""}`}
+                  onClick={() => setRulesFloorFilter(1)}
+                >
+                  FL.1 TELLERS (1-10) · 10m
+                </button>
+                <button
+                  type="button"
+                  className={`inspector-tab-btn fl2-tab ${rulesFloorFilter === 2 ? "active" : ""}`}
+                  onClick={() => setRulesFloorFilter(2)}
+                >
+                  FL.2 CASH (11-20) · 9m
+                </button>
+                <button
+                  type="button"
+                  className={`inspector-tab-btn fl3-tab ${rulesFloorFilter === 3 ? "active" : ""}`}
+                  onClick={() => setRulesFloorFilter(3)}
+                >
+                  FL.3 TITANIUM (21-32) · 8m
+                </button>
+                <button
+                  type="button"
+                  className={`inspector-tab-btn fl4-tab ${rulesFloorFilter === 4 ? "active" : ""}`}
+                  onClick={() => setRulesFloorFilter(4)}
+                >
+                  FL.4 OMEGA (33-45) · 7m
+                </button>
+              </div>
+
+              <div className="inspector-actions-group">
+                <input
+                  type="text"
+                  className="inspector-search-input"
+                  placeholder="🔍 Search questions, answers, keywords..."
+                  value={rulesSearch}
+                  onChange={(e) => setRulesSearch(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="inspector-action-btn btn-randomize-all"
+                  onClick={handleRandomizeAllQuestions}
+                  title="Randomize all dynamic riddles across all 4 levels"
+                >
+                  🎲 RANDOMIZE ALL
+                </button>
+                <button
+                  type="button"
+                  className="inspector-action-btn btn-copy-summary"
+                  onClick={copyAllRulesSummary}
+                  title="Copy formatted 45-question guide to clipboard"
+                >
+                  📋 {copiedRulesSummary ? "COPIED TO CLIPBOARD!" : "COPY QUESTIONS GUIDE"}
+                </button>
+              </div>
+            </div>
+
+            {/* Questions List in Sequential Order */}
+            <div className="inspector-rules-grid">
+              {filteredRules.length === 0 ? (
+                <div className="inspector-empty-state">
+                  No questions matching filter or search query.
+                </div>
+              ) : (
+                filteredRules.map((rule) => {
+                  const floorColor =
+                    rule.level === 1
+                      ? "#48D5D0"
+                      : rule.level === 2
+                      ? "#FFD166"
+                      : rule.level === 3
+                      ? "#F84391"
+                      : "#9B00FF";
+                  const isEditing = editingRuleId === rule.id;
+
+                  return (
+                    <div
+                      key={rule.id}
+                      className={`inspector-rule-card fl-${rule.level}-card ${rule.isCustomized ? "card-customized" : ""}`}
+                      style={{ borderLeftColor: floorColor }}
+                    >
+                      <div className="rule-card-header">
+                        <div className="rule-badge-group">
+                          <span className="rule-number-pill" style={{ backgroundColor: floorColor, color: "#000" }}>
+                            RULE #{String(rule.id).padStart(2, "0")}
+                          </span>
+                          <span className="rule-level-tag" style={{ color: floorColor }}>
+                            LEVEL {rule.level} · {rule.section}
+                          </span>
+                          <span className="rule-category-tag">{rule.category}</span>
+                          {rule.poolCategory && (
+                            <span className="rule-pool-tag" title="Dynamically randomized from pool">
+                              🎲 POOLED
+                            </span>
+                          )}
+                          {rule.isCustomized && (
+                            <span className="rule-custom-badge" title="Director custom override active">
+                              ✏️ CUSTOMIZED
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="rule-card-controls">
+                          {rule.poolCategory && !isEditing && (
+                            <button
+                              type="button"
+                              className="rule-btn-reroll"
+                              onClick={() => handleRerollQuestion(rule)}
+                              title={`Cycle to next question in the ${rule.poolCategory} pool`}
+                            >
+                              🎲 Reroll Question
+                            </button>
+                          )}
+                          {!isEditing ? (
+                            <button
+                              type="button"
+                              className="rule-btn-edit"
+                              onClick={() => handleStartEditRule(rule)}
+                              title="Customize this question prompt or expected solution"
+                            >
+                              ✏️ Edit Question
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="rule-btn-cancel"
+                              onClick={() => setEditingRuleId(null)}
+                            >
+                              ✕ Cancel
+                            </button>
+                          )}
+                          {rule.isCustomized && !isEditing && (
+                            <button
+                              type="button"
+                              className="rule-btn-reset"
+                              onClick={() => handleResetRuleEdit(rule.id)}
+                              title="Reset to default system question"
+                            >
+                              🔄 Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Rule Content or Edit Mode */}
+                      {!isEditing ? (
+                        <div className="rule-card-body">
+                          <div className="rule-prompt-line">
+                            <span className="prompt-label">CONDITION / QUESTION:</span>
+                            <span className="prompt-text">{rule.text}</span>
+                          </div>
+
+                          <div className="rule-answer-line">
+                            <span className="answer-label">EXPECTED SOLUTION:</span>
+                            <span className="answer-code-pill" style={{ borderColor: floorColor }}>
+                              {String(rule.expectedAnswer || "Formula/Regex Checked")}
+                            </span>
+                          </div>
+
+                          {rule.hint && typeof rule.hint === "string" && (
+                            <div className="rule-hint-line">
+                              <span className="hint-label">HINT / CLUE:</span>
+                              <span className="hint-text">{rule.hint}</span>
+                            </div>
+                          )}
+
+                          {rule.managerSpeech && typeof rule.managerSpeech === "string" && (
+                            <div className="rule-speech-preview">
+                              <span className="speech-avatar">👔 Gordon Bennett:</span>
+                              <span className="speech-quote">"{rule.managerSpeech}"</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Inline Editor */
+                        <div className="rule-card-edit-form">
+                          <div className="form-field">
+                            <label>Question Prompt / Text:</label>
+                            <input
+                              type="text"
+                              className="inspector-edit-input"
+                              value={editFormData.text}
+                              onChange={(e) => setEditFormData({ ...editFormData, text: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="form-field">
+                            <label>Expected Answer / Keyword Solution:</label>
+                            <input
+                              type="text"
+                              className="inspector-edit-input"
+                              value={editFormData.expectedAnswer}
+                              onChange={(e) => setEditFormData({ ...editFormData, expectedAnswer: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="form-field">
+                            <label>Hint / Clue for Players:</label>
+                            <input
+                              type="text"
+                              className="inspector-edit-input"
+                              value={editFormData.hint}
+                              onChange={(e) => setEditFormData({ ...editFormData, hint: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="form-actions-row">
+                            <button
+                              type="button"
+                              className="btn-save-edit"
+                              onClick={() => handleSaveRuleEdit(rule.id)}
+                            >
+                              💾 Apply & Broadcast Changes
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-cancel-edit"
+                              onClick={() => setEditingRuleId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="inspector-modal-footer">
+              <span className="footer-directive">
+                👔 Chief Director Bennett: All changes broadcast instantaneously to active player terminals via local bus and cloud dispatch.
+              </span>
+              <button
+                type="button"
+                className="inspector-close-btn"
+                onClick={() => setShowRulesInspector(false)}
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── CINEMATIC PREVIEW OVERLAY (ADMIN ONLY) ── */}
       {adminPreviewCinematic === "wasted" && (
