@@ -838,22 +838,73 @@ function AdminDashboard() {
     })));
   }, [addLog, broadcast]);
 
-  const clearRosterAll = useCallback(async () => {
-    if (!window.confirm("Director Bennett: Permanently purge all participant records and reset surveillance grid? This cannot be undone.")) return;
+  const deletePlayerParticipationRecord = useCallback(async (playerId, alias, name) => {
+    const displayName = alias || name || playerId;
+    if (!window.confirm(`Chief Director Bennett: Permanently delete all participation and submission records for "${displayName}" (${playerId}) from the database?`)) {
+      return;
+    }
+
     SoundEngine.init();
     SoundEngine.playAlert();
-    addLog("Director Bennett permanently purged all participant records");
+    addLog(`Director Bennett permanently removed participation record for ${displayName} (${playerId})`);
+
+    // 1. Supabase Cloud Sync
+    await deletePlayerFromSupabase(playerId);
+    sendAdminCommandToSupabase({ action: "DELETE_RECORD", playerId });
+
+    // 2. Clear local storage items
+    try {
+      localStorage.removeItem("vch_player_state_" + playerId);
+      localStorage.removeItem("vch_player_data_" + playerId);
+      localStorage.removeItem("vch_player_violations_" + playerId);
+    } catch (_) {}
+
+    // 3. BroadcastChannel (instructs open terminal to reset)
+    broadcast({ type: "purge_player", playerId });
+
+    // 4. Update local React state
+    setPlayers(prev => prev.filter(p => p.id !== playerId));
+    setEjectedStations(prev => {
+      const next = prev.filter(s => s.id !== playerId);
+      try { localStorage.setItem("vch_ejected_stations", JSON.stringify(next)); } catch (_) {}
+      return next;
+    });
+    setSecurityViolations(prev => {
+      const next = prev.filter(v => v.playerId !== playerId);
+      try { localStorage.setItem("vch_admin_violations", JSON.stringify(next)); } catch (_) {}
+      return next;
+    });
+
+    // 5. Port 5176 Server
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "DELETE_RECORD", playerId }),
+    }).catch(() => {});
+  }, [addLog, broadcast]);
+
+  const clearAllParticipantsData = useCallback(async () => {
+    if (!window.confirm("⚠️ EMPTY TOURNAMENT DATABASE?\n\nThis will permanently delete ALL participant records, clearance times, and round submissions from the database. Only use this before starting a fresh event.\n\nAre you sure you want to proceed?")) return;
+    SoundEngine.init();
+    SoundEngine.playAlert();
+    addLog("Chief Director Bennett executed complete database wipe: ALL participant records purged");
 
     // 1. Supabase Cloud Sync
     await clearAllPlayersFromSupabase();
-    sendAdminCommandToSupabase({ action: "PURGE_ROSTER" });
+    sendAdminCommandToSupabase({ action: "PURGE_ALL_DATA" });
 
     // 2. Clear local storage player items
     try {
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && (k.startsWith("vch_player_state_") || k.startsWith("vch_player_data_"))) {
+        if (k && (
+          k.startsWith("vch_player_state_") ||
+          k.startsWith("vch_player_data_") ||
+          k.startsWith("vch_player_violations_") ||
+          k === "vch_ejected_stations" ||
+          k === "vch_admin_violations"
+        )) {
           keysToRemove.push(k);
         }
       }
@@ -861,10 +912,20 @@ function AdminDashboard() {
     } catch (_) {}
 
     // 3. BroadcastChannel
+    broadcast({ type: "purge_all" });
     broadcast({ type: "purge_roster" });
 
     // 4. Update local state
     setPlayers([]);
+    setEjectedStations([]);
+    setSecurityViolations([]);
+
+    // 5. Port 5176 Server
+    fetch("http://localhost:5176/api/admin/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "PURGE_ALL_DATA" }),
+    }).catch(() => {});
   }, [addLog, broadcast]);
 
   const handleCopyPassword = useCallback((playerId, password, alias) => {
@@ -1093,14 +1154,14 @@ function AdminDashboard() {
           </button>
 
           <button
-            id="purge-roster-btn"
+            id="empty-database-btn"
             type="button"
-            className="boss-btn boss-btn-eject"
-            onClick={clearRosterAll}
-            title="Permanently purge all participant records from database"
+            className="boss-btn boss-btn-empty-db"
+            onClick={clearAllParticipantsData}
+            title="Empty Database: Permanently delete all participant records, floor times, and cipher submissions"
           >
             <span className="btn-icon">🗑️</span>
-            <span className="btn-text">PURGE ROSTER</span>
+            <span className="btn-text">EMPTY DATABASE</span>
           </button>
 
           <button
@@ -1232,12 +1293,13 @@ function AdminDashboard() {
                 <th>TOTAL CLEARANCE TIME</th>
                 <th>OFFICIAL FINISH TIMESTAMP</th>
                 <th>FLOOR BREAKDOWN</th>
+                <th>DELETE RECORD</th>
               </tr>
             </thead>
             <tbody>
               {tiebreakerRankings.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: "24px", color: "rgba(255, 242, 227, 0.5)" }}>
+                  <td colSpan={9} style={{ textAlign: "center", padding: "24px", color: "rgba(255, 242, 227, 0.5)" }}>
                     No participant clearance records recorded yet. Stations will be automatically evaluated here as they advance through the 4 vault floors.
                   </td>
                 </tr>
@@ -1293,6 +1355,16 @@ function AdminDashboard() {
                           )}
                         </div>
                       </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="boss-cell-btn-delete"
+                          onClick={() => deletePlayerParticipationRecord(p.id, p.alias, p.name)}
+                          title={`Permanently delete participation record for ${p.alias}`}
+                        >
+                          🗑️ DELETE
+                        </button>
+                      </td>
                     </tr>
                   );
                 })
@@ -1337,12 +1409,13 @@ function AdminDashboard() {
                 <th>ADVANCE FLOOR</th>
                 <th>NAME INPUT</th>
                 <th>DISQUALIFY</th>
+                <th>DELETE RECORD</th>
               </tr>
             </thead>
             <tbody>
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="table-empty-cell">
+                  <td colSpan={12} className="table-empty-cell">
                     <div className="radar-empty-container">
                       <div className="radar-anim-wrapper">
                         <div className="radar-circle radar-c1"></div>
@@ -1516,6 +1589,19 @@ function AdminDashboard() {
                           🚫 EJECT
                         </button>
                       </td>
+
+                      {/* Delete Participation Record */}
+                      <td className="cell-action">
+                        <button
+                          id={`delete-record-${p.id}`}
+                          type="button"
+                          className="boss-cell-btn delete-record-btn"
+                          onClick={() => deletePlayerParticipationRecord(p.id, p.alias, p.name)}
+                          title="Permanently remove participation record from database"
+                        >
+                          🗑️ DELETE
+                        </button>
+                      </td>
                     </tr>
                   );
                 })
@@ -1562,12 +1648,13 @@ function AdminDashboard() {
                 <th>TIME ELIMINATED</th>
                 <th>LAST FLOOR</th>
                 <th>RESTORE CLEARANCE</th>
+                <th>DELETE RECORD</th>
               </tr>
             </thead>
             <tbody>
               {ejectedStations.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "rgba(255, 242, 227, 0.5)" }}>
+                  <td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "rgba(255, 242, 227, 0.5)" }}>
                     No eliminated or ejected terminals. When a player is disqualified or ejected, they will automatically appear here instead of the active surveillance grid.
                   </td>
                 </tr>
@@ -1601,6 +1688,16 @@ function AdminDashboard() {
                         title="Reset this station back to Name Input registration"
                       >
                         📝 SEND TO NAME INPUT
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="boss-cell-btn-delete"
+                        onClick={() => deletePlayerParticipationRecord(s.id, s.alias, s.name)}
+                        title="Permanently remove this eliminated player's record"
+                      >
+                        🗑️ DELETE
                       </button>
                     </td>
                   </tr>

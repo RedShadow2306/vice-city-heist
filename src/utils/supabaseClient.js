@@ -197,15 +197,21 @@ export async function updatePlayerInSupabase(playerId, patch) {
  * Delete / Eject player from Supabase.
  */
 export async function deletePlayerFromSupabase(playerId) {
+  if (!playerId) return false;
   try {
     const { error } = await supabase
       .from("vch_players")
       .delete()
       .eq("id", playerId);
 
-    if (error) console.warn("[Supabase] deletePlayer error:", error.message);
+    if (error) {
+      console.warn("[Supabase] deletePlayer error:", error.message);
+      return false;
+    }
+    return true;
   } catch (err) {
     console.warn("[Supabase] deletePlayer exception:", err);
+    return false;
   }
 }
 
@@ -243,11 +249,16 @@ export async function clearAllPlayersFromSupabase() {
     const { error } = await supabase
       .from("vch_players")
       .delete()
-      .neq("id", "none");
+      .neq("id", "___NEVER_MATCH_ALL___");
 
-    if (error) console.warn("[Supabase] clearAllPlayers error:", error.message);
+    if (error) {
+      console.warn("[Supabase] clearAllPlayers error:", error.message);
+      return false;
+    }
+    return true;
   } catch (err) {
     console.warn("[Supabase] clearAllPlayers exception:", err);
+    return false;
   }
 }
 

@@ -1219,7 +1219,14 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     localStorage.removeItem("vch_player_alias");
     localStorage.removeItem("vch_player_college");
     localStorage.removeItem("vch_round_submissions");
+    localStorage.removeItem("vch_level_times");
+    localStorage.removeItem("vch_completion_data");
+    localStorage.removeItem("vch_player_violations_" + playerId);
     setRoundSubmissions({ 1: "", 2: "", 3: "", 4: "" });
+    setLevelTimes({ 1: 0, 2: 0, 3: 0, 4: 0 });
+    setCompletionData(null);
+    setViolations([]);
+    setTotalCampaignSeconds(0);
     try {
       localStorage.removeItem("vch_player_state_" + playerId);
       localStorage.removeItem("vch_player_data_" + playerId);
@@ -1569,6 +1576,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         if (!pid || pid === playerId || (evt.data?.target === "ejected" && (isEjected || localStorage.getItem("vch_ejected") === "true"))) {
           handleResetToNameInput();
         }
+      } else if (type === "purge_all" || type === "purge_roster") {
+        handleResetToNameInput();
+      } else if (type === "purge_player" && pid === playerId) {
+        handleResetToNameInput();
       } else if (type === "globalFreeze") {
         setIsPlayerFrozen(Boolean(f));
         SoundEngine.init();
@@ -1620,6 +1631,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 if (!cmd.playerId || cmd.playerId === playerId || (cmd.target === "ejected" && (isEjected || localStorage.getItem("vch_ejected") === "true"))) {
                   handleResetToNameInput();
                 }
+              } else if (cmd.action === "PURGE_ALL_DATA" || cmd.action === "PURGE_ROSTER") {
+                handleResetToNameInput();
+              } else if ((cmd.action === "PURGE_PLAYER" || cmd.action === "DELETE_RECORD" || cmd.action === "DELETE_PLAYER_RECORD") && cmd.playerId === playerId) {
+                handleResetToNameInput();
               } else if (cmd.action === "RESET_TO_LOBBY") {
                 clearInterval(timerRef.current);
                 setScreen("lobby");
@@ -1681,6 +1696,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               if (!cmd.playerId || cmd.playerId === playerId || (cmd.target === "ejected" && (isEjected || localStorage.getItem("vch_ejected") === "true"))) {
                 handleResetToNameInput();
               }
+            } else if (cmd.action === "PURGE_ALL_DATA" || cmd.action === "PURGE_ROSTER") {
+              handleResetToNameInput();
+            } else if ((cmd.action === "PURGE_PLAYER" || cmd.action === "DELETE_RECORD" || cmd.action === "DELETE_PLAYER_RECORD") && cmd.playerId === playerId) {
+              handleResetToNameInput();
             } else if (cmd.action === "RESET_TO_LOBBY") {
               clearInterval(timerRef.current);
               setScreen("lobby");

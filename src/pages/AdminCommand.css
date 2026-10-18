@@ -535,6 +535,47 @@
   border-color: #A78BFA;
 }
 
+.boss-btn-empty-db {
+  background: linear-gradient(135deg, #991B1B, #DC2626);
+  color: #FFFFFF;
+  border-color: rgba(248, 113, 113, 0.7);
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.45);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.boss-btn-empty-db:hover {
+  background: linear-gradient(135deg, #DC2626, #EF4444);
+  box-shadow: 0 4px 24px rgba(239, 68, 68, 0.75);
+  border-color: #F87171;
+  transform: translateY(-2px);
+}
+
+.delete-record-btn,
+.boss-cell-btn-delete {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  cursor: pointer;
+  background: rgba(239, 68, 68, 0.12);
+  color: #FCA5A5;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.delete-record-btn:hover:not(:disabled),
+.boss-cell-btn-delete:hover:not(:disabled) {
+  background: #DC2626;
+  color: #FFFFFF;
+  border-color: #EF4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
+  transform: translateY(-1px);
+}
+
 /* Round breakdown cards in inspection modal */
 .pw-modal-rounds-grid {
   display: grid;

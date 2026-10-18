@@ -335,6 +335,27 @@ const server = http.createServer((req, res) => {
           if (playerId && players[playerId]) {
             delete players[playerId];
           }
+        } else if (action === 'DELETE_RECORD' || action === 'PURGE_PLAYER' || action === 'DELETE_PLAYER_RECORD') {
+          if (playerId) {
+            delete players[playerId];
+            delete ejectedPlayers[playerId];
+            removedPlayers.delete(playerId);
+            securityViolations = securityViolations.filter(v => v.playerId !== playerId);
+          }
+          gameState.activeCommand = {
+            action: 'PURGE_PLAYER',
+            playerId: playerId || null,
+            timestamp: Date.now(),
+          };
+        } else if (action === 'PURGE_ALL_DATA' || action === 'CLEAR_ALL_PLAYERS' || action === 'PURGE_ROSTER') {
+          players = {};
+          ejectedPlayers = {};
+          securityViolations = [];
+          removedPlayers.clear();
+          gameState.activeCommand = {
+            action: 'PURGE_ALL_DATA',
+            timestamp: Date.now(),
+          };
         } else if (action === 'TRIGGER_SIREN') {
           gameState.activeCommand = {
             action: 'TRIGGER_SIREN',
