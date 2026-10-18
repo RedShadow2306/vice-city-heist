@@ -59,17 +59,16 @@ def build_lobby_vault(output_glb):
 
         return mat
 
-    # Materials
-    mat_chassis = make_mat("MatChassis", (0.09, 0.12, 0.18, 1.0), metallic=0.85, roughness=0.32)
-    mat_frame = make_mat("MatFrame", (0.14, 0.18, 0.28, 1.0), metallic=0.80, roughness=0.30)
-    mat_cyan_glow = make_mat("MatCyanGlow", (0.0, 0.9, 1.0, 1.0), metallic=0.2, roughness=0.2, emission=(0.0, 0.9, 1.0, 1.0), emission_strength=2.2)
-    mat_chrome = make_mat("MatChrome", (0.88, 0.92, 0.98, 1.0), metallic=0.96, roughness=0.15)
-    mat_dark_interior = make_mat("MatDarkInterior", (0.06, 0.08, 0.12, 1.0), metallic=0.88, roughness=0.45)
-    mat_gold = make_mat("MatGold", (1.0, 0.78, 0.05, 1.0), metallic=0.98, roughness=0.16)
-    mat_gold_glow = make_mat("MatGoldGlow", (1.0, 0.75, 0.1, 1.0), metallic=0.5, roughness=0.3, emission=(1.0, 0.7, 0.05, 1.0), emission_strength=3.5)
+    # High-visibility brushed ballistic steel & polished chrome materials
+    mat_chassis = make_mat("MatChassis", (0.36, 0.44, 0.58, 1.0), metallic=0.60, roughness=0.28)
+    mat_frame = make_mat("MatFrame", (0.50, 0.58, 0.72, 1.0), metallic=0.68, roughness=0.22)
+    mat_cyan_glow = make_mat("MatCyanGlow", (0.0, 0.95, 1.0, 1.0), metallic=0.1, roughness=0.15, emission=(0.0, 0.95, 1.0, 1.0), emission_strength=3.2)
+    mat_chrome = make_mat("MatChrome", (0.95, 0.97, 1.0, 1.0), metallic=0.96, roughness=0.10)
+    mat_dark_interior = make_mat("MatDarkInterior", (0.24, 0.28, 0.38, 1.0), metallic=0.45, roughness=0.38)
+    mat_gold = make_mat("MatGold", (1.0, 0.82, 0.15, 1.0), metallic=0.92, roughness=0.16)
+    mat_gold_glow = make_mat("MatGoldGlow", (1.0, 0.80, 0.12, 1.0), metallic=0.4, roughness=0.25, emission=(1.0, 0.75, 0.08, 1.0), emission_strength=4.5)
 
-    mat_dial = make_mat("MatDial", (0.15, 0.18, 0.25, 1.0), metallic=0.8, roughness=0.35, tex_path=dial_tex_path)
-    mat_plaque = make_mat("MatPlaque", (0.10, 0.14, 0.22, 1.0), metallic=0.85, roughness=0.3, tex_path=plaque_tex_path)
+    mat_dial = make_mat("MatDial", (0.35, 0.40, 0.52, 1.0), metallic=0.60, roughness=0.30, tex_path=dial_tex_path)
 
     # ─────────────────────────────────────────────────────────
     # 3. HOLLOW VAULT CHASSIS (Stationary Walls)
@@ -198,7 +197,7 @@ def build_lobby_vault(output_glb):
     # 6. COMBINATION DIAL & 3-SPOKE HANDLE (LOCAL TO DOOR)
     # ─────────────────────────────────────────────────────────
     dial_local_x = 1.34
-    dial_local_z = 0.18
+    dial_local_z = 0.0
     dial_local_y = -0.055
 
     # Dial Bezel Housing
@@ -271,8 +270,18 @@ def build_lobby_vault(output_glb):
         knob.parent = handle_pivot
         knob.location = (tip_x, 0, tip_z)
 
-    # Nameplate Plaque (below dial)
-    add_door_box("VaultPlaque", (dial_local_x, dial_local_y - 0.01, -0.52), (1.46, 0.012, 0.42), mat_plaque)
+    # Dual Heavy Steel Door Reinforcement Ribs (No Plaque/Text - Pure Mechanical Vault Design)
+    add_door_box("DoorReinforceTop", (dial_local_x, -0.048, 0.72), (2.30, 0.015, 0.14), mat_frame)
+    add_door_box("DoorReinforceBottom", (dial_local_x, -0.048, -0.72), (2.30, 0.015, 0.14), mat_frame)
+    for bx in [0.45, 1.05, 1.65, 2.25]:
+        for bz in [0.72, -0.72]:
+            bpy.ops.mesh.primitive_cylinder_add(radius=0.038, depth=0.03, vertices=12, location=(0, 0, 0))
+            bolt = bpy.context.active_object
+            bolt.rotation_euler = (math.radians(90), 0, 0)
+            bpy.ops.object.transform_apply(rotation=True)
+            bolt.data.materials.append(mat_chrome)
+            bolt.parent = door_pivot
+            bolt.location = (bx, -0.055, bz)
 
     # ─────────────────────────────────────────────────────────
     # 7. EXPORT GLTF 2.0 (.glb)

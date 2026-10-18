@@ -9,9 +9,11 @@ function easeOutCubic(x) {
   return 1 - Math.pow(1 - x, 3);
 }
 
+const VAULT_MODEL_URL = getAssetUrl("/models/lobby_vault.glb?v=7");
+
 /* ─── 3D Vice City Savings & Loan Vault Mesh ─── */
 function VaultModel({ isOpening }) {
-  const gltf = useGLTF(getAssetUrl("/models/lobby_vault.glb"));
+  const gltf = useGLTF(VAULT_MODEL_URL);
   const scene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
 
   const groupRef = useRef(null);
@@ -35,7 +37,23 @@ function VaultModel({ isOpening }) {
         child.castShadow = true;
         child.receiveShadow = true;
         if (child.material) {
-          child.material.envMapIntensity = 1.3;
+          child.material.envMapIntensity = 1.6;
+          // Ensure steel materials respond crisply to studio light
+          if (child.material.roughness !== undefined) {
+            child.material.roughness = Math.max(0.18, Math.min(child.material.roughness, 0.42));
+          }
+          if (
+            child.material.metalness !== undefined &&
+            child.material.metalness > 0.75 &&
+            !child.name.includes("Chrome") &&
+            !child.name.includes("Gold") &&
+            !child.name.includes("Spoke") &&
+            !child.name.includes("Hub") &&
+            !child.name.includes("Rivet") &&
+            !child.name.includes("Bolt")
+          ) {
+            child.material.metalness = 0.55;
+          }
         }
       }
     });
@@ -56,10 +74,12 @@ function VaultModel({ isOpening }) {
       if (doorRef.current) doorRef.current.rotation.y = 0;
       openProgressRef.current = 0;
 
-      // Subtle resting float tilt
+      // Subtle resting 3D perspective angle with gentle floating breathing
+      const idleTime = state.clock.elapsedTime;
       if (groupRef.current) {
-        groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.7) * 0.03;
-        groupRef.current.rotation.x = Math.cos(state.clock.elapsedTime * 0.7) * 0.02;
+        // Base 3D isometric turn (14 degrees) showcases safe depth, left hinges, and chrome spokes
+        groupRef.current.rotation.y = 0.22 + Math.sin(idleTime * 0.8) * 0.05;
+        groupRef.current.rotation.x = 0.05 + Math.cos(idleTime * 0.7) * 0.025;
       }
     } else {
       // 2. OPENING SEQUENCE:
@@ -91,59 +111,67 @@ function VaultModel({ isOpening }) {
   });
 
   return (
-    <group ref={groupRef} position={[0, -0.02, 0]} scale={[0.96, 0.96, 0.96]}>
+    <group ref={groupRef} position={[0, -0.02, 0]} scale={[0.98, 0.98, 0.98]}>
       <primitive object={scene} />
     </group>
   );
 }
 
-useGLTF.preload(getAssetUrl("/models/lobby_vault.glb"));
+useGLTF.preload(VAULT_MODEL_URL);
 
-/* ─── Exported Lobby Vault 3D Component ─── */
+/* ─── Exported Lobby Vault 3D Component (Borderless, Pure 3D Safe) ─── */
 export default function LobbyVault3D({ isOpening = false }) {
   return (
     <div className="vault-3d-stage">
-      <div className={`vault-3d-box ${isOpening ? "opening" : ""}`}>
-        {/* Frame Header with Security Chip & Live Status */}
-        <div className="vault-frame-header">
-          <span className="vault-security-chip">TITANIUM CLASS-IV VAULT</span>
-          <span className={`vault-status-indicator ${isOpening ? "opening" : ""}`}>
-            {isOpening ? "UNLOCKING..." : "ARMED & SEALED"}
-          </span>
-        </div>
+      {/* Borderless, Transparent 3D Real-Time Viewport */}
+      <div className="vault-canvas-container">
+        <Canvas
+          shadows
+          gl={{
+            antialias: true,
+            alpha: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.45,
+          }}
+          camera={{ position: [0, 0, 3.8], fov: 42 }}
+          className="vault-r3f-canvas"
+        >
+          {/* High-Visibility Studio Lighting */}
+          <ambientLight intensity={2.2} color="#FFFFFF" />
 
-        {/* 3D Real-Time Canvas Viewport */}
-        <div className="vault-canvas-container">
-          <Canvas
-            shadows
-            camera={{ position: [0, 0, 3.8], fov: 42 }}
-            className="vault-r3f-canvas"
-          >
-            {/* Cinematic Vice City Lighting */}
-            <ambientLight intensity={0.9} color="#101828" />
+          {/* Strong Front Key Light */}
+          <directionalLight position={[3.5, 4.5, 4.5]} intensity={3.6} color="#FFFFFF" castShadow />
 
-            {/* Front Key Light */}
-            <directionalLight position={[2, 3, 4]} intensity={2.2} castShadow />
+          {/* Left Fill Light (soft cool daylight) */}
+          <directionalLight position={[-4.0, 2.0, 3.5]} intensity={2.6} color="#BEE3FF" />
 
-            {/* Cyan Neon Accent Light (reflects off steel chassis & bezel) */}
-            <pointLight position={[-1.8, 1.6, 2.0]} intensity={2.6} color="#00E5FF" distance={5} />
+          {/* Bottom Bounce Light (illuminates underside and lower bolts) */}
+          <directionalLight position={[0, -3.5, 2.5]} intensity={2.0} color="#FFFFFF" />
 
-            {/* Hot Pink Rim Accent */}
-            <pointLight position={[1.8, -1.2, 1.5]} intensity={1.6} color="#FF007F" distance={5} />
+          {/* Top Edge Highlight */}
+          <directionalLight position={[0, 4.5, 0.5]} intensity={2.0} color="#FFFFFF" />
 
-            {/* Interior Gold Light (revealed through opening door) */}
-            <pointLight
-              position={[0.2, -0.2, -0.4]}
-              intensity={isOpening ? 6.0 : 1.2}
-              color="#FFD166"
-              distance={4}
-            />
+          {/* Backlight / Rim Light */}
+          <directionalLight position={[0, 3.0, -3.0]} intensity={2.5} color="#FFFFFF" />
 
-            <Suspense fallback={null}>
-              <VaultModel isOpening={isOpening} />
-            </Suspense>
-          </Canvas>
-        </div>
+          {/* Vice City Cyan Neon Accent (specular reflections on steel chassis) */}
+          <pointLight position={[-2.4, 1.8, 2.2]} intensity={3.8} color="#00E5FF" distance={8} />
+
+          {/* Vice City Magenta Rim Accent */}
+          <pointLight position={[2.4, -1.4, 2.0]} intensity={2.8} color="#FF007F" distance={8} />
+
+          {/* Interior Gold Bullion Glow */}
+          <pointLight
+            position={[0.2, -0.1, -0.3]}
+            intensity={isOpening ? 9.5 : 2.5}
+            color="#FFD166"
+            distance={6}
+          />
+
+          <Suspense fallback={null}>
+            <VaultModel isOpening={isOpening} />
+          </Suspense>
+        </Canvas>
       </div>
     </div>
   );

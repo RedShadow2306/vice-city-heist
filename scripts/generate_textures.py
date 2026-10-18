@@ -12,8 +12,8 @@ def generate_dial_texture(filepath):
     # Dial Background Ring
     r_outer = 480
     r_inner = 140
-    draw.ellipse([cx - r_outer, cy - r_outer, cx + r_outer, cy + r_outer], fill=(22, 28, 41, 255), outline=(90, 109, 150, 255), width=8)
-    draw.ellipse([cx - 430, cy - 430, cx + 430, cy + 430], outline=(60, 75, 105, 255), width=4)
+    draw.ellipse([cx - r_outer, cy - r_outer, cx + r_outer, cy + r_outer], fill=(36, 44, 62, 255), outline=(130, 155, 205, 255), width=8)
+    draw.ellipse([cx - 430, cy - 430, cx + 430, cy + 430], outline=(90, 115, 160, 255), width=4)
 
     # Dial Tick Marks
     for i in range(100):
@@ -22,7 +22,7 @@ def generate_dial_texture(filepath):
         is_mid = (i % 5 == 0) and not is_major
         tick_len = 45 if is_major else (28 if is_mid else 16)
         line_w = 6 if is_major else (4 if is_mid else 2)
-        color = (255, 255, 255, 240) if is_major else ((160, 185, 220, 220) if is_mid else (100, 120, 155, 180))
+        color = (255, 255, 255, 255) if is_major else ((200, 220, 250, 240) if is_mid else (140, 165, 205, 200))
 
         x1 = cx + (r_outer - 15) * math.cos(angle_rad)
         y1 = cy + (r_outer - 15) * math.sin(angle_rad)
@@ -52,10 +52,10 @@ def generate_dial_texture(filepath):
         bbox = draw.textbbox((0, 0), text, font=font)
         tw = bbox[2] - bbox[0]
         th = bbox[3] - bbox[1]
-        draw.text((tx - tw / 2, ty - th / 2), text, fill=(220, 235, 255, 255), font=font)
+        draw.text((tx - tw / 2, ty - th / 2), text, fill=(255, 255, 255, 255), font=font)
 
     # Center Hub Base
-    draw.ellipse([cx - r_inner, cy - r_inner, cx + r_inner, cy + r_inner], fill=(15, 19, 29, 255), outline=(72, 213, 208, 255), width=6)
+    draw.ellipse([cx - r_inner, cy - r_inner, cx + r_inner, cy + r_inner], fill=(28, 35, 52, 255), outline=(0, 229, 255, 255), width=6)
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     img.save(filepath)
     print(f"Generated dial texture: {filepath}")
