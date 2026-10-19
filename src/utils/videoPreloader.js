@@ -11,9 +11,10 @@
 
 import { getAssetUrl } from "./assetPath";
 
-const CACHE_NAME = "vch-video-cache-v1";
+const CACHE_NAME = "vch-video-cache-v2";
+const OBSOLETE_CACHES = ["vch-video-cache-v1"];
 const VIDEO_PATH = "/video/heist_intro.mp4";
-const ESTIMATED_SIZE = 5499018; // 5.24 MB
+const ESTIMATED_SIZE = 2912922; // 2.77 MB
 
 class VideoPreloadService {
   constructor() {
@@ -51,6 +52,17 @@ class VideoPreloadService {
   async init() {
     if (this.loadPromise) return this.loadPromise;
 
+    // Purge any stale/choppy cache from v1
+    try {
+      if (typeof window !== "undefined" && "caches" in window) {
+        for (const oldKey of OBSOLETE_CACHES) {
+          if (await caches.has(oldKey)) {
+            await caches.delete(oldKey);
+          }
+        }
+      }
+    } catch (_) {}
+
     this.loadPromise = this._startPreload();
     return this.loadPromise;
   }
@@ -62,7 +74,7 @@ class VideoPreloadService {
 
     // 1. Try Cache Storage first (instant on repeat visits)
     try {
-      if ("caches" in window) {
+      if (typeof window !== "undefined" && "caches" in window) {
         const cache = await caches.open(CACHE_NAME);
         const cachedResponse = await cache.match(targetUrl);
         if (cachedResponse) {
@@ -78,7 +90,7 @@ class VideoPreloadService {
       console.warn("[VideoPreloader] Cache Storage lookup failed, falling back to fetch:", e);
     }
 
-    // 2. Fetch and stream progress
+    // 2. Fetch and stream progress with throttled notifications to prevent UI thread thrashing
     try {
       const response = await fetch(targetUrl);
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
@@ -89,6 +101,7 @@ class VideoPreloadService {
       if (response.body && response.body.getReader) {
         const reader = response.body.getReader();
         let receivedLength = 0;
+        let lastNotifiedPct = 0;
         const chunks = [];
 
         while (true) {
@@ -99,7 +112,9 @@ class VideoPreloadService {
           receivedLength += value.length;
 
           const pct = Math.min(99, Math.round((receivedLength / contentLength) * 100));
-          if (pct !== this.progress) {
+          // Notify every 10% milestone to keep 3D/UI animations at 60 FPS
+          if (pct - lastNotifiedPct >= 10 || pct === 99) {
+            lastNotifiedPct = pct;
             this.progress = pct;
             this.notify();
           }

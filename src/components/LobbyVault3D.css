@@ -45,6 +45,7 @@
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   z-index: 10;
 }

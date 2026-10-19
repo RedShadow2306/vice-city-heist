@@ -192,6 +192,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     blobUrl: videoPreloader.blobUrl,
   }));
   const [videoIsBuffering, setVideoIsBuffering] = useState(false);
+  // Freeze video src upon mounting cutscene so playback never gets interrupted/swapped mid-stream
+  const [activeCutsceneSrc, setActiveCutsceneSrc] = useState(() => videoPreloader.getVideoUrl());
 
   useEffect(() => {
     videoPreloader.init();
@@ -200,6 +202,12 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (screen === "cutscene") {
+      setActiveCutsceneSrc(videoPreloader.getVideoUrl());
+    }
+  }, [screen]);
 
   /* Auto-advance GTA Slideshow Stages */
   useEffect(() => {
@@ -374,21 +382,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const [managerImgSrc] = useState(() => getAssetUrl("/images/manager_cutout.png"));
   const videoRef = useRef(null);
 
-  /* ── Lobby Asset & Video Preloading (Eliminates cutscene & game loading lag) ── */
+  /* ── Lobby Asset Preloading (Eliminates cutscene & game loading lag) ── */
   useEffect(() => {
     if (screen === "lobby") {
-      // 1. Preload video in background and stream into browser HTTP cache
-      try {
-        fetch(getAssetUrl("/video/heist_intro.mp4"), { mode: "cors" }).catch(() => {});
-        const preVideo = document.createElement("video");
-        preVideo.src = getAssetUrl("/video/heist_intro.mp4");
-        preVideo.preload = "auto";
-        preVideo.muted = true;
-        preVideo.playsInline = true;
-        preVideo.load();
-      } catch (_) {}
-
-      // 2. Preload all background textures & UI graphics
+      // Preload all background textures & UI graphics
       const assetsToPreload = [
         "/images/heist_intro_poster.jpg",
         "/images/vault_neon_bg.jpg",
@@ -1257,7 +1254,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     return () => {
       window.removeEventListener("keydown", handleCutsceneKeyDown);
     };
-  }, [screen, handleCutsceneDone, videoPreload.blobUrl]);
+  }, [screen, handleCutsceneDone]);
 
   /* ── Start Active Defense on Current Level ── */
   const handleStartActiveDefense = (levelToStart) => {
@@ -1535,16 +1532,6 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       {/* ── SCREEN 1: WAITING LOBBY (Main Association Background & Clutter-Free) ── */}
       {screen === "lobby" && (
         <section className="lobby-fullscreen-stage">
-          {/* Preload cutscene video silently in the lobby DOM to eliminate any transition buffering */}
-          <video
-            preload="auto"
-            muted
-            playsInline
-            src={videoPreload.blobUrl || getAssetUrl("/video/heist_intro.mp4")}
-            style={{ display: "none", position: "absolute", width: "1px", height: "1px", opacity: 0, pointerEvents: "none" }}
-            aria-hidden="true"
-          />
-
           {/* Main Association Website Sunset Background Layers */}
           <div className="lobby-bg-viewport" aria-hidden="true">
             <img
@@ -1704,12 +1691,16 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           <div className="video-player-frame">
             <video
               ref={videoRef}
-              src={videoPreload.blobUrl || getAssetUrl("/video/heist_intro.mp4")}
+              src={activeCutsceneSrc}
               poster={getAssetUrl("/images/heist_intro_poster.jpg")}
               autoPlay
               playsInline
               preload="auto"
               onEnded={handleCutsceneDone}
+              onError={() => {
+                console.warn("[Cutscene] Video stream error fallback to briefing");
+                handleCutsceneDone();
+              }}
               onWaiting={() => setVideoIsBuffering(true)}
               onPlaying={() => setVideoIsBuffering(false)}
               onCanPlay={() => setVideoIsBuffering(false)}
