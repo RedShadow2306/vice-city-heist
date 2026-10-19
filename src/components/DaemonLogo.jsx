@@ -40,12 +40,12 @@ export default function DaemonLogo({
 
       {/* Typography Lockup */}
       <div className="daemon-text-lockup">
-        <h2 className="daemon-title-text">DAEMON</h2>
+        <h2 className="daemon-title-text">VYUHA</h2>
 
         {showSubtitle && (
           <div className="daemon-script-wrap">
             <span className="daemon-script-text">
-              Vice City <span className="script-year">’26</span>
+              by Daemon <span className="script-year">’26</span>
             </span>
             <div className="daemon-script-underline" />
           </div>

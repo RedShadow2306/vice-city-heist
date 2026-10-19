@@ -260,12 +260,15 @@ const server = http.createServer((req, res) => {
             timestamp: Date.now(),
           };
         } else if (action === 'ADVANCE_PLAYER' && playerId) {
+          const nextLvl = Number(level || data.targetLevel) || (players[playerId] ? Math.min((players[playerId].currentLevel || 1) + 1, 4) : 2);
           if (players[playerId]) {
-            players[playerId].currentLevel = Math.min((players[playerId].currentLevel || 1) + 1, 4);
+            players[playerId].currentLevel = nextLvl;
           }
           gameState.activeCommand = {
             action: 'ADVANCE_PLAYER',
             playerId,
+            level: nextLvl,
+            targetLevel: nextLvl,
             timestamp: Date.now(),
           };
         } else if (action === 'REMOVE_PLAYER' && playerId) {

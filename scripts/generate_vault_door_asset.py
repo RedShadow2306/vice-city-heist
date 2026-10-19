@@ -12,12 +12,21 @@ matching the user reference image:
   * VaultDoorAssembly (pivoting on left hinge X = -1.25)
   * LockWheelAssembly (spins on central Z axis)
 """
-import bpy
+import importlib
 import math
 import os
 import sys
 
+try:
+    bpy = importlib.import_module("bpy")
+except (ImportError, ModuleNotFoundError):
+    bpy = None
+
 def build_vault_door(output_path):
+    if bpy is None:
+        print("ERROR: bpy module not available. Must run inside Blender.")
+        return
+
     # 1. Reset scene
     bpy.ops.wm.read_factory_settings(use_empty=True)
 

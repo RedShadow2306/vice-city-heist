@@ -55,6 +55,9 @@ import "./AdminCommand.css";
 const ADMIN_PIN    = "1986";
 const CHANNEL_NAME = "vch-admin-bus";
 const POLL_MS      = 1200;
+const ADMIN_API_URL = typeof window !== "undefined"
+  ? `http://${window.location.hostname || "localhost"}:5176`
+  : "http://localhost:5176";
 
 /* ─── Broadcast Helper ──────────────────────────────────── */
 function getBus() {
@@ -565,7 +568,7 @@ function AdminDashboard() {
 
       // 3. Fetch from Standalone Admin Server on Port 5176 (if running)
       try {
-        const res = await fetch("http://localhost:5176/api/state");
+        const res = await fetch(`${ADMIN_API_URL}/api/state`);
         const data = await res.json();
         if (data.players && Array.isArray(data.players)) {
           data.players.forEach(p => {
@@ -754,14 +757,16 @@ function AdminDashboard() {
   /* ── Action Handlers ── */
   const toggleFreeze = useCallback((id, alias) => {
     SoundEngine.init();
+    const currentPlayer = players.find(p => p.id === id);
     setFrozen(prev => {
-      const nextFrozen = !prev[id];
+      const currentlyFrozen = prev[id] !== undefined ? prev[id] : Boolean(currentPlayer?.isFrozen);
+      const nextFrozen = !currentlyFrozen;
       const action = nextFrozen ? "EXECUTIVE LOCKDOWN (FROZEN)" : "LOCKDOWN LIFTED (THAWED)";
       SoundEngine[nextFrozen ? "playFreeze" : "playUnlock"]();
       addLog(`Director Bennett applied ${action} on station ${alias} (${id})`);
 
       // 1. Supabase Cloud Sync
-      updatePlayerInSupabase(id, { isFrozen: nextFrozen });
+      updatePlayerInSupabase(id, { isFrozen: nextFrozen, status: nextFrozen ? "FROZEN" : "ACTIVE" });
       sendAdminCommandToSupabase({
         action: nextFrozen ? "FREEZE_PLAYER" : "UNFREEZE_PLAYER",
         playerId: id,
@@ -771,7 +776,7 @@ function AdminDashboard() {
       broadcast({ type: nextFrozen ? "freeze" : "unfreeze", playerId: id, frozen: nextFrozen });
 
       // 3. Port 5176 Server
-      fetch("http://localhost:5176/api/admin/command", {
+      fetch(`${ADMIN_API_URL}/api/admin/command`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -780,11 +785,29 @@ function AdminDashboard() {
         }),
       }).catch(() => {});
 
-      // 4. Update local state
-      setPlayers(pls => pls.map(p => p.id === id ? { ...p, isFrozen: nextFrozen } : p));
+      // 4. Update localStorage so 1200ms polling doesn't overwrite it
+      try {
+        const stateKey = "vch_player_state_" + id;
+        const raw = localStorage.getItem(stateKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          parsed.isFrozen = nextFrozen;
+          if (!nextFrozen && parsed.isBreached) parsed.isBreached = false;
+          parsed.status = nextFrozen ? "FROZEN" : "ACTIVE";
+          localStorage.setItem(stateKey, JSON.stringify(parsed));
+        }
+        if (nextFrozen) {
+          localStorage.setItem("vch_player_frozen_" + id, "true");
+        } else {
+          localStorage.removeItem("vch_player_frozen_" + id);
+        }
+      } catch (_) {}
+
+      // 5. Update local state
+      setPlayers(pls => pls.map(p => p.id === id ? { ...p, isFrozen: nextFrozen, status: nextFrozen ? "FROZEN" : "ACTIVE" } : p));
       return { ...prev, [id]: nextFrozen };
     });
-  }, [addLog, broadcast]);
+  }, [players, addLog, broadcast]);
 
   const toggleGlobalFreeze = useCallback(() => {
     SoundEngine.init();
@@ -803,7 +826,7 @@ function AdminDashboard() {
       broadcast({ type: "globalFreeze", frozen: next });
 
       // 3. Port 5176 Server
-      fetch("http://localhost:5176/api/admin/command", {
+      fetch(`${ADMIN_API_URL}/api/admin/command`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: next ? "GLOBAL_FREEZE" : "GLOBAL_UNFREEZE" }),
@@ -818,7 +841,7 @@ function AdminDashboard() {
     SoundEngine.playSwoosh();
 
     const currentPlayer = players.find(p => p.id === id);
-    const nextChapter = Math.min((currentPlayer?.chapter || 1) + 1, 4);
+    const nextChapter = Math.min((currentPlayer?.chapter || currentPlayer?.currentLevel || 1) + 1, 4);
 
     setPlayers(prev => prev.map(p =>
       p.id === id ? { ...p, chapter: nextChapter, currentLevel: nextChapter } : p
@@ -831,17 +854,30 @@ function AdminDashboard() {
       action: "ADVANCE_PLAYER",
       playerId: id,
       targetLevel: nextChapter,
+      level: nextChapter,
     });
 
     // 2. BroadcastChannel
-    broadcast({ type: "advance", playerId: id, targetLevel: nextChapter });
+    broadcast({ type: "advance", playerId: id, targetLevel: nextChapter, level: nextChapter });
 
     // 3. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "ADVANCE_PLAYER", playerId: id, level: nextChapter }),
+      body: JSON.stringify({ action: "ADVANCE_PLAYER", playerId: id, level: nextChapter, targetLevel: nextChapter }),
     }).catch(() => {});
+
+    // 4. Update localStorage so polling doesn't revert level
+    try {
+      const stateKey = "vch_player_state_" + id;
+      const raw = localStorage.getItem(stateKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        parsed.currentLevel = nextChapter;
+        parsed.chapter = nextChapter;
+        localStorage.setItem(stateKey, JSON.stringify(parsed));
+      }
+    } catch (_) {}
   }, [players, addLog, broadcast]);
 
   const removePlayer = useCallback((id, alias) => {
@@ -905,7 +941,7 @@ function AdminDashboard() {
     broadcast({ type: "remove", playerId: id });
 
     // 4. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "REMOVE_PLAYER", playerId: id, reason: "Revoked by Director Bennett" }),
@@ -924,7 +960,7 @@ function AdminDashboard() {
     broadcast({ type: "reset_to_name_input", target: "ejected" });
 
     // 3. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "RESET_TO_NAME_INPUT", target: "ejected" }),
@@ -960,7 +996,7 @@ function AdminDashboard() {
     broadcast({ type: "reset_to_name_input", playerId: id });
 
     // 4. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "RESET_TO_NAME_INPUT", playerId: id }),
@@ -1034,7 +1070,7 @@ function AdminDashboard() {
     broadcast({ type: "start_story" });
 
     // 3. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "START_STORY_MODE" }),
@@ -1053,7 +1089,7 @@ function AdminDashboard() {
     broadcast({ type: "siren" });
 
     // 3. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "TRIGGER_SIREN" }),
@@ -1074,7 +1110,7 @@ function AdminDashboard() {
     broadcast({ type: "reset_lobby" });
 
     // 3. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "RESET_TO_LOBBY" }),
@@ -1132,7 +1168,7 @@ function AdminDashboard() {
     });
 
     // 5. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "DELETE_RECORD", playerId }),
@@ -1177,7 +1213,7 @@ function AdminDashboard() {
     setSecurityViolations([]);
 
     // 5. Port 5176 Server
-    fetch("http://localhost:5176/api/admin/command", {
+    fetch(`${ADMIN_API_URL}/api/admin/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "PURGE_ALL_DATA" }),
@@ -1291,7 +1327,7 @@ function AdminDashboard() {
 
     const exportData = {
       tournament: "Vice City Heist: Bank Manager Vault Defense",
-      association: "CSE Association · DAEMON '26",
+      association: "CSE Association · VYUHA by DAEMON '26",
       exportedAt: new Date().toISOString(),
       totalParticipants: players.length,
       director: "Gordon Bennett",
@@ -1748,7 +1784,7 @@ function AdminDashboard() {
                 </tr>
               ) : (
                 players.map(p => {
-                  const isF = frozen[p.id] || p.isFrozen || globalFreeze;
+                  const isF = globalFreeze || (frozen[p.id] !== undefined ? frozen[p.id] : Boolean(p.isFrozen));
                   const floorCfg = VAULT_FLOORS[p.chapter] || VAULT_FLOORS[1];
                   const hasPw = Boolean(p.currentPassword);
 

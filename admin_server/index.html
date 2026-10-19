@@ -439,6 +439,30 @@
       color: #fff;
     }
 
+    .btn-row-action.btn-advance-row {
+      background: rgba(72, 213, 208, 0.15);
+      border-color: #48D5D0;
+      color: #48D5D0;
+    }
+
+    .btn-row-action.btn-advance-row:hover {
+      background: #48D5D0;
+      border-color: #48D5D0;
+      color: #070913;
+    }
+
+    .btn-row-action.btn-freeze-row {
+      background: rgba(255, 209, 102, 0.15);
+      border-color: #FFD166;
+      color: #FFD166;
+    }
+
+    .btn-row-action.btn-freeze-row:hover {
+      background: #FFD166;
+      border-color: #FFD166;
+      color: #070913;
+    }
+
     .btn-row-action:hover {
       background: var(--vice-pink);
       border-color: var(--vice-pink);
@@ -721,7 +745,8 @@
           return `${m}:${sec < 10 ? '0' : ''}${sec}`;
         };
 
-        const isLocked = p.isBreached || p.status === 'BREACH_LOCKED' || p.status === 'LOCKED_FAILED';
+        const isFrozen = Boolean(p.isFrozen || isLocked);
+        const nextLvl = Math.min(4, (p.currentLevel || 1) + 1);
 
         html += `
           <tr>
@@ -738,15 +763,18 @@
             <td>${p.timeLeft ? formatTime(p.timeLeft) : '10:00'}</td>
             <td>
               <div class="action-btns-cell">
-                ${isLocked ? `
+                ${isFrozen ? `
                   <button class="btn-row-action unfreeze" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">
-                    🔓 UNFREEZE
+                    ☀️ THAW
                   </button>
                 ` : `
-                  <button class="btn-row-action" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">
-                    🔓 REFRESH
+                  <button class="btn-row-action btn-freeze-row" onclick="sendCommand('FREEZE_PLAYER', '${p.id}')">
+                    ❄️ FREEZE
                   </button>
                 `}
+                <button class="btn-row-action btn-advance-row" onclick="advancePlayer('${p.id}', ${nextLvl})" title="Advance player to Level ${nextLvl}">
+                  ⏩ PROMOTE (L${nextLvl})
+                </button>
                 <button class="btn-row-action btn-remove" onclick="removePlayer('${p.id}', '${(p.name || 'Agent').replace(/'/g, "\\'")}')">
                   🚫 REMOVE
                 </button>
@@ -757,6 +785,20 @@
       });
 
       tbody.innerHTML = html;
+    }
+
+    async function advancePlayer(playerId, nextLevel) {
+      try {
+        const res = await fetch('/api/admin/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'ADVANCE_PLAYER', playerId, targetLevel: nextLevel, level: nextLevel })
+        });
+        addLog(`⏩ Promoted player <span class="log-action">${playerId}</span> to Level ${nextLevel}`);
+        pollState();
+      } catch (err) {
+        addLog(`Error advancing player: ${err.message}`);
+      }
     }
 
     async function removePlayer(playerId, name) {

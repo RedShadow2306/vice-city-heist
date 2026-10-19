@@ -45,7 +45,9 @@ import "./PlayerTerminal.css";
 import LobbyVault3D from "../components/LobbyVault3D";
 
 const CHANNEL_NAME = "vch-admin-bus";
-const ADMIN_API_URL = "http://localhost:5176";
+const ADMIN_API_URL = typeof window !== "undefined"
+  ? `http://${window.location.hostname || "localhost"}:5176`
+  : "http://localhost:5176";
 
 /* ─── Story Intermissions Data for GTA Story Mode Slideshow ─── */
 const INTERMISSION_STORIES = {
@@ -148,7 +150,15 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   /* Player Registration & Session Details */
   const [playerId] = useState(() => localStorage.getItem("vch_player_id") || "P_" + Math.random().toString(36).substring(2, 8));
-  const [playerName, setPlayerName] = useState(() => localStorage.getItem("vch_player_name") || "");
+  const [player1Name, setPlayer1Name] = useState(() => localStorage.getItem("vch_player1_name") || "");
+  const [player2Name, setPlayer2Name] = useState(() => localStorage.getItem("vch_player2_name") || "");
+  const [playerName, setPlayerName] = useState(() => {
+    const saved = localStorage.getItem("vch_player_name") || "";
+    const p1 = localStorage.getItem("vch_player1_name") || "";
+    const p2 = localStorage.getItem("vch_player2_name") || "";
+    if (p1 && p2) return `${p1} & ${p2}`;
+    return saved || p1 || "";
+  });
   const [playerAlias, setPlayerAlias] = useState(() => localStorage.getItem("vch_player_alias") || "");
   const [playerCollege, setPlayerCollege] = useState(() => localStorage.getItem("vch_player_college") || "");
   const [isRegistered, setIsRegistered] = useState(() => Boolean(localStorage.getItem("vch_registered")));
@@ -157,7 +167,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* Lockout & Security Freeze State */
   const [isLockedBreach, setIsLockedBreach] = useState(() => localStorage.getItem("vch_locked_breach") === "true");
   const [isEjected, setIsEjected] = useState(() => localStorage.getItem("vch_ejected") === "true");
-  const [isPlayerFrozen, setIsPlayerFrozen] = useState(false);
+  const [isPlayerFrozen, setIsPlayerFrozen] = useState(() => localStorage.getItem("vch_player_frozen_" + playerId) === "true");
   const [breachReason, setBreachReason] = useState(() => localStorage.getItem("vch_breach_reason") || "");
 
   /* 3D Vault & Story Slideshow State */
@@ -276,6 +286,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     setIsRegistered(false);
     setBreachReason("");
     setPlayerName("");
+    setPlayer1Name("");
+    setPlayer2Name("");
     setPlayerAlias("");
     setPlayerCollege("");
     setPassword("");
@@ -287,6 +299,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     localStorage.removeItem("vch_breach_reason");
     localStorage.removeItem("vch_ejected");
     localStorage.removeItem("vch_registered");
+    localStorage.removeItem("vch_player1_name");
+    localStorage.removeItem("vch_player2_name");
     localStorage.removeItem("vch_player_name");
     localStorage.removeItem("vch_player_alias");
     localStorage.removeItem("vch_player_college");
@@ -596,29 +610,37 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     SoundEngine.init();
     SoundEngine.playSwoosh();
     SoundEngine.playSuccess();
-    const nextLvl = targetLevel || Math.min(currentLevel + 1, 4);
-    const targetCfg = CAMPAIGN_LEVELS[nextLvl];
-    setCurrentLevel(nextLvl);
-    setSessionData(createSessionData());
-    setPassword("");
-    passwordRef.current = "";
-    setUnlockedCount(1);
-    setTimeLeft(targetCfg.startSeconds);
-    timeLeftRef.current = targetCfg.startSeconds;
-    setSurvivedSeconds(0);
-    survivedSecondsRef.current = 0;
-    setRevealedHints(new Set());
-    setLastPraise(null);
-    setScreen("game");
-    setIsPlayerFrozen(false);
-    setIsLockedBreach(false);
-    reportToAdmin({
-      status: `LEVEL_${nextLvl}_ACTIVE`,
-      currentLevel: nextLvl,
-      rulesCleared: 0,
-      currentPassword: "",
+    setCurrentLevel(prevLvl => {
+      const nextLvl = Number(targetLevel) || Math.min(prevLvl + 1, 4);
+      const targetCfg = CAMPAIGN_LEVELS[nextLvl] || CAMPAIGN_LEVELS[1];
+      setSessionData(createSessionData());
+      setPassword("");
+      passwordRef.current = "";
+      setUnlockedCount(1);
+      setTimeLeft(targetCfg.startSeconds);
+      timeLeftRef.current = targetCfg.startSeconds;
+      setSurvivedSeconds(0);
+      survivedSecondsRef.current = 0;
+      setRevealedHints(new Set());
+      setLastPraise(null);
+      setScreen("game");
+      setIsPlayerFrozen(false);
+      setIsLockedBreach(false);
+      try {
+        localStorage.setItem("vch_player_level_" + playerId, String(nextLvl));
+        localStorage.removeItem("vch_player_frozen_" + playerId);
+      } catch (_) {}
+      reportToAdmin({
+        status: `LEVEL_${nextLvl}_ACTIVE`,
+        currentLevel: nextLvl,
+        chapter: nextLvl,
+        rulesCleared: 0,
+        currentPassword: "",
+        isFrozen: false,
+      });
+      return nextLvl;
     });
-  }, [currentLevel, reportToAdmin]);
+  }, [playerId, reportToAdmin]);
 
   /* ── Trigger Cinematic WASTED Sequence ── */
   const triggerWastedSequence = useCallback((reason = "THE VAULT WAS BREACHED! TOMMY VERCETTI ESCAPED WITH $3,000,000", isElimination = false) => {
@@ -736,8 +758,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         SoundEngine.init();
         if (f) SoundEngine.playFreeze();
         else SoundEngine.playUnlock();
-      } else if (type === "advance" && pid === playerId) {
-        advanceFloorByAdmin();
+      } else if (type === "advance" && (pid === playerId || !pid)) {
+        advanceFloorByAdmin(evt.data?.targetLevel || evt.data?.level);
       }
     };
     return () => bus.close();
@@ -764,6 +786,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 setIsPlayerFrozen(false);
                 setIsLockedBreach(false);
                 setIsEjected(false);
+                try { localStorage.removeItem("vch_player_frozen_" + playerId); } catch (_) {}
                 localStorage.removeItem("vch_locked_breach");
                 localStorage.removeItem("vch_breach_reason");
                 localStorage.removeItem("vch_ejected");
@@ -774,8 +797,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 }
               } else if (cmd.action === "FREEZE_PLAYER" && cmd.playerId === playerId) {
                 setIsPlayerFrozen(true);
+                try { localStorage.setItem("vch_player_frozen_" + playerId, "true"); } catch (_) {}
               } else if (cmd.action === "ADVANCE_PLAYER" && cmd.playerId === playerId) {
-                advanceFloorByAdmin();
+                advanceFloorByAdmin(cmd.targetLevel || cmd.level);
               } else if (cmd.action === "REMOVE_PLAYER" && cmd.playerId === playerId) {
                 handleEjected();
               } else if (cmd.action === "RESET_TO_NAME_INPUT") {
@@ -810,6 +834,16 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         const data = await res.json();
         const cmd = data?.gameState?.activeCommand;
 
+        if (typeof data?.gameState?.globalFreeze === "boolean") {
+          setIsPlayerFrozen(data.gameState.globalFreeze);
+        }
+        if (data?.players && Array.isArray(data.players)) {
+          const myP = data.players.find(p => p.id === playerId);
+          if (myP && typeof myP.isFrozen === "boolean") {
+            setIsPlayerFrozen(myP.isFrozen);
+          }
+        }
+
         if (cmd) {
           const cmdTime = cmd.timestamp;
           const lastProcessed = Number(sessionStorage.getItem("vch_last_admin_cmd") || 0);
@@ -826,6 +860,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 setIsPlayerFrozen(false);
                 setIsLockedBreach(false);
                 setIsEjected(false);
+                try { localStorage.removeItem("vch_player_frozen_" + playerId); } catch (_) {}
                 localStorage.removeItem("vch_locked_breach");
                 localStorage.removeItem("vch_breach_reason");
                 localStorage.removeItem("vch_ejected");
@@ -837,8 +872,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               }
             } else if (cmd.action === "FREEZE_PLAYER" && cmd.playerId === playerId) {
               setIsPlayerFrozen(true);
+              try { localStorage.setItem("vch_player_frozen_" + playerId, "true"); } catch (_) {}
             } else if (cmd.action === "ADVANCE_PLAYER" && cmd.playerId === playerId) {
-              advanceFloorByAdmin();
+              advanceFloorByAdmin(cmd.targetLevel || cmd.level);
             } else if (cmd.action === "REMOVE_PLAYER") {
               if (cmd.playerId === playerId) {
                 handleEjected();
@@ -1434,17 +1470,26 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* ── Lobby Registration Submit ── */
   const handleRegisterLobby = (e) => {
     e.preventDefault();
-    const trimmedName = playerName.trim();
-    if (!trimmedName) return;
+    const p1 = (player1Name || "").trim();
+    const p2 = (player2Name || "").trim();
+    if (!p1 || !p2) {
+      alert("Please enter the full names of both team operatives.");
+      return;
+    }
+    const combinedName = `${p1} & ${p2}`;
     const finalAlias = (playerAlias || "").trim() || `Station ${playerId.slice(-4)}`;
     const finalCollege = (playerCollege || "").trim();
 
     localStorage.setItem("vch_player_id", playerId);
-    localStorage.setItem("vch_player_name", trimmedName);
+    localStorage.setItem("vch_player1_name", p1);
+    localStorage.setItem("vch_player2_name", p2);
+    localStorage.setItem("vch_player_name", combinedName);
     localStorage.setItem("vch_player_alias", finalAlias);
     localStorage.setItem("vch_player_college", finalCollege);
     localStorage.setItem("vch_registered", "true");
-    setPlayerName(trimmedName);
+    setPlayer1Name(p1);
+    setPlayer2Name(p2);
+    setPlayerName(combinedName);
     setPlayerAlias(finalAlias);
     setPlayerCollege(finalCollege);
     setIsRegistered(true);
@@ -1453,7 +1498,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     reportToAdmin({
       status: "IN_LOBBY",
       isRegistered: true,
-      name: trimmedName,
+      name: combinedName,
       alias: finalAlias,
       college: finalCollege,
     });
@@ -1504,7 +1549,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           <div className="lobby-bg-viewport" aria-hidden="true">
             <img
               src={getAssetUrl("/images/vice-hero.jpg")}
-              alt="DAEMON Vice City Sunset"
+              alt="VYUHA Vice City Sunset"
               className="lobby-bg-img"
             />
             <div className="lobby-bg-overlay-warm" />
@@ -1514,43 +1559,69 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           </div>
 
           <div className="lobby-card">
-            <div className="lobby-badge">🚔 VCPD CENTRAL BANK DISPATCH · DAEMON '26</div>
+            <div className="lobby-badge">🚔 VCPD CENTRAL BANK DISPATCH · VYUHA '26</div>
             <h1 className="vice-display-lg lobby-title">EL BANCO CORRUPTO GRANDE</h1>
             <p className="lobby-subtitle">CENTRAL VAULT DEFENSE PROTOCOL · CSE ASSOCIATION</p>
 
             {!isRegistered ? (
-              /* Registration Form */
+              /* Registration Form - Two Player Team */
               <form onSubmit={handleRegisterLobby} className="lobby-reg-form">
-                <div className="form-group">
-                  <label className="form-label">YOUR FULL NAME / AGENT NAME</label>
-                  <input
-                    type="text"
-                    required
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="e.g. Lance Vance"
-                    className="lobby-input"
-                  />
+                <div className="form-row">
+                  <div className="form-group flex-1">
+                    <label className="form-label">OPERATIVE 1 (FULL NAME)</label>
+                    <input
+                      type="text"
+                      required
+                      value={player1Name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPlayer1Name(val);
+                        const p2 = (player2Name || "").trim();
+                        const p1 = val.trim();
+                        setPlayerName(p1 && p2 ? `${p1} & ${p2}` : (p1 || p2));
+                      }}
+                      placeholder="e.g. Lance Vance"
+                      className="lobby-input"
+                    />
+                  </div>
+
+                  <div className="form-group flex-1">
+                    <label className="form-label">OPERATIVE 2 (FULL NAME)</label>
+                    <input
+                      type="text"
+                      required
+                      value={player2Name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPlayer2Name(val);
+                        const p1 = (player1Name || "").trim();
+                        const p2 = val.trim();
+                        setPlayerName(p1 && p2 ? `${p1} & ${p2}` : (p1 || p2));
+                      }}
+                      placeholder="e.g. Tommy Vercetti"
+                      className="lobby-input"
+                    />
+                  </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group flex-1">
-                    <label className="form-label">STATION / TERMINAL ALIAS</label>
+                    <label className="form-label">TEAM / STATION ALIAS</label>
                     <input
                       type="text"
                       value={playerAlias}
                       onChange={(e) => setPlayerAlias(e.target.value)}
-                      placeholder="e.g. Terminal #04"
+                      placeholder="e.g. Terminal #04 / Cyber Squad"
                       className="lobby-input"
                     />
                   </div>
                   <div className="form-group flex-1">
-                    <label className="form-label">COLLEGE / TEAM NAME</label>
+                    <label className="form-label">COLLEGE / INSTITUTION</label>
                     <input
                       type="text"
                       value={playerCollege}
                       onChange={(e) => setPlayerCollege(e.target.value)}
-                      placeholder="e.g. Cyber Squad"
+                      placeholder="e.g. KMCT IETM"
                       className="lobby-input"
                     />
                   </div>
@@ -1666,7 +1737,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 <span className="cutscene-hud-icon">▶▶</span>
                 <span className="cutscene-hud-text">PRESS ANY KEY OR CLICK ANYWHERE TO SKIP INTRO</span>
               </div>
-              <div className="cutscene-hud-sub">TRANSMISSION // LIVE INFILTRATION — DAEMON '26</div>
+              <div className="cutscene-hud-sub">TRANSMISSION // LIVE INFILTRATION — VYUHA '26</div>
             </div>
           </div>
         </section>

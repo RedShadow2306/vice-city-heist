@@ -109,7 +109,8 @@ export default function ProjectorStage() {
 
       // 3. Fetch Standalone Admin Server (if running)
       try {
-        const res = await fetch("http://localhost:5176/api/state");
+        const adminUrl = typeof window !== "undefined" ? `http://${window.location.hostname || "localhost"}:5176/api/state` : "http://localhost:5176/api/state";
+        const res = await fetch(adminUrl);
         const data = await res.json();
         const serverPlayers = data.players || [];
         if (serverPlayers.length > 0) {
@@ -224,7 +225,7 @@ export default function ProjectorStage() {
           <h1 className="stage-title glitch-stage" data-text="VICE CITY HEIST">
             VICE CITY HEIST
           </h1>
-          <p className="stage-sub">LIVE LEADERBOARD · DAEMON '26 TOURNAMENT BROADCAST</p>
+          <p className="stage-sub">LIVE LEADERBOARD · VYUHA by DAEMON '26 TOURNAMENT BROADCAST</p>
         </div>
         <div className="stage-meta">
           <span className="stage-clock">{tick}</span>

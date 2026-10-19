@@ -64,15 +64,15 @@ function Shell() {
 
         <div className="nav-links">
           <a
-            href="http://localhost:5174/"
+            href="https://www.daemonietm.online"
             target="_blank"
             rel="noopener noreferrer"
             className="nav-link external-portal-link"
-            title="Open DAEMON '26 Main Association Fest Website"
+            title="Open VYUHA by DAEMON '26 Main Fest Website"
           >
             <img
               src={getAssetUrl("/daemon-logo.png")}
-              alt="DAEMON Logo"
+              alt="VYUHA Logo"
               className="nav-portal-logo-icon"
               onError={(e) => {
                 if (!e.target.src.endsWith(".svg")) {
@@ -80,7 +80,7 @@ function Shell() {
                 }
               }}
             />
-            <span>DAEMON PORTAL ↗</span>
+            <span>VYUHA PORTAL ↗</span>
           </a>
         </div>
       </nav>

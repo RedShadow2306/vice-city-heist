@@ -1,6 +1,6 @@
 import React, { Suspense, useRef, useEffect, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { getAssetUrl } from "../utils/assetPath";
@@ -15,6 +15,9 @@ function easeInOutQuad(x) {
 }
 
 const VAULT_MODEL_URL = getAssetUrl("/models/lobby_vault.glb?v=60");
+const VAULT_INTERIOR_IMG = getAssetUrl("/images/vault_interior.jpg");
+useGLTF.preload(VAULT_MODEL_URL);
+useTexture.preload(VAULT_INTERIOR_IMG);
 
 /* ─── Procedural Studio Environment for True Metallic Reflections ─── */
 function StudioEnvironment() {
@@ -40,6 +43,11 @@ function StudioEnvironment() {
 /* ─── 3D Vice City Bank Vault Mesh Component ─── */
 function VaultModel({ isOpening, onToggleOpen }) {
   const gltf = useGLTF(VAULT_MODEL_URL);
+  const interiorTex = useTexture(VAULT_INTERIOR_IMG);
+  useEffect(() => {
+    if (interiorTex) interiorTex.colorSpace = THREE.SRGBColorSpace;
+  }, [interiorTex]);
+
   const scene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
 
   const groupRef = useRef(null);
@@ -53,7 +61,18 @@ function VaultModel({ isOpening, onToggleOpen }) {
   useEffect(() => {
     deadboltsRef.current = [];
     scene.traverse((child) => {
-      if (child.name === "VaultDoorAssembly") {
+      // Hide the solid cylinder caps and blocky meshes so the photorealistic treasury interior is revealed
+      if (
+        child.name === "ChamberLining" ||
+        child.name === "ChamberBackWall" ||
+        child.name === "DoorFrameCollar" ||
+        child.name === "DoorFrameFlange" ||
+        child.name === "GoldPedestalGlow" ||
+        child.name.startsWith("GoldBar_") ||
+        child.name.startsWith("CashStack_")
+      ) {
+        child.visible = false;
+      } else if (child.name === "VaultDoorAssembly") {
         doorRef.current = child;
       } else if (child.name === "CombinationWheel") {
         wheelRef.current = child;
@@ -200,15 +219,28 @@ function VaultModel({ isOpening, onToggleOpen }) {
       ref={groupRef}
       position={[0, 0, 0]}
       scale={[0.92, 0.92, 0.92]}
-      onClick={onToggleOpen}
+      onClick={(e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        onToggleOpen();
+      }}
       style={{ cursor: "pointer" }}
     >
+      {/* Outer dark-iron beveled portal ring framing the doorway with perimeter hex bolts */}
+      <mesh position={[0.08, 0, 0.018]}>
+        <ringGeometry args={[0.995, 1.09, 64]} />
+        <meshStandardMaterial color="#121622" roughness={0.38} metalness={0.92} />
+      </mesh>
+
+      {/* High-Resolution Bank Vault Treasury Chamber Interior revealed inside the circular doorway */}
+      <mesh position={[0.08, 0, 0.012]} rotation={[0, 0, 0]}>
+        <circleGeometry args={[1.00, 64]} />
+        <meshBasicMaterial map={interiorTex} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+
       <primitive object={scene} />
     </group>
   );
 }
-
-useGLTF.preload(VAULT_MODEL_URL);
 
 /* ─── Exported Lobby Vault 3D Component ─── */
 export default function LobbyVault3D({ isOpening = false }) {
@@ -266,6 +298,18 @@ export default function LobbyVault3D({ isOpening = false }) {
             />
           </Suspense>
         </Canvas>
+
+        <button
+          type="button"
+          className="vault-inspect-pill-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            setInteractiveOpen((prev) => !prev);
+          }}
+          title="Click to toggle vault open and inspect treasury chamber"
+        >
+          {effectiveOpening ? "🔒 CLICK TO CLOSE VAULT" : "🔓 CLICK TO OPEN & INSPECT VAULT"}
+        </button>
       </div>
     </div>
   );
