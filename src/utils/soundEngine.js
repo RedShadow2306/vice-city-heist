@@ -37,6 +37,8 @@ class SoundEngine {
     if (this._masterGain && this._ctx) {
       this._masterGain.gain.setValueAtTime(v ? 0 : 0.55, this._ctx.currentTime);
     }
+    if (this._wastedAudio) this._wastedAudio.muted = Boolean(v);
+    if (this._passedAudio) this._passedAudio.muted = Boolean(v);
   }
 
   static get isMuted() { return this._muted; }
@@ -197,6 +199,7 @@ class SoundEngine {
       if (!this._wastedAudio) {
         this._wastedAudio = new Audio(getAssetUrl("/audio/wasted.m4a"));
       }
+      this._wastedAudio.muted = Boolean(this._muted);
       this._wastedAudio.currentTime = 0;
       this._wastedAudio.volume = 0.95;
       this._wastedAudio.play().catch(() => this._playWastedSynth());
@@ -206,14 +209,15 @@ class SoundEngine {
   }
 
   static _playWastedSynth() {
+    if (this._muted) return;
     this.resume();
     const t = this._ctx?.currentTime ?? 0;
     // Classic GTA Vice City deep brass doom hit with heavy reverberation & pitch drop
     this._osc('sawtooth', 130.81, t, t + 1.6, 0.45);
     this._osc('sawtooth', 98.0, t + 0.04, t + 1.8, 0.4);
     this._osc('sawtooth', 65.4, t + 0.08, t + 2.2, 0.42);
-    // Sub-bass slow boom
-    if (this._ctx) {
+    // Sub-bass slow boom routed to masterGain
+    if (this._ctx && this._masterGain) {
       try {
         const osc = this._ctx.createOscillator();
         const gain = this._ctx.createGain();
@@ -223,7 +227,7 @@ class SoundEngine {
         gain.gain.setValueAtTime(0.65, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 2.4);
         osc.connect(gain);
-        gain.connect(this._ctx.destination);
+        gain.connect(this._masterGain);
         osc.start(t);
         osc.stop(t + 2.4);
       } catch (_) {}
@@ -238,6 +242,7 @@ class SoundEngine {
       if (!this._passedAudio) {
         this._passedAudio = new Audio(getAssetUrl("/audio/mission_passed.m4a"));
       }
+      this._passedAudio.muted = Boolean(this._muted);
       this._passedAudio.currentTime = 0;
       this._passedAudio.volume = 0.95;
       this._passedAudio.play().catch(() => this._playMissionPassedSynth());
@@ -247,6 +252,7 @@ class SoundEngine {
   }
 
   static _playMissionPassedSynth() {
+    if (this._muted) return;
     const t = this._ctx?.currentTime ?? 0;
     // Authentic GTA Vice City celebratory synth chords + triumphant flourish
     const chords = [

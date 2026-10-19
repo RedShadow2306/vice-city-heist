@@ -43,3 +43,8 @@ previous model
 config/
 kilo.json
 opencode.jsonc
+
+# Video scratch frames and intermediate renders
+public/video/frame_*.jpg
+public/video/original_hd_source.mp4
+public/video/version_*.mp4
