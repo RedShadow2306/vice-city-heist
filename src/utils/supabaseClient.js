@@ -45,7 +45,7 @@ export async function syncPlayerToSupabase(player) {
       current_level: Number(player.currentLevel) || 1,
       rules_cleared: Number(player.rulesCleared) || 0,
       score: Number(player.score) || 0,
-      time_left: Number(player.timeLeft) ?? 600,
+      time_left: Number.isFinite(Number(player.timeLeft)) ? Number(player.timeLeft) : 600,
       is_breached: Boolean(player.isBreached),
       is_frozen: Boolean(player.isFrozen),
       current_password: player.currentPassword || player.password || "",

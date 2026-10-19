@@ -239,6 +239,20 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const charsWrapperRef = useRef(null);
   const reportDebounceTimerRef = useRef(null);
 
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+  const isLockedBreachRef = useRef(isLockedBreach);
+  isLockedBreachRef.current = isLockedBreach;
+
+  const isSoloAllowed = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(
+      import.meta.env?.DEV ||
+      new URLSearchParams(window.location.search).has("solo") ||
+      new URLSearchParams(window.location.search).has("test")
+    );
+  }, []);
+
   const requestFullscreenSafe = () => {
     try {
       const el = document.documentElement;
@@ -277,6 +291,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const handleEjected = useCallback(() => {
     clearInterval(timerRef.current);
     setIsLockedBreach(true);
+    isLockedBreachRef.current = true;
     setIsEjected(true);
     const reason = "DISQUALIFIED & REMOVED FROM TOURNAMENT BY DISPATCH ADMIN";
     setBreachReason(reason);
@@ -284,6 +299,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     localStorage.setItem("vch_ejected", "true");
     localStorage.setItem("vch_breach_reason", reason);
     setScreen("wasted_cinematic");
+    screenRef.current = "wasted_cinematic";
     exitFullscreenSafe();
     SoundEngine.init();
     if (soundEnabled) SoundEngine.playWasted();
@@ -488,7 +504,14 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     const curFrozen = overrides.isFrozen !== undefined ? overrides.isFrozen : (isPlayerFrozen || Boolean(parentFrozen));
     const curPassword = overrides.currentPassword !== undefined ? overrides.currentPassword : (passwordRef.current || "");
 
-    const calculatedScore = Math.max(0, curUnlocked - 1) * 150 + (curLevel - 1) * 600 + Math.max(0, curTime || 0);
+    const prevRulesCompleted = curLevel === 1 ? 0 : curLevel === 2 ? 10 : curLevel === 3 ? 23 : 39;
+    const cumulativeRules = overrides.rulesCleared !== undefined
+      ? overrides.rulesCleared
+      : (prevRulesCompleted + Math.max(0, curUnlocked - 1));
+
+    const calculatedScore = overrides.score !== undefined
+      ? overrides.score
+      : (cumulativeRules * 150 + (curLevel - 1) * 600 + Math.max(0, curTime || 0));
 
     const payload = {
       id: playerId,
@@ -506,7 +529,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         : screen.toUpperCase(),
       currentLevel: curLevel,
       chapter: curLevel,
-      rulesCleared: Math.max(0, curUnlocked - 1),
+      rulesCleared: cumulativeRules,
       score: calculatedScore,
       timeLeft: curTime,
       isBreached: curBreach,
@@ -649,12 +672,14 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     setBreachReason(reason);
     localStorage.setItem("vch_breach_reason", reason);
     setIsLockedBreach(true);
+    isLockedBreachRef.current = true;
     localStorage.setItem("vch_locked_breach", "true");
     if (isElimination) {
       setIsEjected(true);
       localStorage.setItem("vch_ejected", "true");
     }
     setScreen("wasted_cinematic");
+    screenRef.current = "wasted_cinematic";
     exitFullscreenSafe();
     SoundEngine.init();
     if (soundEnabled) SoundEngine.playWasted();
@@ -709,7 +734,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       if (type === "remove" && pid === playerId) {
         handleEjected();
       } else if (type === "start_story") {
-        if (screen === "lobby") {
+        if (screen === "lobby" && isRegistered) {
           launchStoryMode();
         }
       } else if (type === "siren") {
@@ -763,7 +788,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       }
     };
     return () => bus.close();
-  }, [playerId, handleEjected, handleResetToNameInput, screen, launchStoryMode, cfg.startSeconds, advanceFloorByAdmin, isEjected]);
+  }, [playerId, isRegistered, handleEjected, handleResetToNameInput, screen, launchStoryMode, cfg.startSeconds, advanceFloorByAdmin, isEjected]);
 
   /* ── Listen for Admin Commands (via Supabase & Port 5176) ── */
   useEffect(() => {
@@ -780,7 +805,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             const lastProcessed = Number(sessionStorage.getItem("vch_last_admin_cmd") || 0);
             if (cmd.timestamp > lastProcessed) {
               sessionStorage.setItem("vch_last_admin_cmd", String(cmd.timestamp));
-              if (cmd.action === "START_STORY_MODE" && screen === "lobby") {
+              if (cmd.action === "START_STORY_MODE" && screen === "lobby" && isRegistered) {
                 launchStoryMode();
               } else if (cmd.action === "UNFREEZE_PLAYER" && (!cmd.playerId || cmd.playerId === playerId)) {
                 setIsPlayerFrozen(false);
@@ -852,7 +877,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             sessionStorage.setItem("vch_last_admin_cmd", String(cmdTime));
 
             if (cmd.action === "START_STORY_MODE") {
-              if (screen === "lobby") {
+              if (screen === "lobby" && isRegistered) {
                 launchStoryMode();
               }
             } else if (cmd.action === "UNFREEZE_PLAYER") {
@@ -907,7 +932,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
     const interval = setInterval(checkAdminCommands, 1200);
     return () => clearInterval(interval);
-  }, [screen, launchStoryMode, playerId, cfg.startSeconds, handleEjected, handleResetToNameInput, advanceFloorByAdmin, isEjected]);
+  }, [screen, isRegistered, launchStoryMode, playerId, cfg.startSeconds, handleEjected, handleResetToNameInput, advanceFloorByAdmin, isEjected]);
 
   /* ── Security Violation & Illegal Actions Reporter (Anti-Cheat) ── */
   const reportViolation = useCallback(
@@ -977,7 +1002,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     if (screen !== "game" || isLockedBreach) return;
 
     const handleVisibilityChange = () => {
-      if (document.hidden && screen === "game") {
+      if (document.hidden && screenRef.current === "game" && !isLockedBreachRef.current) {
         const reason = "UNAUTHORIZED TAB SWITCH / MINIMIZE DETECTED (Eliminated)";
         triggerWastedSequence(reason, true);
         reportViolation("TAB_SWITCH", reason, true);
@@ -994,7 +1019,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         return;
       }
 
-      if (!document.fullscreenElement && screen === "game" && !isLockedBreach) {
+      if (!document.fullscreenElement && screenRef.current === "game" && !isLockedBreachRef.current) {
         SoundEngine.init();
         SoundEngine.playAlert();
         setFullscreenGraceCountdown(5);
@@ -1318,6 +1343,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   /* ── Start Active Defense on Current Level ── */
   const handleStartActiveDefense = (levelToStart) => {
+    requestFullscreenSafe();
     SoundEngine.init();
     if (soundEnabled) {
       SoundEngine.playClick();
@@ -1337,8 +1363,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     setRevealedHints(new Set());
     setLastPraise(null);
     setScreen("game");
+    screenRef.current = "game";
     setIsPlayerFrozen(false);
     setIsLockedBreach(false);
+    isLockedBreachRef.current = false;
 
     setTimeout(() => {
       inputRef.current?.focus();
@@ -1347,7 +1375,6 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     reportToAdmin({
       status: `LEVEL_${levelToStart}_ACTIVE`,
       currentLevel: levelToStart,
-      rulesCleared: 0,
       currentPassword: "",
     });
   };
@@ -1512,7 +1539,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         }
       } else if (e.key === "Escape") {
         e.preventDefault();
-        triggerWastedSequence("MISSION ABORTED BY AGENT", false);
+        inputRef.current?.focus();
       } else {
         if (document.activeElement !== inputRef.current && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
           inputRef.current?.focus();
@@ -1724,14 +1751,16 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                     ⮌ BACK TO AGENT REGISTRATION
                   </button>
 
-                  <button
-                    type="button"
-                    className="solo-start-btn"
-                    onClick={launchStoryMode}
-                    title="Click for solo testing or offline demo"
-                  >
-                    ▶ [SOLO TEST: LAUNCH STORY MODE DIRECTLY]
-                  </button>
+                  {isSoloAllowed && (
+                    <button
+                      type="button"
+                      className="solo-start-btn"
+                      onClick={launchStoryMode}
+                      title="Click for solo testing or offline demo"
+                    >
+                      ▶ [SOLO TEST: LAUNCH STORY MODE DIRECTLY]
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -2031,13 +2060,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                         key={rule.id}
                         className={`neon-rule-row ${passed ? "rule-passed" : "rule-failing"} ${isFailingCurrent ? "rule-current-failing" : ""} ${rule.isRiddle ? "rule-is-riddle" : ""}`}
                         onClick={() => {
-                          if (!revealedHints.has(rule.id)) {
+                          if (!passed && !revealedHints.has(rule.id)) {
                             setRevealedHints((prev) => new Set([...prev, rule.id]));
                             triggerTimeBonus(-15);
                             if (soundEnabled) SoundEngine.playHintUsed();
                           }
                         }}
-                        title={isHinted ? "Intel already revealed" : "Click to reveal Manager Intel (-15s penalty)"}
+                        title={passed ? "Rule already passed" : (isHinted ? "Intel already revealed" : "Click to reveal Manager Intel (-15s penalty)")}
                       >
                         <div className="neon-rule-content">
                           <span className="neon-bullet">{passed ? "✓" : (rule.isRiddle ? "🧩" : "•")}</span>
@@ -2317,7 +2346,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                     🏠 RETURN TO LOBBY
                   </button>
                 </>
-              ) : (
+              ) : isSoloAllowed ? (
                 <button
                   type="button"
                   className="gta-action-btn secondary-btn"
@@ -2325,6 +2354,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 >
                   [➔ REGISTER NEW AGENT DETAILS]
                 </button>
+              ) : (
+                <div className="ejected-warning-box" style={{ color: "#FF2A6D", fontWeight: 700, padding: "10px", border: "1px dashed #FF2A6D", marginTop: "12px", fontFamily: "var(--font-mono, monospace)", textAlign: "center" }}>
+                  ⚠️ OPERATIVE DISQUALIFIED // CONTACT DISPATCH ORGANIZER
+                </div>
               )}
             </div>
           </div>
@@ -2570,7 +2603,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                   ➔ RETURN TO SECURITY LOBBY
                 </button>
               </div>
-            ) : (
+            ) : isSoloAllowed ? (
               <div className="solo-dev-unfreeze">
                 <button
                   type="button"
@@ -2588,6 +2621,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 >
                   [➔ REGISTER NEW AGENT DETAILS // RETURN TO NAME INPUT]
                 </button>
+              </div>
+            ) : (
+              <div className="ejected-warning-box" style={{ color: "#FF2A6D", fontWeight: 700, padding: "14px", border: "1px dashed #FF2A6D", marginTop: "16px", fontFamily: "var(--font-mono, monospace)", textAlign: "center", maxWidth: "500px", margin: "16px auto 0" }}>
+                ⚠️ OPERATIVE DISQUALIFIED BY DISPATCH // CONTACT TOURNAMENT ORGANIZER
               </div>
             )}
           </div>

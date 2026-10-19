@@ -745,7 +745,7 @@
           return `${m}:${sec < 10 ? '0' : ''}${sec}`;
         };
 
-        const isFrozen = Boolean(p.isFrozen || isLocked);
+        const isFrozen = Boolean(p.isFrozen || p.isBreached);
         const nextLvl = Math.min(4, (p.currentLevel || 1) + 1);
 
         html += `

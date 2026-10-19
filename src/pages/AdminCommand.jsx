@@ -369,7 +369,7 @@ function AdminDashboard() {
     const fresh = createSessionData();
     setAdminSession(fresh);
     saveSessionData(fresh);
-    addLog("Chief Director Bennett randomized all 45 vault cipher questions & riddles across all 4 levels.");
+    addLog("Chief Director Bennett randomized all 59 vault cipher questions & riddles across all 4 levels.");
   }, [addLog]);
 
   /* Custom Rule Edit Handlers */
@@ -477,7 +477,8 @@ function AdminDashboard() {
 
     const chapter = Number(p.current_level || p.currentLevel || p.chapter) || 1;
     const rulesCleared = Number(p.rules_cleared ?? p.rulesCleared) || 0;
-    const timeLeft = Number(p.time_left ?? p.timeLeft) ?? 600;
+    const rawTime = p.time_left ?? p.timeLeft;
+    const timeLeft = Number.isFinite(Number(rawTime)) ? Number(rawTime) : 600;
     const score = p.score !== undefined
       ? Number(p.score)
       : rulesCleared * 150 + (chapter - 1) * 600 + Math.max(0, timeLeft);
@@ -507,7 +508,7 @@ function AdminDashboard() {
       totalClearanceSeconds: Number(p.totalClearanceSeconds || p.total_clearance_seconds || 0),
       clearanceFormatted: p.clearanceFormatted || p.clearance_formatted || "",
       levelTimes: p.levelTimes || p.level_times || {},
-      isGrandWinner: Boolean(p.isGrandWinner || p.is_grand_winner || p.status === "GRAND_VICTORY" || (chapter >= 4 && rulesCleared >= 45)),
+      isGrandWinner: Boolean(p.isGrandWinner || p.is_grand_winner || p.status === "GRAND_VICTORY" || (chapter >= 4 && rulesCleared >= 59)),
       currentPassword: p.current_password || p.currentPassword || p.password || "",
       passwordHistory: p.password_history || p.passwordHistory || [],
       lastSeen: p.last_seen || p.lastSeen || Date.now(),
@@ -1008,8 +1009,8 @@ function AdminDashboard() {
     const list = [...players];
     return list.sort((a, b) => {
       // 1. Level 4 Cleared / Grand Victory (Priority 1)
-      const aWon = a.isGrandWinner || a.status === "GRAND_VICTORY" || (a.currentLevel >= 4 && a.rulesCleared >= 45);
-      const bWon = b.isGrandWinner || b.status === "GRAND_VICTORY" || (b.currentLevel >= 4 && b.rulesCleared >= 45);
+      const aWon = a.isGrandWinner || a.status === "GRAND_VICTORY" || (a.currentLevel >= 4 && a.rulesCleared >= 59);
+      const bWon = b.isGrandWinner || b.status === "GRAND_VICTORY" || (b.currentLevel >= 4 && b.rulesCleared >= 59);
       if (aWon && !bWon) return -1;
       if (!aWon && bWon) return 1;
 
@@ -1293,7 +1294,7 @@ function AdminDashboard() {
         escapeCSV(rSubs[2] || "--"),
         lTimes[3] ?? (p.currentLevel > 3 ? "Cleared" : "--"),
         escapeCSV(rSubs[3] || "--"),
-        lTimes[4] ?? (p.rulesCleared >= 45 ? "Cleared" : "--"),
+        lTimes[4] ?? (p.rulesCleared >= 59 ? "Cleared" : "--"),
         escapeCSV(rSubs[4] || "--"),
         p.totalClearanceSeconds || "--",
         escapeCSV(p.clearanceFormatted || "--"),
@@ -2345,7 +2346,7 @@ function AdminDashboard() {
                   type="button"
                   className="inspector-action-btn btn-copy-summary"
                   onClick={copyAllRulesSummary}
-                  title="Copy formatted 45-question guide to clipboard"
+                  title="Copy formatted 59-question guide to clipboard"
                 >
                   📋 {copiedRulesSummary ? "COPIED TO CLIPBOARD!" : "COPY QUESTIONS GUIDE"}
                 </button>

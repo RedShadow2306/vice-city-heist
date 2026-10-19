@@ -99,10 +99,9 @@ function Shell() {
       <footer className="discreet-organizer-footer">
         <span
           className="organizer-shortcut-text"
-          title="Central Dispatch shortcut: Ctrl + Shift + A"
           onDoubleClick={() => window.open(getAdminPortalUrl(), "_blank")}
         >
-          🔒 Central Security System v2.6 · [Ctrl+Shift+A for Dispatch Console]
+          🔒 Central Security System v2.6 · Bank of Vice City Operations
         </span>
       </footer>
     </div>

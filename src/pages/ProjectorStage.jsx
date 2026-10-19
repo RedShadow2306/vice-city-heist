@@ -37,10 +37,17 @@ export default function ProjectorStage() {
 
     const chapter = Number(sp.current_level || sp.currentLevel || sp.chapter) || 1;
     const rulesCleared = Number(sp.rules_cleared ?? sp.rulesCleared) || 0;
-    const timeLeft = Number(sp.time_left ?? sp.timeLeft) ?? 600;
+    const rawTime = sp.time_left ?? sp.timeLeft;
+    const timeLeft = Number.isFinite(Number(rawTime)) ? Number(rawTime) : 600;
     const calculatedScore = sp.score !== undefined
       ? Number(sp.score)
       : rulesCleared * 150 + (chapter - 1) * 600 + Math.max(0, timeLeft);
+    const isGrandWinner = Boolean(
+      sp.isGrandWinner ||
+      sp.is_grand_winner ||
+      sp.status === "GRAND_VICTORY" ||
+      (chapter >= 4 && rulesCleared >= 59)
+    );
 
     return {
       id: sp.id,
@@ -54,9 +61,18 @@ export default function ProjectorStage() {
       timeLeft,
       delta: 0,
       isBreached: Boolean(sp.is_breached || sp.isBreached),
+      isGrandWinner,
       status: sp.status || "IN_LOBBY",
       isMock: false,
     };
+  }, []);
+
+  const sortProjectorPlayers = useCallback((a, b) => {
+    const aWon = Boolean(a.isGrandWinner || a.status === "GRAND_VICTORY");
+    const bWon = Boolean(b.isGrandWinner || b.status === "GRAND_VICTORY");
+    if (aWon && !bWon) return -1;
+    if (!aWon && bWon) return 1;
+    return (b.score || 0) - (a.score || 0);
   }, []);
 
   /* Scan local storage for local player tabs */
@@ -138,7 +154,7 @@ export default function ProjectorStage() {
         }
       } catch (_) {}
 
-      const sorted = Array.from(combinedMap.values()).sort((a, b) => b.score - a.score);
+      const sorted = Array.from(combinedMap.values()).sort(sortProjectorPlayers);
       setBoard(sorted);
     };
 
@@ -183,7 +199,7 @@ export default function ProjectorStage() {
             delta: existing ? Math.max(0, normalized.score - existing.score) : 0,
           };
           map.set(normalized.id, updated);
-          return Array.from(map.values()).sort((a, b) => b.score - a.score);
+          return Array.from(map.values()).sort(sortProjectorPlayers);
         });
       }
 
@@ -277,6 +293,20 @@ export default function ProjectorStage() {
                   <span className="row-alias">{player.alias}</span>
                   {player.college && <span className="row-college">{player.college}</span>}
                   <span className="row-chapter">FLOOR {player.chapter}</span>
+                  {player.isGrandWinner && (
+                    <span className="row-grand-winner-badge" style={{
+                      background: "linear-gradient(90deg, #FFD700, #FF69B4)",
+                      color: "#000",
+                      fontWeight: 800,
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      fontSize: "0.75rem",
+                      marginLeft: "6px",
+                      letterSpacing: "0.05em",
+                    }}>
+                      👑 HEIST DEFENDED
+                    </span>
+                  )}
                   {player.isBreached && <span className="row-breach-badge">🚨 BREACHED</span>}
                   {isFrozen && <span className="row-frozen-badge">❄ FROZEN</span>}
                 </div>
