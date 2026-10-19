@@ -21,14 +21,13 @@ Every task, bug, or error added to this log follows this format:
 
 ## 🚀 Session Resumption State (Checkpoint)
 
-- **Last Updated**: `2026-10-19 17:00:00 IST`
+- **Last Updated**: `2026-10-19 17:52:00 IST`
 - **Current Branch**: `main`
-- **Build Status**: ✅ Passing (`vite v8.3.4` bundle built in 1.14s)
-- **Active Focus**: Scratch file cleanup & Tournament sync verification
+- **Build Status**: ✅ Passing (`vite v8.3.4` bundle built in 425ms)
+- **Active Focus**: Tournament sync verification
 - **Next Up**:
-  1. Clean up or archive untracked scratch video artifacts in `public/video/` (`frame_current.jpg`, `frame_hd_source.jpg`, `original_hd_source.mp4`, `version_8f8488e.mp4`).
-  2. Validate full tournament end-to-end sync between `PlayerTerminal.jsx`, `ProjectorStage.jsx`, and `admin_server/server.cjs`.
-  3. Address non-fatal React hook dependency warnings in `PlayerTerminal.jsx`.
+  1. Validate full tournament sync between `PlayerTerminal.jsx`, `ProjectorStage.jsx`, and `admin_server/server.cjs`.
+  2. Address non-fatal React hook dependency warnings in `PlayerTerminal.jsx`.
 
 ---
 
@@ -36,6 +35,7 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **ISS-002** | User Reported + Code Scan | Audio / Video Cutscene | Sound of cutscene video lost due to autoplay policy mute fallback | High | **COMPLETED** |
 | **ISS-001** | User Reported + Code Scan | Audio / SoundEngine | Audio subsystem review & mute bypass in `soundEngine.js` | High | **COMPLETED** |
 | **TSK-001** | Code Scan | Media / Optimization | Cutscene 30fps CFR 2.77MB optimization & mid-stream stutter elimination | High | **COMPLETED** |
 | **TSK-002** | User Request | Multiplayer / Branding | 2-Player team registration & VYUHA by DAEMON '26 branding | High | **COMPLETED** |
@@ -46,6 +46,36 @@ Every task, bug, or error added to this log follows this format:
 ---
 
 ## 📝 Detailed Task & Error Logs
+
+### 🔊 ISS-002: Video Cutscene Audio Lost Due to Autoplay Policy Mute Fallback
+- **Date Logged**: `2026-10-19 17:38:48 IST`
+- **Completed**: `2026-10-19 17:51:50 IST`
+- **Origin**:
+  - **User Reported**: "Hey, the sound of the video is lost. Can you check it and find the issue, and find a solution also please?"
+  - **Code Scan / Playwright Verification**:
+    1. Verified `heist_intro.mp4` internal audio track: 44.1kHz stereo AAC-LC, 3287 audio frames, 76.36s duration. Audio waveform is healthy with strong amplitude (`peakVolume: 0.485`).
+    2. Investigated browser lifecycle in `PlayerTerminal.jsx`:
+       - `launchStoryMode` animates the 3D vault door open with a 1800ms timer (`setTimeout(..., 1800)`).
+       - Because 1.8s elapses before setting `screen = "cutscene"`, the browser's transient user activation window (1000ms) expires.
+       - The unmuted `<video>` was blocked by browser autoplay policy (`NotAllowedError`).
+       - Lines 1240-1245 caught this and permanently silenced the element (`videoRef.current.muted = true`).
+       - Clicking anywhere on the screen triggered `onClick={handleCutsceneDone}`, skipping the entire cutscene rather than unmuting.
+       - Additionally, `autoPlay` attribute raced with `video.play()` causing `AbortError: interrupted by a new load request`.
+- **Root Cause**: Transient user activation expiration during vault opening animation combined with silent catch block fallback (`muted = true`), race condition between `autoPlay` tag attribute and `video.play()`, and absence of unmuting UI controls.
+- **Affected Files**:
+  - [`src/pages/PlayerTerminal.jsx`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.jsx)
+  - [`src/pages/PlayerTerminal.css`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.css)
+- **Applied Fix**:
+  1. Removed `autoPlay` attribute from `<video>` to eliminate race-condition load aborts.
+  2. Froze `activeCutsceneSrc` during cutscene playback so blob preloading doesn't trigger a mid-stream source swap.
+  3. Added `isCutsceneMuted` state in React.
+  4. If browser autoplay restricts unmuted audio, sets `isCutsceneMuted(true)` and displays a glowing retro GTA Vice City banner: `[ 🔊 TAP ANYWHERE TO UNMUTE AUDIO ]`.
+  5. If `isCutsceneMuted` is true, the first click on the video unmutes audio (`muted = false`, `volume = 1.0`) with a pleasant retro sound blip, without skipping the cutscene!
+  6. Added a dedicated `[ 🔇 UNMUTE ]` / `[ 🔊 AUDIO ON ]` toggle pill in the cutscene HUD (with keyboard shortcut `M` / `Space`).
+  7. Verified in automated Chromium test: video loads unmuted at volume 1.0 with zero errors and smooth playback.
+- **Status**: `COMPLETED`
+
+---
 
 ### 🎧 ISS-001: Audio Subsystem Resilience & Mute/Output Routing
 - **Date Logged**: `2026-10-19 16:56:46 IST`

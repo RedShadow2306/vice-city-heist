@@ -1964,6 +1964,110 @@
   display: none;
 }
 
+/* Unmute Prompt Banner for Cutscene Video */
+.cutscene-unmute-banner {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: rgba(12, 16, 28, 0.94);
+  border: 1.5px solid #FF007F;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(255, 0, 127, 0.6), inset 0 0 15px rgba(255, 0, 127, 0.25);
+  cursor: pointer;
+  z-index: 120;
+  animation: unmuteBannerPulse 1.4s ease-in-out infinite alternate;
+  pointer-events: auto;
+  transition: transform 0.2s ease;
+}
+
+.cutscene-unmute-banner:hover {
+  transform: translateX(-50%) scale(1.04);
+}
+
+@keyframes unmuteBannerPulse {
+  0% { transform: translateX(-50%) scale(0.98); box-shadow: 0 0 15px rgba(255, 0, 127, 0.45); }
+  100% { transform: translateX(-50%) scale(1.02); box-shadow: 0 0 35px rgba(255, 0, 127, 0.9); }
+}
+
+.cutscene-unmute-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unmute-badge-icon {
+  font-size: 20px;
+}
+
+.unmute-badge-title {
+  font-family: var(--font-display, 'Outfit', sans-serif);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: #FF007F;
+  text-shadow: 0 0 10px rgba(255, 0, 127, 0.85);
+}
+
+.cutscene-unmute-callout {
+  font-family: var(--font-display, 'Outfit', sans-serif);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #FFF;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+/* Audio Toggle Pill Button in Cutscene Overlay */
+.cutscene-audio-pill {
+  pointer-events: auto;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: var(--font-display, 'Outfit', sans-serif);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+  background: rgba(10, 14, 26, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFF;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.cutscene-audio-pill.pill-muted {
+  border-color: #FF007F;
+  color: #FF66B2;
+  box-shadow: 0 0 18px rgba(255, 0, 127, 0.6);
+  animation: unmuteBannerPulse 1.8s ease-in-out infinite alternate;
+}
+
+.cutscene-audio-pill.pill-active {
+  border-color: #00E5FF;
+  color: #00E5FF;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+}
+
+.cutscene-audio-pill:hover {
+  transform: scale(1.06);
+}
+
+.cutscene-audio-pill .pill-icon {
+  font-size: 14px;
+}
+
 /* ══════════════════════════════════════════════════════
    SCREEN 3 & 4: LOCKER ROOM BRIEFING & ACTIVE DEFENSE
    (Real Locker Room Background from /images/vault_lockers.jpg)

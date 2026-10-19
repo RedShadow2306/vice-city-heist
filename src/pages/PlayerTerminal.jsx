@@ -194,6 +194,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const [videoIsBuffering, setVideoIsBuffering] = useState(false);
   // Freeze video src upon mounting cutscene so playback never gets interrupted/swapped mid-stream
   const [activeCutsceneSrc, setActiveCutsceneSrc] = useState(() => videoPreloader.getVideoUrl());
+  const [isCutsceneMuted, setIsCutsceneMuted] = useState(false);
 
   useEffect(() => {
     videoPreloader.init();
@@ -205,6 +206,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   useEffect(() => {
     if (screen === "cutscene") {
+      setActiveCutsceneSrc((prev) => prev || videoPreloader.getVideoUrl());
+    } else {
       setActiveCutsceneSrc(videoPreloader.getVideoUrl());
     }
   }, [screen]);
@@ -1220,7 +1223,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     }
   }, [isLockedBreach, isPlayerFrozen, parentFrozen, soundEnabled, cfg, activeRulesList, triggerTimeBonus, handleLevelFinished, reportToAdmin, setPassword, setUnlockedCount]);
 
-  /* ── Cutscene Completion ── */
+  /* ── Cutscene Completion & Audio Controls ── */
   const handleCutsceneDone = useCallback(() => {
     if (videoRef.current) videoRef.current.pause();
     if (soundEnabled) SoundEngine.playClick();
@@ -1228,25 +1231,82 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     reportToAdmin({ status: "BRIEFING" });
   }, [soundEnabled, reportToAdmin]);
 
-  /* ── Cutscene Keydown & Fullscreen Handler ── */
+  const handleUnmuteCutscene = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.volume = 1.0;
+      setIsCutsceneMuted(false);
+      if (soundEnabled) {
+        SoundEngine.resume();
+        SoundEngine.playClick();
+      }
+    }
+  }, [soundEnabled]);
+
+  const handleToggleCutsceneAudio = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (videoRef.current) {
+      const nextMuted = !videoRef.current.muted;
+      videoRef.current.muted = nextMuted;
+      setIsCutsceneMuted(nextMuted);
+      if (!nextMuted && soundEnabled) {
+        SoundEngine.resume();
+        SoundEngine.playClick();
+      }
+    }
+  }, [soundEnabled]);
+
+  const handleCutsceneStageClick = useCallback((e) => {
+    // If video was muted by browser autoplay policy, first click unmutes with sound blip and doesn't skip!
+    if (isCutsceneMuted || (videoRef.current && videoRef.current.muted)) {
+      handleUnmuteCutscene(e);
+      return;
+    }
+    // If already unmuted or sound is playing, clicking skips to briefing
+    handleCutsceneDone();
+  }, [isCutsceneMuted, handleUnmuteCutscene, handleCutsceneDone]);
+
+  /* ── Cutscene Playback & Keydown Handler ── */
   useEffect(() => {
     if (screen !== "cutscene") return;
 
     requestFullscreenSafe();
 
     if (videoRef.current) {
+      // First attempt unmuted playback if sound is enabled
+      videoRef.current.muted = !soundEnabled;
+      videoRef.current.volume = 1.0;
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            videoRef.current.play().catch(() => {});
-          }
-        });
+        playPromise
+          .then(() => {
+            setIsCutsceneMuted(Boolean(videoRef.current?.muted));
+          })
+          .catch((err) => {
+            console.warn("[Cutscene] Autoplay with audio restricted by browser. Falling back to muted with tap-to-unmute prompt:", err);
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              setIsCutsceneMuted(true);
+              videoRef.current.play().catch(() => {});
+            }
+          });
       }
     }
 
-    const handleCutsceneKeyDown = () => {
+    const handleCutsceneKeyDown = (e) => {
+      // If user presses M, toggle audio
+      if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        handleToggleCutsceneAudio(e);
+        return;
+      }
+      // If muted, Enter or Space unmutes without skipping
+      if (isCutsceneMuted && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        handleUnmuteCutscene(e);
+        return;
+      }
       handleCutsceneDone();
     };
 
@@ -1254,7 +1314,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     return () => {
       window.removeEventListener("keydown", handleCutsceneKeyDown);
     };
-  }, [screen, handleCutsceneDone]);
+  }, [screen, soundEnabled, isCutsceneMuted, handleCutsceneDone, handleUnmuteCutscene, handleToggleCutsceneAudio]);
 
   /* ── Start Active Defense on Current Level ── */
   const handleStartActiveDefense = (levelToStart) => {
@@ -1683,17 +1743,16 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       {screen === "cutscene" && (
         <section 
           className="cutscene-fullscreen-stage" 
-          onClick={handleCutsceneDone}
+          onClick={handleCutsceneStageClick}
           tabIndex={0}
           role="button"
-          aria-label="Click anywhere or press any key to skip cutscene"
+          aria-label={isCutsceneMuted ? "Click anywhere to unmute cutscene audio" : "Click anywhere or press any key to skip cutscene"}
         >
           <div className="video-player-frame">
             <video
               ref={videoRef}
               src={activeCutsceneSrc}
               poster={getAssetUrl("/images/heist_intro_poster.jpg")}
-              autoPlay
               playsInline
               preload="auto"
               onEnded={handleCutsceneDone}
@@ -1723,10 +1782,39 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               </div>
             )}
 
+            {/* Tap to Unmute Banner (Shown whenever browser autoplay policy restricted initial audio) */}
+            {isCutsceneMuted && (
+              <div 
+                className="cutscene-unmute-banner"
+                onClick={handleUnmuteCutscene}
+              >
+                <div className="cutscene-unmute-badge">
+                  <span className="unmute-badge-icon">🔊</span>
+                  <span className="unmute-badge-title">AUDIO MUTED BY BROWSER</span>
+                </div>
+                <div className="cutscene-unmute-callout">
+                  TAP ANYWHERE TO UNMUTE VICE CITY TRANSMISSION
+                </div>
+              </div>
+            )}
+
             <div className="cutscene-hud-overlay">
+              {/* Direct Unmute / Mute Toggle Button */}
+              <button
+                type="button"
+                className={`cutscene-audio-pill ${isCutsceneMuted ? "pill-muted" : "pill-active"}`}
+                onClick={handleToggleCutsceneAudio}
+                title="Toggle cutscene sound (or press M)"
+              >
+                <span className="pill-icon">{isCutsceneMuted ? "🔇" : "🔊"}</span>
+                <span className="pill-text">{isCutsceneMuted ? "UNMUTE AUDIO" : "SOUND ON"}</span>
+              </button>
+
               <div className="cutscene-hud-pulse">
                 <span className="cutscene-hud-icon">▶▶</span>
-                <span className="cutscene-hud-text">PRESS ANY KEY OR CLICK ANYWHERE TO SKIP INTRO</span>
+                <span className="cutscene-hud-text">
+                  {isCutsceneMuted ? "TAP SCREEN TO UNMUTE · PRESS ESC TO SKIP" : "PRESS ANY KEY OR CLICK TO SKIP"}
+                </span>
               </div>
               <div className="cutscene-hud-sub">TRANSMISSION // LIVE INFILTRATION — VYUHA '26</div>
             </div>
