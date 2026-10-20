@@ -109,7 +109,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "printf",
     hint: 'Fill in the blank: C console output function: printf("...") (type directly, no quotes)',
     prompt: 'Fill in the missing C output function: _____("Access Granted to Vault\\n");',
-    managerSpeech: 'Code diagnostic! Fill in the missing C console output function: _____("Access Granted")! Enter printf!'
+    managerSpeech: 'Code diagnostic! Fill in the missing C console output function: _____("Access Granted")!'
   },
   {
     id: "def_python",
@@ -119,7 +119,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "def",
     hint: 'Fill in the blank: Python keyword used to define a function: def (type directly, no quotes)',
     prompt: 'Fill in the missing Python keyword: _____ unlock_vault(code):',
-    managerSpeech: 'Python script syntax check! What 3-letter keyword defines a function in Python? Enter def!'
+    managerSpeech: 'Python script syntax check! What keyword defines a function in Python?'
   },
   {
     id: "console_js",
@@ -129,7 +129,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "console",
     hint: 'Fill in the blank: JavaScript standard output object: console.log(...) (type directly, no quotes)',
     prompt: 'Fill in the missing JavaScript object: _____.log("Vault Lockdown Active");',
-    managerSpeech: 'Browser devtools log check! What object precedes .log("...") in JavaScript? Enter console!'
+    managerSpeech: 'Browser devtools log check! What object precedes .log("...") in JavaScript?'
   },
   {
     id: "return_fn",
@@ -139,7 +139,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "return",
     hint: 'Fill in the blank: Keyword used to pass back a value from a function: return (type directly, no quotes)',
     prompt: 'Fill in the missing keyword: int calculate_balance() { _____ 3000000; }',
-    managerSpeech: 'Function control flow! What 6-letter keyword passes the calculated value out of a function? Enter return!'
+    managerSpeech: 'Function control flow! What keyword passes the calculated value out of a function?'
   },
   {
     id: "for_loop",
@@ -149,7 +149,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "for",
     hint: 'Fill in the blank: Standard loop keyword for counter iterations: for (type directly, no quotes)',
     prompt: 'Fill in the missing loop keyword: _____ (int i = 0; i < 10; i++) { ... }',
-    managerSpeech: 'Loop iteration protocol! What 3-letter keyword executes a counted loop? Enter for!'
+    managerSpeech: 'Loop iteration protocol! What keyword executes a counted loop?'
   },
   {
     id: "if_condition",
@@ -159,7 +159,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "if",
     hint: 'Fill in the blank: Fundamental conditional branching keyword: if (type directly, no quotes)',
     prompt: 'Fill in the missing conditional keyword: _____ (threat_level > 5) { trigger_alarm(); }',
-    managerSpeech: 'Logic branch checkpoint! What 2-letter keyword executes a condition? Enter if!'
+    managerSpeech: 'Logic branch checkpoint! What keyword executes a condition?'
   },
   {
     id: "while_loop",
@@ -169,7 +169,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "while",
     hint: 'Fill in the blank: Loop keyword that runs while condition holds true: while (type directly, no quotes)',
     prompt: 'Fill in the missing loop keyword: _____ (security_breach == true) { ... }',
-    managerSpeech: 'Continuous defense loop! What 5-letter keyword runs a loop while condition is true? Enter while!'
+    managerSpeech: 'Continuous defense loop! What keyword runs a loop while condition is true?'
   },
   {
     id: "print_python",
@@ -179,7 +179,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "print",
     hint: 'Fill in the blank: Python built-in standard display function: print (type directly, no quotes)',
     prompt: 'Fill in the missing Python output function: _____("Vault Security Status: Armed");',
-    managerSpeech: 'Python terminal log check! What 5-letter function prints output to console? Enter print!'
+    managerSpeech: 'Python terminal log check! What function prints output to console?'
   },
   {
     id: "new_keyword",
@@ -189,7 +189,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "new",
     hint: 'Fill in the blank: Keyword to instantiate or allocate a new object: new (type directly, no quotes)',
     prompt: 'Fill in the missing object instantiation keyword: VaultLock lock = _____ VaultLock();',
-    managerSpeech: 'Object instantiation! What 3-letter keyword creates a new object instance? Enter new!'
+    managerSpeech: 'Object instantiation! What keyword creates a new object instance?'
   },
   {
     id: "static_mod",
@@ -199,7 +199,7 @@ export const CODE_SNIPPET_PUZZLES = [
     blank: "static",
     hint: 'Fill in the blank: Keyword for class-level (non-instance) variables/methods: static (type directly, no quotes)',
     prompt: 'Fill in the missing Java/C# modifier: public _____ int MAX_SAFE_DEPOSITS = 1986;',
-    managerSpeech: 'Class variable memory check! What 6-letter modifier makes a field belong to the class itself? Enter static!'
+    managerSpeech: 'Class variable memory check! What modifier makes a field belong to the class itself?'
   }
 ];
 
@@ -208,21 +208,21 @@ export const CHATGPT_OPTIONS = [
   {
     model: "4o",
     name: "GPT-4o (Omni)",
-    prompt: 'What is OpenAI\'s famous flagship multimodal model release for ChatGPT (short 2-character name)?',
+    prompt: 'What is OpenAI\'s famous flagship multimodal model release for ChatGPT?',
     hint: 'OpenAI\'s omni flagship model is "4o" (do NOT use quotes).',
     alt: ["4o", "omni", "gpt-4o", "gpt4o"]
   },
   {
     model: "o1",
     name: "OpenAI o1 Reasoning",
-    prompt: 'What is OpenAI\'s breakthrough reasoning model series name designed for complex math & coding (short 2-character name)?',
+    prompt: 'What is OpenAI\'s breakthrough reasoning model series name designed for complex math & coding?',
     hint: 'OpenAI\'s reasoning model series is "o1" (do NOT use quotes).',
     alt: ["o1", "o3", "reasoning"]
   },
   {
     model: "gpt4",
     name: "GPT-4",
-    prompt: 'What major transformer model series by OpenAI preceded GPT-4o (enter "gpt4")?',
+    prompt: 'What major transformer model series by OpenAI preceded GPT-4o?',
     hint: 'Generative Pre-trained Transformer model: "gpt4" (do NOT use quotes).',
     alt: ["gpt4", "4o", "gpt-4"]
   }
@@ -233,21 +233,21 @@ export const TESLA_OPTIONS = [
   {
     model: "roadster",
     name: "Tesla Roadster",
-    prompt: 'What futuristic sports car has Elon Musk announced with optional SpaceX cold gas thrusters that can "fly"? (8-letter word)',
+    prompt: 'What futuristic sports car has Elon Musk announced with optional SpaceX cold gas thrusters that can "fly"?',
     hint: 'Tesla\'s rocket-thruster flying supercar: "roadster" (do NOT use quotes).',
     alt: ["roadster"]
   },
   {
     model: "cybertruck",
     name: "Tesla Cybertruck",
-    prompt: 'What famous angular stainless-steel electric pickup truck was engineered by Tesla? (10-letter word)',
+    prompt: 'What famous angular stainless-steel electric pickup truck was engineered by Tesla?',
     hint: 'Tesla\'s angular electric pickup: "cybertruck" (do NOT use quotes).',
     alt: ["cybertruck"]
   },
   {
     model: "autopilot",
     name: "Tesla Autopilot",
-    prompt: 'What famous autonomous driving and self-steering technology is built into Tesla vehicles? (9-letter word)',
+    prompt: 'What famous autonomous driving and self-steering technology is built into Tesla vehicles?',
     hint: 'Tesla autonomous navigation system: "autopilot" (do NOT use quotes).',
     alt: ["autopilot", "fsd"]
   }
@@ -256,91 +256,91 @@ export const TESLA_OPTIONS = [
 /* ─── Accessible Tech & Common Knowledge Riddles Pool (Rule 13) ─── */
 export const TECH_COMMON_RIDDLES = [
   {
-    prompt: "Where is user data from apps like Instagram and TikTok stored remotely? (5-letter word)",
+    prompt: "Where is user data from apps like Instagram and TikTok stored remotely?",
     ans: "cloud",
     alt: ["cloud", "server"],
     label: "Cloud Storage",
     hint: "Remote distributed internet servers and offsite data storage: cloud (do NOT use quotes)."
   },
   {
-    prompt: "What secure protocol displays a padlock icon in your web browser address bar? (5-letter acronym)",
+    prompt: "What secure protocol displays a padlock icon in your web browser address bar?",
     ans: "https",
     alt: ["https", "ssl"],
     label: "HTTPS",
     hint: "Encrypted web communications protocol: https (do NOT use quotes)."
   },
   {
-    prompt: "What global network of interconnected computers connects the whole world? (8-letter word)",
+    prompt: "What global network of interconnected computers connects the whole world?",
     ans: "internet",
     alt: ["internet", "web"],
     label: "Internet",
     hint: "The vast global telecommunications system: internet (do NOT use quotes)."
   },
   {
-    prompt: "What device in your home routes Wi-Fi signals to your smartphone and laptop? (6-letter word)",
+    prompt: "What device in your home routes Wi-Fi signals to your smartphone and laptop?",
     ans: "router",
     alt: ["router", "modem"],
     label: "Router",
     hint: "Networking appliance routing packets: router (do NOT use quotes)."
   },
   {
-    prompt: "What open-source Google mobile operating system powers billions of smartphones? (7-letter word)",
+    prompt: "What open-source Google mobile operating system powers billions of smartphones?",
     ans: "android",
     alt: ["android"],
     label: "Android",
     hint: "Google's open-source mobile OS: android (do NOT use quotes)."
   },
   {
-    prompt: "What wireless technology connects your smartphone to earbuds or speakers? (9-letter word)",
+    prompt: "What wireless technology connects your smartphone to earbuds or speakers?",
     ans: "bluetooth",
     alt: ["bluetooth"],
     label: "Bluetooth",
     hint: "Named after tenth-century King Harald Gormsson: bluetooth (do NOT use quotes)."
   },
   {
-    prompt: "What 2-letter abbreviation represents Artificial Intelligence systems? (2 letters)",
+    prompt: "What abbreviation represents Artificial Intelligence systems?",
     ans: "ai",
     alt: ["ai"],
     label: "AI",
     hint: "Two-letter acronym for artificial intelligence: ai (do NOT use quotes)."
   },
   {
-    prompt: "What 3-letter satellite navigation system pinpoints your phone's geographic location? (3 letters)",
+    prompt: "What satellite navigation system pinpoints your phone's geographic location?",
     ans: "gps",
     alt: ["gps"],
     label: "GPS",
     hint: "Global Positioning System: gps (do NOT use quotes)."
   },
   {
-    prompt: "What video cable standard connects your console, laptop, or monitor for HD video? (4-letter acronym)",
+    prompt: "What video cable standard connects your console, laptop, or monitor for HD video?",
     ans: "hdmi",
     alt: ["hdmi"],
     label: "HDMI",
     hint: "High-Definition Multimedia Interface: hdmi (do NOT use quotes)."
   },
   {
-    prompt: "What fast solid-state drive replaced mechanical spinning hard drives in modern laptops? (3 letters)",
+    prompt: "What fast solid-state drive replaced mechanical spinning hard drives in modern laptops?",
     ans: "ssd",
     alt: ["ssd"],
     label: "SSD",
     hint: "Solid-State Drive high-speed storage: ssd (do NOT use quotes)."
   },
   {
-    prompt: "What universal cable standard charges modern iPhones, Androids, and laptops? (3 letters)",
+    prompt: "What universal cable standard charges modern iPhones, Androids, and laptops?",
     ans: "usb",
     alt: ["usb", "usbc"],
     label: "USB",
     hint: "Universal Serial Bus: usb or usbc (do NOT use quotes)."
   },
   {
-    prompt: "What small text file does a website save in your browser to remember your login? (6-letter word)",
+    prompt: "What small text file does a website save in your browser to remember your login?",
     ans: "cookie",
     alt: ["cookie", "cookies"],
     label: "HTTP Cookie",
     hint: "Small HTTP browser state tracking file: cookie (do NOT use quotes)."
   },
   {
-    prompt: "What vibrant display screen technology illuminates each individual pixel without a backlight? (4 letters)",
+    prompt: "What vibrant display screen technology illuminates each individual pixel without a backlight?",
     ans: "oled",
     alt: ["oled", "amoled"],
     label: "OLED Screen",
@@ -427,25 +427,25 @@ export const SHA_PHRASES = [
 /* ─── Systems Architecture Riddles (Rule 32) ─── */
 export const SYS_TECH_RIDDLES = [
   {
-    clue: "What 7-letter network security system monitors and filters incoming and outgoing network traffic based on security rules?",
+    clue: "What network security system monitors and filters incoming and outgoing network traffic based on security rules?",
     word: "firewall",
     name: "Network Firewall",
     hint: "Security barrier between networks: firewall (do NOT use quotes).",
   },
   {
-    clue: "What 6-letter OS program converts human-readable source code into machine code or bytecode?",
+    clue: "What OS program converts human-readable source code into machine code or bytecode?",
     word: "compiler",
     name: "Source Compiler",
     hint: "Program translating source code to executable: compiler (do NOT use quotes).",
   },
   {
-    clue: "What 6-letter temporary physical memory region holds data while it is being moved between devices or processes?",
+    clue: "What temporary physical memory region holds data while it is being moved between devices or processes?",
     word: "buffer",
     name: "Memory Buffer",
     hint: "Temporary chunk of RAM: buffer (do NOT use quotes).",
   },
   {
-    clue: "What 6-letter core software program directly manages CPU, RAM, and hardware devices at Ring 0?",
+    clue: "What core software program directly manages CPU, RAM, and hardware devices at Ring 0?",
     word: "kernel",
     name: "Operating System Kernel",
     hint: "Central core of an OS: kernel (do NOT use quotes).",
@@ -510,13 +510,13 @@ export const SWATCH_OPTIONS = [
 
 /* ─── CS Fundamentals (Rule 33) ─── */
 export const CS_FUNDAMENTALS = [
-  { clue: "The smallest atomic unit of digital data in computer science, storing binary 0 or 1. What 3-letter term am I?", word: "bit", name: "Digital Bit" },
-  { clue: "Composed of 8 continuous bits, I represent a single character in ASCII. What 4-letter unit am I?", word: "byte", name: "Data Byte" },
-  { clue: "A linear data structure following Last-In First-Out (LIFO) where items push and pop from the top. What 5-letter term am I?", word: "stack", name: "LIFO Stack" },
-  { clue: "A linear data structure following First-In First-Out (FIFO) where elements join the rear and leave the front. What 5-letter term am I?", word: "queue", name: "FIFO Queue" },
-  { clue: "An unhandled flaw or error in source code causing unintended program behavior. What 3-letter term am I?", word: "bug", name: "Software Bug" },
-  { clue: "A contiguous collection of elements of the same data type stored sequentially in memory. What 5-letter data structure am I?", word: "array", name: "Array" },
-  { clue: "A non-linear hierarchical data structure consisting of nodes connected by edges, starting from a root. What 4-letter term am I?", word: "tree", name: "Tree Structure" },
+  { clue: "The smallest atomic unit of digital data in computer science, storing binary 0 or 1. What term am I?", word: "bit", name: "Digital Bit" },
+  { clue: "Composed of 8 continuous bits, I represent a single character in ASCII. What unit am I?", word: "byte", name: "Data Byte" },
+  { clue: "A linear data structure following Last-In First-Out (LIFO) where items push and pop from the top. What term am I?", word: "stack", name: "LIFO Stack" },
+  { clue: "A linear data structure following First-In First-Out (FIFO) where elements join the rear and leave the front. What term am I?", word: "queue", name: "FIFO Queue" },
+  { clue: "An unhandled flaw or error in source code causing unintended program behavior. What term am I?", word: "bug", name: "Software Bug" },
+  { clue: "A contiguous collection of elements of the same data type stored sequentially in memory. What data structure am I?", word: "array", name: "Array" },
+  { clue: "A non-linear hierarchical data structure consisting of nodes connected by edges, starting from a root. What term am I?", word: "tree", name: "Tree Structure" },
 ];
 
 /* ─── Persistent Non-Repeating Pool Picker ─── */
@@ -757,12 +757,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 2 · OPERATOR",
       difficultyColor: "#48D5D0",
       isRiddle: true,
-      text: '🔁 LOOP CONSTRUCT: "What standard keyword is used to create a loop in C, C++, or Java?" (3-letter word, e.g. "for" or "while")',
+      text: '🔁 LOOP CONSTRUCT: "What standard keyword is used to create a loop in C, C++, or Java?"',
       badge: (pw) => (/(for|while)/i.test(pw.replace(/["']/g, "")) ? "Loop KW ✓" : "Loop KW ?"),
       hint: 'Standard loop iteration keyword: "for" or "while" (type directly, no quotes).',
       check: (pw) => /(for|while)/i.test(pw.replace(/["']/g, "")),
       headline: "LOOP CONSTRUCT KEYWORD!",
-      managerSpeech: "Programming fundamentals check! What keyword is used to execute a loop in C, C++, or Java? Enter for or while!",
+      managerSpeech: "Programming fundamentals check! What keyword is used to execute a loop in C, C++, or Java?",
       expectedAnswer: "for (or while)",
     },
     {
@@ -775,12 +775,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 2 · OPERATOR",
       difficultyColor: "#48D5D0",
       isRiddle: true,
-      text: '🔀 CONDITIONAL BRANCH: "What fundamental 2-letter keyword is used for conditional branching in C, Python, or Java?"',
+      text: '🔀 CONDITIONAL BRANCH: "What fundamental keyword is used for conditional branching in C, Python, or Java?"',
       badge: (pw) => (/if/i.test(pw.replace(/["']/g, "")) ? "if ✓" : "Condition KW ?"),
       hint: 'Fundamental conditional statement keyword: "if" (type directly, no quotes).',
       check: (pw) => /if/i.test(pw.replace(/["']/g, "")),
       headline: "CONDITIONAL STATEMENT KEYWORD!",
-      managerSpeech: "Decision tree checkpoint! What 2-letter keyword tests a condition? Enter if!",
+      managerSpeech: "Decision tree checkpoint! What keyword tests a condition?",
       expectedAnswer: "if",
     },
     {
@@ -833,7 +833,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       hint: `Convert decimal ${binaryTarget.dec} into binary: ${binaryTarget.bin} (type directly, no quotes).`,
       check: (pw) => pw.replace(/["']/g, "").includes(binaryTarget.bin),
       headline: "BINARY REGISTER CONVERSION!",
-      managerSpeech: `Convert decimal ${binaryTarget.dec} into its binary representation! Enter ${binaryTarget.bin} (no quotes)!`,
+      managerSpeech: `Convert decimal ${binaryTarget.dec} into its binary representation!`,
       expectedAnswer: binaryTarget.bin,
     },
     {
@@ -938,7 +938,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★☆☆☆",
       difficultyTier: "TIER 2 · OPERATOR",
       difficultyColor: "#48D5D0",
-      text: "Include a valid HTML tag (e.g. <div>, <span>, <p>, <h1>)",
+      text: "Include a valid HTML tag enclosed in angle brackets",
       badge: (pw) => (/<\s*(?:div|p|span|h[1-6]|a|b|i|u|button|input|form|table|tr|td|th|ul|ol|li|img|head|body|html|main|nav|header|footer|section|article|code|pre)\b[^>]*>/i.test(pw.replace(/["']/g, "")) || /<\s*[a-zA-Z][a-zA-Z0-9]*\b[^>]*>/i.test(pw.replace(/["']/g, "")) ? "HTML Tag ✓" : "HTML Tag ?"),
       hint: "Enclose a standard HTML markup element between angle brackets (e.g. <div>, <p>, <span>). Do NOT use quotes.",
       check: (pw) => /<\s*(?:div|p|span|h[1-6]|a|b|i|u|button|input|form|table|tr|td|th|ul|ol|li|img|head|body|html|main|nav|header|footer|section|article|code|pre)\b[^>]*>/i.test(pw.replace(/["']/g, "")) || /<\s*[a-zA-Z][a-zA-Z0-9]*\b[^>]*>/i.test(pw.replace(/["']/g, "")),
@@ -955,7 +955,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★☆☆☆",
       difficultyTier: "TIER 2 · OPERATOR",
       difficultyColor: "#48D5D0",
-      text: "Include a reserved Python keyword (def, return, import, class, etc.)",
+      text: "Include a reserved Python keyword",
       badge: (pw) => (/(def|return|import|lambda|class|yield|async|await|while|elif|from|with|raise|except|finally|assert|break|continue|global|nonlocal)/i.test(pw.replace(/["']/g, "")) ? "Python KW ✓" : "Python KW ?"),
       hint: "Include a reserved Python language keyword (e.g. for functions, loops, or imports). Do NOT use quotes.",
       check: (pw) => /(def|return|import|lambda|class|yield|async|await|while|elif|from|with|raise|except|finally|assert|break|continue|global|nonlocal)/i.test(pw.replace(/["']/g, "")),
@@ -991,12 +991,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyColor: "#48D5D0",
       isRiddle: true,
       poolCategory: "romanTarget",
-      text: `Include Roman numeral representation for integer ${romanTarget.num} (${romanTarget.roman})`,
+      text: `Include Roman numeral representation for integer ${romanTarget.num}`,
       badge: (pw) => (pw.includes(romanTarget.roman) ? `Roman ${romanTarget.roman} ✓` : "Roman ?"),
       hint: `Roman numeral for ${romanTarget.num} is ${romanTarget.roman} in uppercase (type directly, no quotes).`,
       check: (pw) => pw.replace(/["']/g, "").includes(romanTarget.roman),
       headline: "ROMAN NUMERAL VAULT ENCRYPTION!",
-      managerSpeech: `Ancient Roman cipher lock! Translate decimal ${romanTarget.num} into Roman numerals: ${romanTarget.roman}!`,
+      managerSpeech: `Ancient Roman cipher lock! Translate decimal ${romanTarget.num} into Roman numerals!`,
       expectedAnswer: romanTarget.roman,
     },
     {
@@ -1008,7 +1008,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a valid programming file extension (.js, .py, .ts, etc.)",
+      text: "Include a valid programming file extension with its dot",
       badge: (pw) => (/\.(js|py|html|css|ts|json|cpp|java|sh|jsx|tsx|php|rb|go|rs|sql|md)/i.test(pw.replace(/["']/g, "")) ? "File Ext ✓" : "Extension ?"),
       hint: "Include a standard code file extension preceded by a dot (e.g. .js, .py, .ts). Do NOT use quotes.",
       check: (pw) => /\.(js|py|html|css|ts|json|cpp|java|sh|jsx|tsx|php|rb|go|rs|sql|md)/i.test(pw.replace(/["']/g, "")),
@@ -1025,7 +1025,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a Git command (commit, push, pull, branch, merge, etc.)",
+      text: "Include a primary Git version control command",
       badge: (pw) => (/(commit|push|pull|checkout|branch|clone|status|merge|rebase|fetch|stash|reset|diff)/i.test(pw.replace(/["']/g, "")) ? "Git Cmd ✓" : "Git Cmd ?"),
       hint: "Include a command used in Git version control (e.g. for repository branching, commits, or remotes). Do NOT use quotes.",
       check: (pw) => /(commit|push|pull|checkout|branch|clone|status|merge|rebase|fetch|stash|reset|diff)/i.test(pw.replace(/["']/g, "")),
@@ -1042,7 +1042,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a valid IPv4 address (e.g. 192.168.1.1 or 10.0.0.1)",
+      text: "Include a valid IPv4 numerical address",
       badge: (pw) => (/(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/.test(pw.replace(/["']/g, "")) ? "IPv4 ✓" : "IPv4 ?"),
       hint: "Include a 4-octet IPv4 numerical address with octets 0-255 separated by dots. Do NOT use quotes.",
       check: (pw) => /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/.test(pw.replace(/["']/g, "")),
@@ -1059,12 +1059,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a valid MAC address format (e.g. 01:23:45:67:89:AB)",
+      text: "Include a valid physical MAC address format",
       badge: (pw) => (/(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/.test(pw.replace(/["']/g, "")) ? "MAC ✓" : "MAC Format ?"),
       hint: "Include 6 pairs of hex digits separated by colons or hyphens, e.g. 01:23:45:67:89:AB (do NOT use quotes).",
       check: (pw) => /(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/.test(pw.replace(/["']/g, "")),
       headline: "PHYSICAL MAC ADDRESS!",
-      managerSpeech: "Hardware NIC layer verification! Include a standard MAC address format like 01:23:45:67:89:AB!",
+      managerSpeech: "Hardware NIC layer verification! Include a standard MAC address format!",
       expectedAnswer: "01:23:45:67:89:AB",
     },
     {
@@ -1094,12 +1094,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
       isRiddle: true,
-      text: '⚡ NVIDIA PARALLEL COMPUTING: "What 4-letter proprietary parallel computing platform developed by Nvidia powers modern AI GPU training?"',
+      text: '⚡ NVIDIA PARALLEL COMPUTING: "What proprietary parallel computing platform developed by Nvidia powers modern AI GPU training?"',
       badge: (pw) => (/cuda/i.test(pw.replace(/["']/g, "")) ? "CUDA ✓" : "GPU Platform ?"),
       hint: 'Nvidia parallel computing architecture: "cuda" (type directly, no quotes).',
       check: (pw) => /cuda/i.test(pw.replace(/["']/g, "")),
       headline: "NVIDIA CUDA ARCHITECTURE!",
-      managerSpeech: "Hardware acceleration protocol! What 4-letter Nvidia parallel platform runs neural network training? Enter cuda!",
+      managerSpeech: "Hardware acceleration protocol! What Nvidia parallel platform runs neural network training?",
       expectedAnswer: "cuda",
     },
 
@@ -1117,12 +1117,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyColor: "#FFD166",
       isRiddle: true,
       poolCategory: "rot13",
-      text: `🧩 CIPHER: Include the word "${rot13.plain}" encoded with ROT13 (${rot13.encoded})`,
+      text: `🧩 CIPHER: Include the word "${rot13.plain}" encoded with ROT13`,
       badge: (pw) => (new RegExp(rot13.encoded, "i").test(pw.replace(/["']/g, "")) ? `${rot13.encoded} ✓` : "ROT13 ?"),
       hint: `ROT13 of ${rot13.plain} is ${rot13.encoded} (type directly, do NOT use quotes).`,
       check: (pw) => new RegExp(rot13.encoded, "i").test(pw.replace(/["']/g, "")),
       headline: "ROT13 CIPHER SHIFT!",
-      managerSpeech: `Classic ROT13 rotation cipher! Rotate ${rot13.plain} by 13 alphabet positions to ${rot13.encoded}!`,
+      managerSpeech: `Classic ROT13 rotation cipher! Rotate ${rot13.plain} by 13 alphabet positions!`,
       expectedAnswer: rot13.encoded,
     },
     {
@@ -1136,12 +1136,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyColor: "#FFD166",
       isRiddle: true,
       poolCategory: "caesar",
-      text: `🧩 CIPHER: Include Caesar cipher (+${caesar.shift} shift) encoding of the word "${caesar.word}" (${caesar.cipher})`,
+      text: `🧩 CIPHER: Include Caesar cipher (+${caesar.shift} shift) encoding of the word "${caesar.word}"`,
       badge: (pw) => (new RegExp(caesar.cipher, "i").test(pw.replace(/["']/g, "")) ? `${caesar.cipher} ✓` : "Caesar ?"),
       hint: `Caesar shift +${caesar.shift} of ${caesar.word} is ${caesar.cipher} (type directly, no quotes).`,
       check: (pw) => new RegExp(caesar.cipher, "i").test(pw.replace(/["']/g, "")),
       headline: "CAESAR CIPHER SHIFT!",
-      managerSpeech: `Shift the Roman alphabet by +${caesar.shift} for '${caesar.word}'! Enter ${caesar.cipher} (no quotes)!`,
+      managerSpeech: `Shift the Roman alphabet by +${caesar.shift} for '${caesar.word}'!`,
       expectedAnswer: caesar.cipher,
     },
     {
@@ -1153,12 +1153,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a valid JSON key-value pair string (e.g. {code:101} or {vault:1})",
+      text: "Include a valid JSON key-value pair string",
       badge: (pw) => (/\{[^{}]*:[^{}]*\}/.test(pw.replace(/["']/g, "")) || /["'][a-zA-Z0-9_]+["']\s*:\s*["'][a-zA-Z0-9_]+["']/.test(pw) ? "JSON OK ✓" : "JSON KV ?"),
       hint: "Include key-value format inside braces like {vault:1} or {code:101} (type directly, do NOT use quotes).",
       check: (pw) => /\{[^{}]*:[^{}]*\}/.test(pw.replace(/["']/g, "")) || /["'][a-zA-Z0-9_]+["']\s*:\s*["'][a-zA-Z0-9_]+["']/.test(pw),
       headline: "JSON DATA PROTOCOL!",
-      managerSpeech: "Payload serialization! Format a valid JSON key-value pair inside curly braces like {code:101}!",
+      managerSpeech: "Payload serialization! Format a valid JSON key-value pair inside curly braces!",
       expectedAnswer: "{code:101}, {vault:1}, etc.",
     },
     {
@@ -1241,12 +1241,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyColor: "#FFD166",
       isRiddle: true,
       poolCategory: "sqlKeyword",
-      text: `🧩 DATABASE PROTOCOL: Include SQL query instruction (${sqlKeyword.word}) to ${(sqlKeyword.desc || "execute query").toLowerCase()}`,
+      text: `🧩 DATABASE PROTOCOL: Include SQL query instruction to ${(sqlKeyword.desc || "execute query").toLowerCase()}`,
       badge: (pw) => (new RegExp(sqlKeyword.word, "i").test(pw.replace(/["']/g, "")) ? `${sqlKeyword.word} ✓` : "SQL Cmd ?"),
       hint: `SQL command is ${sqlKeyword.word} (type directly, no quotes).`,
       check: (pw) => new RegExp(sqlKeyword.word, "i").test(pw.replace(/["']/g, "")),
       headline: "SQL COMMAND INJECTION!",
-      managerSpeech: `Query the financial accounts! Include the SQL keyword '${sqlKeyword.word}'!`,
+      managerSpeech: `Query the financial accounts! What is the SQL keyword to ${(sqlKeyword.desc || "execute query").toLowerCase()}?`,
       expectedAnswer: sqlKeyword.word,
     },
     {
@@ -1314,12 +1314,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
       isRiddle: true,
-      text: '🤖 AI DEVELOPER TOOLS: "What famous AI pair programmer created by GitHub assists millions of developers writing code?" (7-letter word)',
+      text: '🤖 AI DEVELOPER TOOLS: "What famous AI pair programmer created by GitHub assists millions of developers writing code?"',
       badge: (pw) => (/copilot/i.test(pw.replace(/["']/g, "")) ? "Copilot ✓" : "AI Tool ?"),
       hint: 'GitHub\'s AI pair programmer: "copilot" (type directly, no quotes).',
       check: (pw) => /copilot/i.test(pw.replace(/["']/g, "")),
       headline: "GITHUB COPILOT AI ASSISTANT!",
-      managerSpeech: "Next-gen code intelligence! What 7-letter AI assistant developed by GitHub autocompletes code? Enter copilot!",
+      managerSpeech: "Next-gen code intelligence! What AI assistant developed by GitHub autocompletes code?",
       expectedAnswer: "copilot",
     },
     {
@@ -1337,7 +1337,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       hint: 'Creator of Linux & Git: "torvalds" or "linus" (type directly, no quotes).',
       check: (pw) => /(torvalds|linus)/i.test(pw.replace(/["']/g, "")),
       headline: "LINUS TORVALDS IDENTIFICATION!",
-      managerSpeech: "Open-source foundation check! Who created Linux and Git? Enter torvalds (no quotes)!",
+      managerSpeech: "Open-source foundation check! Who created Linux and Git?",
       expectedAnswer: "torvalds",
     },
     {
@@ -1367,12 +1367,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isRiddle: true,
-      text: '🧩 ALGORITHMS: "What 9-letter algorithmic technique solves subproblems by having a function call ITSELF until reaching a base condition?"',
+      text: '🧩 ALGORITHMS: "What algorithmic technique solves subproblems by having a function call ITSELF until reaching a base condition?"',
       badge: (pw) => (/recursion/i.test(pw.replace(/["']/g, "")) ? "recursion ✓" : "Algorithm ?"),
       hint: "Function calling itself: recursion (type directly, no quotes).",
       check: (pw) => /recursion/i.test(pw.replace(/["']/g, "")),
       headline: "RECURSION ALGORITHM RIDDLE!",
-      managerSpeech: "Algorithmic thinking! What fundamental technique solves problems by having a function call itself? Enter recursion (no quotes)!",
+      managerSpeech: "Algorithmic thinking! What fundamental technique solves problems by having a function call itself?",
       expectedAnswer: "recursion",
     },
     {
@@ -1385,12 +1385,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isRiddle: true,
-      text: '🧩 DIGITAL LOGIC: "I am the universal boolean logic gate that outputs 0 ONLY when both inputs are 1. What 4-letter gate am I?"',
+      text: '🧩 DIGITAL LOGIC: "I am the universal boolean logic gate that outputs 0 ONLY when both inputs are 1. What gate am I?"',
       badge: (pw) => (/NAND/i.test(pw.replace(/["']/g, "")) ? "NAND ✓" : "Logic Gate ?"),
       hint: 'Universal logic gate: "NAND" (type directly, no quotes).',
       check: (pw) => /NAND/i.test(pw.replace(/["']/g, "")),
       headline: "UNIVERSAL GATE RIDDLE!",
-      managerSpeech: "Universal digital circuits! What gate produces 0 only on two 1s? Enter NAND (no quotes)!",
+      managerSpeech: "Universal digital circuits! What gate produces 0 only on two 1s?",
       expectedAnswer: "NAND",
     },
 
@@ -1459,12 +1459,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyColor: "#F84391",
       isRiddle: true,
       poolCategory: "netPort",
-      text: `🧩 NETWORK PORTS: Include the standard IANA port number reserved for ${netPort.proto} (Port ${netPort.port})`,
+      text: `🧩 NETWORK PORTS: Include the standard IANA port number reserved for ${netPort.proto}`,
       badge: (pw) => (pw.replace(/["']/g, "").includes(String(netPort.port)) ? `Port ${netPort.port} ✓` : "Port ?"),
       hint: `Standard IANA port number for ${netPort.proto} is ${netPort.port} (type directly, no quotes).`,
       check: (pw) => pw.replace(/["']/g, "").includes(String(netPort.port)),
       headline: "IANA PORT NUMBER ASSIGNMENT!",
-      managerSpeech: `Configure the network firewall! What is the standard port for ${netPort.proto}? Enter ${netPort.port}!`,
+      managerSpeech: `Configure the network firewall! What is the standard port for ${netPort.proto}?`,
       expectedAnswer: String(netPort.port),
     },
     {
@@ -1478,12 +1478,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyColor: "#F84391",
       isRiddle: true,
       poolCategory: "shaPhrase",
-      text: `🧩 CRYPTOGRAPHIC DIGEST: Include the first 4 hex characters of SHA-256 for "${shaPhrase.phrase}" (${shaPhrase.short})`,
+      text: `🧩 CRYPTOGRAPHIC DIGEST: Include the first 4 hex characters of SHA-256 for "${shaPhrase.phrase}"`,
       badge: (pw) => (new RegExp(shaPhrase.short, "i").test(pw.replace(/["']/g, "")) ? `${shaPhrase.short} ✓` : "SHA-256 ?"),
       hint: `First 4 hex characters of SHA-256('${shaPhrase.phrase}') is ${shaPhrase.short} (type directly, no quotes).`,
       check: (pw) => new RegExp(shaPhrase.short, "i").test(pw.replace(/["']/g, "")),
       headline: "SHA-256 HASH DIGEST PREFIX!",
-      managerSpeech: `Cryptographic integrity verification! Type the first 4 hex characters of SHA-256 for '${shaPhrase.phrase}': ${shaPhrase.short}!`,
+      managerSpeech: `Cryptographic integrity verification! What are the first 4 hex characters of SHA-256 for '${shaPhrase.phrase}'?`,
       expectedAnswer: shaPhrase.short,
     },
     {
@@ -1552,7 +1552,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       hint: "Quicksort worst-case occurs on sorted arrays: quadratic O(n2), O(n^2), or O(n²) (type directly, no quotes).",
       check: (pw) => /O\(n(?:\^2|2|²)\)/i.test(pw.replace(/["']/g, "")),
       headline: "ASYMPTOTIC COMPLEXITY RIDDLE!",
-      managerSpeech: "Quicksort worst-case pivot breakdown! What is the quadratic asymptotic upper bound in Big-O? Enter O(n2) or O(n^2) (no quotes)!",
+      managerSpeech: "Quicksort worst-case pivot breakdown! What is the quadratic asymptotic upper bound in Big-O?",
       expectedAnswer: "O(n2) or O(n^2)",
     },
     {
@@ -1567,7 +1567,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       isSwatch: true,
       poolCategory: "swatch",
       swatchColor: swatch.css,
-      text: `Include 3-character uppercase hex code for vault color swatch (${swatch.hex})`,
+      text: `Include 3-character uppercase hex code for vault color swatch`,
       badge: (pw) => {
         const clean = pw.replace(/["']/g, "").toUpperCase();
         const rawHex = swatch.hex.replace("#", "").toUpperCase();
@@ -1593,12 +1593,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isRiddle: true,
-      text: '🧩 OPERATING SYSTEMS: What 6-letter algorithm name, formulated by Edsger Dijkstra, tests resource allocation safety to avoid deadlocks?',
+      text: '🧩 OPERATING SYSTEMS: What algorithm name, formulated by Edsger Dijkstra, tests resource allocation safety to avoid deadlocks?',
       badge: (pw) => (/banker/i.test(pw.replace(/["']/g, "")) ? "banker ✓" : "Algorithm ?"),
       hint: "Dijkstra's deadlock avoidance algorithm: banker (type directly, no quotes).",
       check: (pw) => /banker/i.test(pw.replace(/["']/g, "")),
       headline: "DEADLOCK AVOIDANCE RIDDLE!",
-      managerSpeech: "Operating systems resource matrix! What algorithm formulated by Dijkstra tests safe states to prevent deadlock? Enter banker (no quotes)!",
+      managerSpeech: "Operating systems resource matrix! What algorithm formulated by Dijkstra tests safe states to prevent deadlock?",
       expectedAnswer: "banker",
     },
     {
@@ -1611,12 +1611,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isRiddle: true,
-      text: '🧩 CHARACTER ENCODING: "What foundational 5-letter 7-bit character encoding standard, published in 1963, assigns numerical codes 0–127 to English characters and symbols?"',
+      text: '🧩 CHARACTER ENCODING: "What foundational character encoding standard, published in 1963, assigns numerical codes 0–127 to English characters and symbols?"',
       badge: (pw) => (/ASCII/i.test(pw) ? "ASCII ✓" : "Character Encoding ?"),
       hint: 'Standard 7-bit character encoding acronym: "ASCII".',
       check: (pw) => /ASCII/i.test(pw),
       headline: "CHARACTER ENCODING RIDDLE!",
-      managerSpeech: "The universal 7-bit character encoding! What 5-letter acronym standardized text codes?",
+      managerSpeech: "The universal 7-bit character encoding! What acronym standardized text codes?",
       expectedAnswer: "ASCII",
     },
     {
@@ -1648,12 +1648,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isRiddle: true,
-      text: '🧩 DIGITAL LOGIC: "What 3-letter boolean logic operator outputs 1 (TRUE) if and only if its two binary inputs are strictly DIFFERENT (Exclusive OR)?"',
+      text: '🧩 DIGITAL LOGIC: "What boolean logic operator outputs 1 (TRUE) if and only if its two binary inputs are strictly DIFFERENT?"',
       badge: (pw) => (/XOR/i.test(pw) ? "XOR ✓" : "Exclusive OR ?"),
       hint: 'Exclusive OR logic operator: "XOR".',
       check: (pw) => /XOR/i.test(pw),
       headline: "EXCLUSIVE OR RIDDLE!",
-      managerSpeech: "Binary parity gate! What 3-letter logic operator is true only when inputs differ? Exclusive OR!",
+      managerSpeech: "Binary parity gate! What logic operator is true only when inputs differ?",
       expectedAnswer: "XOR",
     },
     {
@@ -1671,7 +1671,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       hint: 'Bitcoin creator\'s first name: "satoshi" (type directly, no quotes).',
       check: (pw) => /satoshi/i.test(pw.replace(/["']/g, "")),
       headline: "BITCOIN CREATOR SATOSHI!",
-      managerSpeech: "Cryptographic ledger lore! Who created Bitcoin? Enter satoshi (no quotes)!",
+      managerSpeech: "Cryptographic ledger lore! Who is the pseudonymous creator of Bitcoin?",
       expectedAnswer: "satoshi",
     },
     {
@@ -1684,12 +1684,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isRiddle: true,
-      text: '🧠 GENERATIVE AI: "What 3-letter acronym represents Large Language Models trained on vast text data to power ChatGPT, Claude, and Gemini?"',
+      text: '🧠 GENERATIVE AI: "What acronym represents Large Language Models trained on vast text data to power ChatGPT, Claude, and Gemini?"',
       badge: (pw) => (/llm/i.test(pw.replace(/["']/g, "")) ? "LLM ✓" : "AI Term ?"),
       hint: 'Large Language Model acronym: "llm" (type directly, no quotes).',
       check: (pw) => /llm/i.test(pw.replace(/["']/g, "")),
       headline: "LARGE LANGUAGE MODEL (LLM)!",
-      managerSpeech: "Generative AI architecture! What 3-letter acronym describes models like GPT and Gemini? Enter llm!",
+      managerSpeech: "Generative AI architecture! What acronym describes models like GPT and Gemini?",
       expectedAnswer: "llm",
     },
     {
@@ -1702,12 +1702,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isRiddle: true,
-      text: '☁️ CLOUD PLATFORMS: "What 3-letter acronym represents the world\'s largest cloud computing infrastructure platform launched by Amazon in 2006?"',
+      text: '☁️ CLOUD PLATFORMS: "What acronym represents the world\'s largest cloud computing infrastructure platform launched by Amazon in 2006?"',
       badge: (pw) => (/aws/i.test(pw.replace(/["']/g, "")) ? "AWS ✓" : "Cloud Acronym ?"),
       hint: 'Amazon Web Services acronym: "aws" (type directly, no quotes).',
       check: (pw) => /aws/i.test(pw.replace(/["']/g, "")),
       headline: "AMAZON WEB SERVICES (AWS)!",
-      managerSpeech: "Cloud infrastructure titan! What 3-letter acronym powers Amazon cloud services? Enter aws!",
+      managerSpeech: "Cloud infrastructure titan! What acronym powers Amazon cloud services?",
       expectedAnswer: "aws",
     },
     {
@@ -1720,12 +1720,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 5 · MASTER CYBER",
       difficultyColor: "#9B00FF",
       isRiddle: true,
-      text: '🖥️ HARDWARE ENGINEERING: "What is the main printed circuit board in a computer that interconnects the CPU, RAM, storage, and graphics cards?" (11-letter word)',
+      text: '🖥️ HARDWARE ENGINEERING: "What is the main printed circuit board in a computer that interconnects the CPU, RAM, storage, and graphics cards?"',
       badge: (pw) => (/motherboard/i.test(pw.replace(/["']/g, "")) ? "Motherboard ✓" : "Mainboard ?"),
       hint: 'Main computer circuit board: "motherboard" (type directly, no quotes).',
       check: (pw) => /motherboard/i.test(pw.replace(/["']/g, "")),
       headline: "MAIN MOTHERBOARD BUS!",
-      managerSpeech: "Hardware motherboard diagnostic! What is the primary circuit board holding the CPU and RAM? Enter motherboard!",
+      managerSpeech: "Hardware motherboard diagnostic! What is the primary circuit board holding the CPU and RAM?",
       expectedAnswer: "motherboard",
     },
     {
@@ -1738,12 +1738,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 5 · MASTER CYBER",
       difficultyColor: "#9B00FF",
       isRiddle: true,
-      text: '📐 SOFTWARE DESIGN PATTERNS: "What software design pattern restricts the instantiation of a class to only ONE single global instance?" (9-letter word)',
+      text: '📐 SOFTWARE DESIGN PATTERNS: "What software design pattern restricts the instantiation of a class to only ONE single global instance?"',
       badge: (pw) => (/singleton/i.test(pw.replace(/["']/g, "")) ? "Singleton ✓" : "Design Pattern ?"),
       hint: 'Single instance design pattern: "singleton" (type directly, no quotes).',
       check: (pw) => /singleton/i.test(pw.replace(/["']/g, "")),
       headline: "SINGLETON DESIGN PATTERN!",
-      managerSpeech: "Software architecture patterns! What pattern guarantees only a single instance exists across the program? Enter singleton!",
+      managerSpeech: "Software architecture patterns! What pattern guarantees only a single instance exists across the program?",
       expectedAnswer: "singleton",
     },
     {
@@ -1756,7 +1756,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 5 · MASTER CYBER",
       difficultyColor: "#9B00FF",
       isRiddle: true,
-      text: '🧩 MASTER CONTAINMENT DIRECTIVE: "Final emergency system lockdown: Enter the 12-character uppercase command directive confirming our vault is locked (two words separated by an underscore)."',
+      text: '🧩 MASTER CONTAINMENT DIRECTIVE: "Final emergency system lockdown: Enter the emergency command directive confirming our vault is locked (two words separated by an underscore)."',
       badge: (pw) => (/VAULT_LOCKED/i.test(pw) ? "LOCKED ✓" : "Master Directive ?"),
       hint: 'Emergency directive is "VAULT_LOCKED".',
       check: (pw) => /VAULT_LOCKED/i.test(pw),

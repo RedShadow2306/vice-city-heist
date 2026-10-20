@@ -1520,6 +1520,30 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     inputRef.current?.focus();
   }, [password, isLockedBreach, isPlayerFrozen, parentFrozen, soundEnabled, handleInputChange]);
 
+  /* On-Screen Virtual Mechanical Keyboard Press */
+  const handleVirtualKeyPress = useCallback((key) => {
+    if (isLockedBreach || isPlayerFrozen || Boolean(parentFrozen)) return;
+    if (soundEnabled) SoundEngine.playKeyType();
+    if (key === "BACKSPACE" || key === "BKSP") {
+      const newPw = password.slice(0, -1);
+      handleInputChange({ target: { value: newPw } });
+    } else if (key === "ENTER") {
+      const allPassed = displayedRules.length >= cfg.rules && displayedRules.every((r) => r.check(passwordRef.current));
+      if (allPassed) {
+        handleLevelFinished(true, passwordRef.current, unlockedCountRef.current);
+      } else {
+        if (soundEnabled) SoundEngine.playDenied();
+      }
+    } else if (key === "SPACE") {
+      const newPw = password + " ";
+      handleInputChange({ target: { value: newPw } });
+    } else if (key.length === 1) {
+      const newPw = password + key;
+      handleInputChange({ target: { value: newPw } });
+    }
+    inputRef.current?.focus();
+  }, [password, isLockedBreach, isPlayerFrozen, parentFrozen, soundEnabled, handleInputChange, displayedRules, cfg.rules, handleLevelFinished]);
+
   /* Global Keyboard Shortcuts for Game Screen */
   useEffect(() => {
     if (screen !== "game") return;
@@ -1551,6 +1575,21 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [screen, displayedRules, cfg.rules, handleLevelFinished, soundEnabled, reportToAdmin]);
+
+  /* Instant Start Keyboard Shortcut for Briefing Screen */
+  useEffect(() => {
+    if (screen !== "briefing") return;
+    const handleBriefingKeyDown = (e) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") {
+        e.preventDefault();
+        SoundEngine.init();
+        if (soundEnabled) SoundEngine.playClick();
+        handleStartActiveDefense(1);
+      }
+    };
+    window.addEventListener("keydown", handleBriefingKeyDown);
+    return () => window.removeEventListener("keydown", handleBriefingKeyDown);
+  }, [screen, handleStartActiveDefense, soundEnabled]);
 
   /* ── Lobby Registration Submit ── */
   const handleRegisterLobby = (e) => {
@@ -1852,45 +1891,120 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
         </section>
       )}
 
-      {/* ── SCREEN 3: LOCKER ROOM BRIEFING & MANAGER GBA BOX ── */}
+      {/* ── SCREEN 3: LOCKER ROOM BRIEFING & MANAGER GBA BOX (CINEMATIC FULL-SCREEN) ── */}
       {screen === "briefing" && (
         <section className="locker-briefing-stage">
+          {/* Ambient Airlock VFX Overlays */}
+          <div className="briefing-siren-sweep" aria-hidden="true" />
+          <div className="airlock-steam-vent steam-left" aria-hidden="true" />
+          <div className="airlock-steam-vent steam-right" aria-hidden="true" />
+          <div className="vault-screen-scanlines" aria-hidden="true" />
+          <div className="vault-screen-vignette" aria-hidden="true" />
+
+          {/* Tactical Surveillance Camera OSD */}
+          <div className="briefing-cctv-hud" aria-hidden="true">
+            <div className="cctv-hud-top-left">
+              <span className="cctv-rec-dot">● REC</span>
+              <span className="cctv-cam-tag">CAM-04 // SUB-LEVEL 1 AIRLOCK</span>
+            </div>
+            <div className="cctv-hud-top-right">
+              <span className="cctv-feed-tag">EL BANCO CORRUPTO GRANDE · CIPHER DEFENSE</span>
+              <span className="cctv-fps-tag">60 FPS // ENCRYPTED RF</span>
+            </div>
+          </div>
+
           <div className="locker-briefing-card">
+            <div className="briefing-top-hazard-bar" aria-hidden="true" />
+
             <div className="locker-scene-header">
-              <span className="scene-badge">🚨 EMERGENCY AIRLOCK // SUB-LEVEL</span>
+              <div className="scene-badge-row">
+                <span className="scene-badge emergency-alarm">🚨 EMERGENCY AIRLOCK // SUB-LEVEL 1</span>
+                <span className="threat-indicator-pill">THREAT: CRITICAL</span>
+                <span className="time-limit-badge">⏱️ 10:00 TIMER PER FLOOR</span>
+              </div>
               <h2 className="vice-display-lg scene-title">{cfg.title}</h2>
-              <p className="scene-sub">Vercetti's gang has infiltrated the outer perimeter!</p>
+              <p className="scene-sub">VERCETTI'S GANG HAS INFILTRATED THE OUTER PERIMETER — BLAST GATES ARMED</p>
             </div>
 
-            {/* Pokémon GBA Interactive Box */}
+            {/* Tactical Command Briefing Deck */}
             <div className="gba-interactive-wrapper briefing-gba">
+              {/* Left Comms Bay: Manager Gordon Bennett Portrait with Radar Ring & Live Soundwaves */}
               <div className="gba-manager-slide-container slide-in">
-                <div className="manager-portrait-frame speaking">
-                  <img src={managerImgSrc} alt="Bank Manager Gordon Bennett" className="manager-portrait-img" />
+                <div className="manager-comms-bay">
+                  <div className="manager-portrait-frame speaking">
+                    <img src={managerImgSrc} alt="Bank Manager Gordon Bennett" className="manager-portrait-img" />
+                    <div className="manager-radar-ring" aria-hidden="true" />
+                  </div>
+                  <div className="manager-comms-telemetry">
+                    <span className="telemetry-name">GORDON BENNETT</span>
+                    <span className="telemetry-role">MANAGING DIRECTOR</span>
+                    <div className="telemetry-soundwave" aria-hidden="true">
+                      <span className="sw-bar b1" />
+                      <span className="sw-bar b2" />
+                      <span className="sw-bar b3" />
+                      <span className="sw-bar b4" />
+                      <span className="sw-bar b5" />
+                    </div>
+                    <span className="telemetry-freq">RF: 142.85 MHz [LIVE]</span>
+                  </div>
                 </div>
               </div>
 
+              {/* Right Directives Bay: High-Tech Mission Message */}
               <div className="gba-dialogue-box">
                 <div className="gba-nameplate">
-                  <span>👔 MANAGER GORDON BENNETT</span>
-                  <span className="gba-mood-chip urgent">PANICKED</span>
+                  <div className="gba-speaker-info">
+                    <span className="speaker-icon">👔</span>
+                    <span className="speaker-title">MANAGER GORDON BENNETT</span>
+                  </div>
+                  <span className="gba-mood-chip urgent">⚠️ PANICKED // PRIORITY ALPHA</span>
                 </div>
                 <div className="gba-text-content">
                   <p className="gba-typewriter-text">
                     "ASSISTANT! Tommy Vercetti and his crew just blasted through the lobby! Tommy has a 10-minute timer per floor before each blast gate breaches! You must set an unbreakable cipher on this terminal immediately! Every suggestion you make, I will verify the security protocols!"
                   </p>
                 </div>
+
+                {/* Tactical Parameters Badges */}
+                <div className="briefing-param-chips">
+                  <div className="param-chip">
+                    <span className="param-icon">⏱️</span>
+                    <div className="param-text">
+                      <span className="param-label">TIME LIMIT</span>
+                      <span className="param-val">10 MINUTES</span>
+                    </div>
+                  </div>
+                  <div className="param-chip">
+                    <span className="param-icon">🔒</span>
+                    <div className="param-text">
+                      <span className="param-label">DEFENSE PROTOCOL</span>
+                      <span className="param-val">CIPHER INJECTION</span>
+                    </div>
+                  </div>
+                  <div className="param-chip">
+                    <span className="param-icon">🔥</span>
+                    <div className="param-text">
+                      <span className="param-label">OPPOSITION</span>
+                      <span className="param-val">TOMMY VERCETTI</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="gba-prompt-arrow blink">▼</div>
               </div>
             </div>
 
+            {/* High-Impact Centered Action Row */}
             <div className="action-row center-actions">
               <button
                 type="button"
-                className="vice-btn primary-btn large-cta"
+                className="vice-btn primary-btn large-cta engage-console-btn"
                 onClick={() => handleStartActiveDefense(1)}
               >
-                ENGAGE LEVEL 1 CIPHER CONSOLE ➔
+                <span className="btn-shine" aria-hidden="true" />
+                <span className="btn-text">ENGAGE LEVEL 1 CIPHER CONSOLE</span>
+                <span className="btn-arrow">➔</span>
+                <span className="btn-kbd-hint">[ENTER ⏎]</span>
               </button>
             </div>
           </div>
@@ -1949,15 +2063,67 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             </div>
           </header>
 
-          {/* 2. CENTER STAGE: ZOOMED-IN CRT MONITOR + ATTACHED NEON RULES PANEL */}
+          {/* 2. COMMAND DECK: FREESTANDING MANAGER + REALISTIC ZOOMED-OUT CRT CONSOLE + RULES PANEL */}
           <div className="vault-center-unit">
-            {/* CRT Computer Terminal Monitor */}
+            {/* BAY 1: FREESTANDING MANAGER GORDON BENNETT (NO ENCLOSING BOX) */}
+            <div className="vault-manager-corner">
+              {/* Natural Floating Comic Speech Bubble */}
+              <div className="manager-comic-bubble">
+                <div className="bubble-header-row">
+                  <span className="bubble-speaker-tag">👔 MANAGER BENNETT</span>
+                  <span className={`bubble-mood-tag ${currentDirective.mood}`}>
+                    {currentDirective.mood.toUpperCase()}
+                  </span>
+                </div>
+
+                {lastPraise && (
+                  <div className="bubble-praise-banner">✨ {lastPraise}</div>
+                )}
+
+                <p className="bubble-speech-text">
+                  "{typedSpeech || "Quick! Enter a new, secure password before Tommy breaches the vault!"}"
+                </p>
+
+                <div className="bubble-tail" />
+              </div>
+
+              {/* Prominent High-Visibility Manager Bennett Character Bust */}
+              <div className="manager-bust-container">
+                <img
+                  src={managerImgSrc}
+                  alt="Bank Manager Gordon Bennett"
+                  className="manager-bust-image"
+                />
+              </div>
+            </div>
+
+            {/* BAY 2: REALISTIC PHYSICAL CRT COMPUTER TERMINAL MONITOR (ZOOMED-OUT RETRO WORKSTATION) */}
             <div className="crt-monitor-cabinet" onClick={() => inputRef.current?.focus()}>
+              {/* Cabinet Top Header: Real Hardware Chassis Vents & Brand Badge */}
+              <div className="crt-cabinet-top" aria-hidden="true">
+                <div className="crt-vent-slits">
+                  <span /><span /><span /><span /><span /><span />
+                </div>
+                <div className="crt-badge-row">
+                  <span className="crt-mfg-badge">🛡️ DIEBOLD-SECURE // MOD-86</span>
+                  <span className="crt-power-indicator">
+                    <span className="pwr-led green-glow" /> PWR
+                  </span>
+                </div>
+              </div>
+
+              {/* Realistic Recessed Bezel & Curved Glass Screen */}
               <div className="crt-screen-bezel">
                 <div className="crt-screen-glass">
+                  <div className="crt-glass-glare" aria-hidden="true" />
                   <div className="crt-scanline-lines" aria-hidden="true" />
                   <div className="crt-inner-display">
-                    {/* Header */}
+                    {/* Retro Terminal Header */}
+                    <div className="crt-terminal-banner">
+                      <span>VCPD VAULT SECURITY CONSOLE v4.2 · AIRLOCK INTERLOCK</span>
+                    </div>
+
+                    {/* Prompt Header */}
                     <div className="crt-prompt-text">CREATE NEW STRONG PASSWORD:</div>
 
                     {/* Bracketed Slot Row */}
@@ -1979,9 +2145,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                       </div>
                     </div>
 
-                    {/* Active Input Box & On-Screen Numeric Keypad Row */}
+                    {/* Active Command Prompt Input Box */}
                     <div className="crt-interactive-row">
                       <div className={`crt-input-box ${password.length > 0 && activeFailing ? "input-failing-glow" : ""}`}>
+                        <span className="crt-input-prompt-symbol" aria-hidden="true">&gt;</span>
                         <input
                           ref={inputRef}
                           type={showPassword ? "text" : "password"}
@@ -1991,7 +2158,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                           placeholder={
                             isPlayerFrozen || Boolean(parentFrozen)
                               ? "❄️ TERMINAL FROZEN..."
-                              : ""
+                              : "ENTER CIPHER..."
                           }
                           autoComplete="off"
                           autoCorrect="off"
@@ -2001,32 +2168,123 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                         />
                         <span className="crt-blinking-cursor">█</span>
                       </div>
-
-                      {/* On-Screen Keypad Grid */}
-                      <div className="crt-keypad-grid" aria-label="Numeric keypad">
-                        {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "+", "-"].map((k) => (
-                          <button
-                            key={k}
-                            type="button"
-                            className="crt-keypad-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleKeypadPress(k);
-                            }}
-                          >
-                            {k}
-                          </button>
-                        ))}
-                      </div>
                     </div>
 
-                    {/* Status Pill */}
+                    {/* Status Pill & Character Count */}
                     <div className="crt-status-row">
                       <span className={`crt-status-pill ${activeFailing ? "status-pending" : "status-cleared"}`}>
                         {activeFailing ? "PROTOCOL PENDING" : "VAULT ACCESS GRANTED"}
                       </span>
                       <span className="crt-char-count">{[...password].length} CHARACTERS</span>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cabinet Bottom Controls: Hardware Dial Knobs & Degauss Switch */}
+              <div className="crt-cabinet-bottom-controls" aria-hidden="true">
+                <div className="crt-knob-group">
+                  <span className="crt-knob" title="Brightness" />
+                  <span className="crt-knob-label">BRIGHT</span>
+                </div>
+                <div className="crt-knob-group">
+                  <span className="crt-knob" title="Contrast" />
+                  <span className="crt-knob-label">CONTRAST</span>
+                </div>
+                <div className="crt-degauss-group">
+                  <span className="crt-rocker-switch" />
+                  <span className="crt-knob-label">DEGAUSS</span>
+                </div>
+              </div>
+
+              {/* Attached Retro Mechanical Keyboard Console Deck */}
+              <div className="crt-terminal-keyboard" aria-label="Terminal mechanical keyboard">
+                <div className="keyboard-top-lip">
+                  <span className="kb-brand">MODEL-M TACTILE KEYBOARD // MIL-SPEC</span>
+                  <div className="kb-leds">
+                    <span className="kb-led-item"><span className="kb-led green-on" /> NUM</span>
+                    <span className="kb-led-item"><span className="kb-led" /> CAPS</span>
+                    <span className="kb-led-item"><span className="kb-led" /> SCROLL</span>
+                  </div>
+                </div>
+
+                <div className="keyboard-keys-grid">
+                  {/* Row 1 */}
+                  <div className="kb-row">
+                    {["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "BKSP"].map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        className={`kb-key ${k === "BKSP" ? "key-backspace" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); handleVirtualKeyPress(k); }}
+                      >
+                        {k}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Row 2 */}
+                  <div className="kb-row">
+                    {["TAB", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "\\"].map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        className={`kb-key ${k === "TAB" ? "key-tab" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); handleVirtualKeyPress(k); }}
+                      >
+                        {k}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Row 3 */}
+                  <div className="kb-row">
+                    {["CAPS", "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'", "ENTER"].map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        className={`kb-key ${k === "ENTER" ? "key-enter" : k === "CAPS" ? "key-caps" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); handleVirtualKeyPress(k); }}
+                      >
+                        {k}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Row 4 */}
+                  <div className="kb-row">
+                    {["SHIFT", "Z", "X", "C", "V", "B", "N", "M", ",", ".", "/", "SHIFT"].map((k, i) => (
+                      <button
+                        key={`${k}-${i}`}
+                        type="button"
+                        className={`kb-key ${k === "SHIFT" ? "key-shift" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); handleVirtualKeyPress(k); }}
+                      >
+                        {k}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Row 5 */}
+                  <div className="kb-row">
+                    <button type="button" className="kb-key key-mod" onClick={(e) => e.stopPropagation()}>CTRL</button>
+                    <button type="button" className="kb-key key-mod" onClick={(e) => e.stopPropagation()}>ALT</button>
+                    <button
+                      type="button"
+                      className="kb-key key-space"
+                      onClick={(e) => { e.stopPropagation(); handleVirtualKeyPress("SPACE"); }}
+                    >
+                      SPACEBAR
+                    </button>
+                    <button type="button" className="kb-key key-mod" onClick={(e) => e.stopPropagation()}>ALT</button>
+                    <button
+                      type="button"
+                      className="kb-key key-clear"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInputChange({ target: { value: "" } });
+                        inputRef.current?.focus();
+                      }}
+                      title="Clear password input"
+                    >
+                      CLR
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2060,14 +2318,6 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                       <div
                         key={rule.id}
                         className={`neon-rule-row ${passed ? "rule-passed" : "rule-failing"} ${isFailingCurrent ? "rule-current-failing" : ""} ${rule.isRiddle ? "rule-is-riddle" : ""}`}
-                        onClick={() => {
-                          if (!passed && !revealedHints.has(rule.id)) {
-                            setRevealedHints((prev) => new Set([...prev, rule.id]));
-                            triggerTimeBonus(-15);
-                            if (soundEnabled) SoundEngine.playHintUsed();
-                          }
-                        }}
-                        title={passed ? "Rule already passed" : (isHinted ? "Intel already revealed" : "Click to reveal Manager Intel (-15s penalty)")}
                       >
                         <div className="neon-rule-content">
                           <span className="neon-bullet">{passed ? "✓" : (rule.isRiddle ? "🧩" : "•")}</span>
@@ -2096,9 +2346,21 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                             <span className={`neon-badge ${rule.isRiddle ? "neon-riddle-badge" : ""}`}>{rule.badge(password)}</span>
                           )}
                           {!passed && !isHinted && (
-                            <span className="neon-hint-btn-pill" title="Click to reveal Manager Intel (-15s)">
+                            <button
+                              type="button"
+                              className="neon-hint-btn-pill"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!passed && !revealedHints.has(rule.id)) {
+                                  setRevealedHints((prev) => new Set([...prev, rule.id]));
+                                  triggerTimeBonus(-15);
+                                  if (soundEnabled) SoundEngine.playHintUsed();
+                                }
+                              }}
+                              title="Click to reveal Manager Intel (-15s penalty)"
+                            >
                               💡 HINT (-15s)
-                            </span>
+                            </button>
                           )}
                         </div>
 
@@ -2115,40 +2377,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             </div>
           </div>
 
-          {/* 3. BOTTOM-LEFT: MANAGER GORDON BENNETT & COMIC SPEECH BUBBLE */}
-          <div className="vault-manager-corner">
-            {/* Comic Speech Bubble */}
-            <div className="manager-comic-bubble">
-              <div className="bubble-header-row">
-                <span className="bubble-speaker-tag">👔 MANAGER BENNETT</span>
-                <span className={`bubble-mood-tag ${currentDirective.mood}`}>
-                  {currentDirective.mood.toUpperCase()}
-                </span>
-              </div>
-
-              {lastPraise && (
-                <div className="bubble-praise-banner">✨ {lastPraise}</div>
-              )}
-
-              <p className="bubble-speech-text">
-                "{typedSpeech || "Quick! Enter a new, secure password before Tommy breaches the vault!"}"
-              </p>
-
-              {/* Speech bubble tail pointing towards the manager */}
-              <div className="bubble-tail" />
-            </div>
-
-            {/* Manager Bennett Bust */}
-            <div className="manager-bust-container">
-              <img
-                src={managerImgSrc}
-                alt="Bank Manager Gordon Bennett"
-                className="manager-bust-image"
-              />
-            </div>
-          </div>
-
-          {/* 4. BOTTOM FOOTER BAR: KEYBINDS & ACTIONS */}
+          {/* 3. BOTTOM FOOTER BAR: KEYBINDS & ACTIONS */}
           <footer className="vault-game-footer">
             <div className="footer-keys-group">
               <button

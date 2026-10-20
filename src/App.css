@@ -164,3 +164,18 @@
 .organizer-shortcut-text:hover {
   color: var(--vice-turquoise, #48D5D0);
 }
+
+/* ════ EDGE-TO-EDGE IMMERSION FOR HEIST SCREENS ════ */
+/* Completely hides top navigation and footer so briefing & game occupy 100% of viewport */
+.app-shell:has(.locker-briefing-stage) .app-nav,
+.app-shell:has(.vault-game-stage) .app-nav,
+.app-shell:has(.locker-briefing-stage) .discreet-organizer-footer,
+.app-shell:has(.vault-game-stage) .discreet-organizer-footer {
+  display: none !important;
+}
+
+.app-shell:has(.locker-briefing-stage) .app-content,
+.app-shell:has(.vault-game-stage) .app-content {
+  padding-top: 0 !important;
+  z-index: 9999 !important;
+}

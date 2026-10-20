@@ -3,11 +3,12 @@
 .terminal-root {
   position: relative;
   z-index: 10;
-  min-height: calc(100svh - 60px);
+  min-height: 100svh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   color: var(--vice-cream, #FFF2E3);
-  padding: 0 clamp(16px, 4vw, 48px) 40px;
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -2069,38 +2070,454 @@
 }
 
 /* ══════════════════════════════════════════════════════
-   SCREEN 3 & 4: LOCKER ROOM BRIEFING & ACTIVE DEFENSE
-   (Real Locker Room Background from /images/vault_lockers.jpg)
+   SCREEN 3: LOCKER ROOM BRIEFING (CINEMATIC FULL-SCREEN AIRLOCK)
    ══════════════════════════════════════════════════════ */
 .locker-briefing-stage {
-  min-height: calc(100vh - 90px);
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9500;
   background: 
-    linear-gradient(180deg, rgba(7, 9, 19, 0.75) 0%, rgba(7, 9, 19, 0.88) 100%),
-    url('/images/vault_neon_bg.jpg') center/cover no-repeat;
+    radial-gradient(ellipse at 50% 40%, rgba(8, 12, 24, 0.45) 0%, rgba(4, 6, 14, 0.92) 100%),
+    url('/images/vault_neon_bg.jpg') center center / cover no-repeat;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(18px, 2.8vw, 36px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Ambient Volumetric Siren Sweeps */
+.briefing-siren-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(248, 67, 145, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 80% 70%, rgba(72, 213, 208, 0.28) 0%, transparent 55%);
+  animation: sirenSweepDual 5s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+  z-index: 2;
+}
+
+@keyframes sirenSweepDual {
+  0% {
+    filter: hue-rotate(0deg) brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: hue-rotate(25deg) brightness(1.25);
+    transform: scale(1.03);
+  }
+  100% {
+    filter: hue-rotate(-20deg) brightness(1);
+    transform: scale(1);
+  }
+}
+
+/* Airlock Steam Vents */
+.airlock-steam-vent {
+  position: absolute;
+  top: 10%;
+  width: 180px;
+  height: 420px;
+  pointer-events: none;
+  z-index: 3;
+  filter: blur(40px);
+  opacity: 0.5;
+}
+
+.airlock-steam-vent.steam-left {
+  left: 2%;
+  background: radial-gradient(ellipse at center, rgba(72, 213, 208, 0.45) 0%, transparent 70%);
+  animation: steamDrift 4.5s ease-in-out infinite alternate;
+}
+
+.airlock-steam-vent.steam-right {
+  right: 2%;
+  background: radial-gradient(ellipse at center, rgba(248, 67, 145, 0.4) 0%, transparent 70%);
+  animation: steamDrift 5s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes steamDrift {
+  0% { transform: translateY(0) scale(1); opacity: 0.35; }
+  50% { transform: translateY(-30px) scale(1.18); opacity: 0.7; }
+  100% { transform: translateY(-60px) scale(1.05); opacity: 0.4; }
+}
+
+/* Tactical Surveillance Camera OSD */
+.briefing-cctv-hud {
+  position: absolute;
+  top: 14px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: rgba(255, 242, 227, 0.7);
+  letter-spacing: 0.14em;
+  z-index: 15;
+  pointer-events: none;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.95);
+}
+
+.cctv-hud-top-left, .cctv-hud-top-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cctv-rec-dot {
+  color: #FF3366;
+  font-weight: 800;
+  animation: recBlink 1s step-start infinite;
+  text-shadow: 0 0 12px #FF3366;
+}
+
+@keyframes recBlink {
+  50% { opacity: 0.2; }
+}
+
+.cctv-cam-tag, .cctv-feed-tag {
+  background: rgba(10, 14, 26, 0.75);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(72, 213, 208, 0.35);
+  color: var(--vice-turquoise, #48D5D0);
+  box-shadow: 0 0 10px rgba(72, 213, 208, 0.2);
+}
+
+.cctv-fps-tag {
+  color: rgba(255, 209, 102, 0.85);
+}
+
+/* The Cinematic Briefing Card */
+.locker-briefing-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: min(1340px, 94vw);
+  margin: auto;
+  background: rgba(10, 14, 28, 0.88);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  border: 1.5px solid rgba(72, 213, 208, 0.45);
+  box-shadow: 
+    0 0 45px rgba(72, 213, 208, 0.25),
+    0 25px 70px rgba(0, 0, 0, 0.95),
+    inset 0 0 35px rgba(72, 213, 208, 0.08);
+  border-radius: 20px;
+  padding: clamp(24px, 3.5vw, 42px);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  animation: cardFadeZoom 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardFadeZoom {
+  0% { opacity: 0; transform: scale(0.96) translateY(15px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.briefing-top-hazard-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 20px 20px 0 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    #FFD166,
+    #FFD166 14px,
+    #141824 14px,
+    #141824 28px
+  );
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.6);
+}
+
+.scene-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.scene-badge.emergency-alarm {
+  background: rgba(248, 67, 145, 0.2);
+  border: 1px solid var(--vice-hotpink, #F84391);
+  color: var(--vice-hotpink, #F84391);
+  box-shadow: 0 0 14px rgba(248, 67, 145, 0.4);
+}
+
+.threat-indicator-pill {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #FF5E7E;
+  background: rgba(255, 94, 126, 0.15);
+  border: 1px solid rgba(255, 94, 126, 0.45);
+  border-radius: 4px;
+  padding: 4px 10px;
+  animation: threatPulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes threatPulse {
+  0% { box-shadow: 0 0 6px rgba(255, 94, 126, 0.2); }
+  100% { box-shadow: 0 0 18px rgba(255, 94, 126, 0.65); }
+}
+
+.time-limit-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--vice-gold, #FFD166);
+  background: rgba(255, 209, 102, 0.12);
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  border-radius: 4px;
+  padding: 4px 10px;
+}
+
+/* Briefing Dual Bay GBA Layout */
+.briefing-gba {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 28px;
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .briefing-gba {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.manager-comms-bay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: rgba(8, 12, 22, 0.7);
+  border: 1.5px solid rgba(72, 213, 208, 0.35);
   border-radius: 16px;
-  padding: 24px;
-  margin-top: 10px;
-  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.8), 0 10px 40px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(248, 67, 145, 0.25);
+  padding: 18px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  height: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.manager-radar-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 16px;
+  border: 1.5px dashed rgba(72, 213, 208, 0.6);
+  animation: radarSpin 14s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes radarSpin {
+  100% { transform: rotate(360deg); }
+}
+
+.manager-comms-telemetry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: 14px;
+}
+
+.telemetry-name {
+  font-family: var(--font-display, sans-serif);
+  font-size: 16px;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.06em;
+}
+
+.telemetry-role {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--vice-turquoise, #48D5D0);
+}
+
+.telemetry-soundwave {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 18px;
+  margin: 6px 0;
+}
+
+.sw-bar {
+  width: 4px;
+  background: var(--vice-turquoise, #48D5D0);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--vice-turquoise);
+}
+
+.sw-bar.b1 { animation: eqBar 0.8s ease-in-out infinite alternate; }
+.sw-bar.b2 { animation: eqBar 0.6s ease-in-out infinite alternate 0.1s; }
+.sw-bar.b3 { animation: eqBar 1.0s ease-in-out infinite alternate 0.2s; }
+.sw-bar.b4 { animation: eqBar 0.7s ease-in-out infinite alternate 0.15s; }
+.sw-bar.b5 { animation: eqBar 0.9s ease-in-out infinite alternate 0.3s; }
+
+@keyframes eqBar {
+  0% { height: 4px; }
+  100% { height: 18px; }
+}
+
+.telemetry-freq {
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  color: rgba(255, 209, 102, 0.9);
+  background: rgba(255, 209, 102, 0.12);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+}
+
+.briefing-param-chips {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.param-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(10, 14, 26, 0.8);
+  border: 1px solid rgba(72, 213, 208, 0.25);
+  border-radius: 8px;
+  padding: 8px 14px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.param-icon {
+  font-size: 18px;
+}
+
+.param-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.param-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: rgba(255, 242, 227, 0.6);
+}
+
+.param-val {
+  font-family: var(--font-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vice-gold, #FFD166);
+}
+
+/* Massive Glowing Action Button */
+.engage-console-btn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #F84391 0%, #FF2A85 50%, #9B00FF 100%) !important;
+  color: #FFFFFF !important;
+  font-size: clamp(16px, 1.8vw, 22px) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+  padding: 16px 42px !important;
+  border-radius: 12px !important;
+  border: 2px solid #FF80BF !important;
+  box-shadow: 
+    0 0 30px rgba(248, 67, 145, 0.7),
+    0 0 60px rgba(155, 0, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+}
+
+.engage-console-btn:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 
+    0 0 50px rgba(248, 67, 145, 0.95),
+    0 0 80px rgba(155, 0, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+.engage-console-btn:active {
+  transform: translateY(1px) scale(0.98) !important;
+}
+
+.btn-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  transform: skewX(-25deg);
+  animation: shineLoop 3s infinite ease-in-out;
+}
+
+@keyframes shineLoop {
+  0% { left: -100%; }
+  35%, 100% { left: 200%; }
+}
+
+.btn-kbd-hint {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  color: #FFF2E3;
 }
 
 /* ══════════════════════════════════════════════════════
-   SCREEN 4: ACTIVE VAULT DEFENSE HEIST LAYOUT
-   (Full Setup: Vault Background + Zoomed-In CRT + Attached Rules Panel + Manager)
+   SCREEN 4: ACTIVE VAULT DEFENSE HEIST LAYOUT (FULL-SCREEN DUAL BAY)
    ══════════════════════════════════════════════════════ */
 .vault-game-stage {
-  position: relative;
-  min-height: calc(100vh - 74px);
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9500;
   background: 
-    radial-gradient(circle at center, rgba(7, 9, 19, 0.4) 0%, rgba(7, 9, 19, 0.8) 100%),
+    radial-gradient(circle at center, rgba(7, 9, 19, 0.4) 0%, rgba(5, 7, 14, 0.9) 100%),
     url('/images/vault_neon_bg.jpg') center center / cover no-repeat;
-  border-radius: 14px;
-  border: 1px solid rgba(248, 67, 145, 0.3);
-  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.85), 0 15px 50px rgba(0, 0, 0, 0.8);
-  padding: 18px 24px 14px;
+  padding: 16px clamp(16px, 2.5vw, 36px) 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  box-sizing: border-box;
   overflow: hidden;
 }
 
@@ -2134,6 +2551,7 @@
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .hud-top-left {
@@ -2263,37 +2681,389 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 10px auto;
+  margin: 8px auto;
   max-width: min(640px, 94vw);
   width: 100%;
 }
 
+/* ════ COMMAND DECK THREE-BAY LAYOUT ════ */
+@media (min-width: 1180px) {
+  .vault-center-unit {
+    max-width: min(1780px, 98vw);
+    display: grid;
+    grid-template-columns: 360px minmax(520px, 1.15fr) minmax(420px, 1.1fr);
+    gap: 24px;
+    align-items: stretch;
+    flex: 1;
+    max-height: calc(100vh - 145px);
+    margin: 4px auto;
+  }
+
+  /* Unboxed, freestanding Manager Bennett on Desktop */
+  .vault-manager-corner {
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: 15 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    align-self: flex-end !important;
+    background: transparent !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: -14px !important;
+    pointer-events: none !important;
+  }
+
+  .manager-comic-bubble {
+    pointer-events: auto !important;
+    max-width: 330px !important;
+    margin-bottom: 14px !important;
+    background: rgba(10, 16, 28, 0.96) !important;
+    border: 2px solid var(--vice-turquoise, #48D5D0) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 0 25px rgba(72, 213, 208, 0.45), 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+  }
+
+  .bubble-tail {
+    display: block !important;
+    position: absolute !important;
+    bottom: -10px !important;
+    left: 48px !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-left: 10px solid transparent !important;
+    border-right: 10px solid transparent !important;
+    border-top: 10px solid var(--vice-turquoise, #48D5D0) !important;
+  }
+
+  .manager-bust-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-end !important;
+    width: 100% !important;
+    max-height: 440px !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+  }
+
+  .manager-bust-image {
+    max-height: 430px !important;
+    width: auto !important;
+    object-fit: contain !important;
+    filter: 
+      brightness(1.24) 
+      contrast(1.12) 
+      drop-shadow(0 20px 40px rgba(0, 0, 0, 0.95)) 
+      drop-shadow(0 0 32px rgba(72, 213, 208, 0.55)) 
+      drop-shadow(0 0 16px rgba(248, 67, 145, 0.35)) !important;
+  }
+
+  /* Realistic Zoomed-Out Physical CRT Monitor Cabinet */
+  .crt-monitor-cabinet {
+    align-self: center !important;
+    height: auto !important;
+    max-width: 600px !important;
+    width: 100% !important;
+    margin: auto !important;
+  }
+
+  .neon-rules-panel {
+    margin-top: 0 !important;
+    max-width: 100% !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .neon-rules-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .neon-rules-scroll {
+    flex: 1;
+    max-height: calc(100vh - 275px) !important;
+  }
+
+  .crt-monitor-cabinet {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1179px) {
+  .vault-center-unit {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 100%;
+    flex: 1;
+    align-items: stretch;
+  }
+
+  .crt-monitor-cabinet {
+    order: 1;
+  }
+
+  .neon-rules-panel {
+    order: 2;
+  }
+
+  .vault-manager-corner {
+    order: 3;
+    grid-column: 1 / -1;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 100%;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 16px;
+    background: rgba(8, 14, 28, 0.85);
+    border: 1px solid rgba(72, 213, 208, 0.3);
+    border-radius: 12px;
+    padding: 10px 16px;
+    margin-top: 10px;
+    pointer-events: auto;
+  }
+
+  .manager-bust-container {
+    display: none !important;
+  }
+
+  .manager-comic-bubble {
+    flex: 1;
+    margin-bottom: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .vault-center-unit {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .crt-monitor-cabinet { order: 1; }
+  .neon-rules-panel { order: 2; }
+  .vault-manager-corner {
+    order: 3;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 100%;
+    pointer-events: auto;
+  }
+  .manager-bust-container { display: none !important; }
+  .bubble-tail { display: none !important; }
+}
+
 .crt-monitor-cabinet {
-  background: linear-gradient(145deg, #2b3330 0%, #171d1b 100%);
-  border: 3px solid #3d4a44;
-  border-radius: 16px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.85), inset 0 2px 4px rgba(255, 255, 255, 0.1);
-  padding: 12px 16px;
+  background: linear-gradient(175deg, #3d4a44 0%, #29332e 40%, #1a221f 100%);
+  border: 4px solid #4a5c53;
+  border-radius: 22px;
+  box-shadow: 
+    0 25px 70px rgba(0, 0, 0, 0.95),
+    0 0 40px rgba(0, 0, 0, 0.8),
+    inset 0 2px 3px rgba(255, 255, 255, 0.2),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.7);
+  padding: 12px 18px 14px;
+  max-width: 620px;
   width: 100%;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+  height: auto;
   cursor: text;
 }
 
+/* Cabinet Top Vents & Brand Badge */
+.crt-cabinet-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.crt-vent-slits {
+  display: flex;
+  gap: 5px;
+}
+
+.crt-vent-slits span {
+  display: block;
+  width: 18px;
+  height: 4px;
+  background: #111714;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.crt-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.crt-mfg-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #9cb5a8;
+  text-shadow: 0 1px 2px #000;
+}
+
+.crt-power-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  font-weight: 800;
+  color: #4af682;
+}
+
+.pwr-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #33ff66;
+  box-shadow: 0 0 8px #33ff66, 0 0 14px #33ff66;
+  animation: pwrPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes pwrPulse {
+  0% { opacity: 0.7; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 12px #33ff66, 0 0 18px #33ff66; }
+}
+
 .crt-screen-bezel {
-  background: #0d1210;
-  border-radius: 10px;
-  border: 3px solid #1f2723;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
-  padding: 8px;
+  background: #0c120f;
+  border-radius: 16px;
+  border: 5px solid #1a231f;
+  box-shadow: 
+    inset 0 14px 28px rgba(0, 0, 0, 0.98),
+    inset 0 -8px 16px rgba(0, 0, 0, 0.85),
+    0 3px 6px rgba(0, 0, 0, 0.6);
+  padding: 10px;
 }
 
 .crt-screen-glass {
-  background: radial-gradient(circle at center, #0e1e17 0%, #060c09 100%);
-  border-radius: 6px;
-  padding: 14px 18px;
+  background: radial-gradient(ellipse at 50% 50%, #0e271a 0%, #06150d 70%, #020805 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 0 35px rgba(72, 213, 208, 0.15);
-  border: 1px solid #14281f;
+  box-shadow: 
+    inset 0 0 50px rgba(51, 255, 102, 0.25),
+    inset 0 0 16px rgba(0, 0, 0, 0.95);
+  border: 1.5px solid #1c3d2a;
+}
+
+.crt-glass-glare {
+  position: absolute;
+  top: -40%;
+  left: -30%;
+  width: 160%;
+  height: 90%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.03) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 4;
+}
+
+.crt-terminal-banner {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(74, 246, 130, 0.65);
+  border-bottom: 1px dashed rgba(74, 246, 130, 0.3);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  text-align: center;
+  text-shadow: 0 0 6px rgba(74, 246, 130, 0.5);
+}
+
+.crt-cabinet-bottom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 4px 10px 0;
+}
+
+.crt-knob-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crt-knob {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #4a5852 0%, #1b221f 100%);
+  border: 1px solid #111614;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+}
+
+.crt-degauss-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crt-rocker-switch {
+  width: 20px;
+  height: 11px;
+  background: #151c19;
+  border: 1px solid #33403a;
+  border-radius: 2px;
+  position: relative;
+}
+
+.crt-rocker-switch::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 1px;
+  width: 7px;
+  height: 7px;
+  background: #ff3344;
+  border-radius: 1px;
+  box-shadow: 0 0 5px #ff3344;
+}
+
+.crt-knob-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #7b9186;
+  text-shadow: 0 1px 1px #000;
 }
 
 .crt-scanline-lines {
@@ -2510,6 +3280,204 @@
   background: rgba(82, 255, 136, 0.2);
   color: #52ff88;
   border: 1px solid #52ff88;
+}
+
+/* ════ Attached Retro Mechanical Keyboard Console Deck ════ */
+.crt-terminal-keyboard {
+  background: linear-gradient(180deg, #1a221e 0%, #121815 100%);
+  border: 2px solid #2a3830;
+  border-radius: 12px;
+  box-shadow: 
+    inset 0 2px 4px rgba(255, 255, 255, 0.08),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.9),
+    0 8px 24px rgba(0, 0, 0, 0.7);
+  padding: 8px 10px 10px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  user-select: none;
+}
+
+.keyboard-top-lip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kb-brand {
+  font-family: var(--font-mono, monospace);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #6a8275;
+  text-shadow: 0 1px 1px #000;
+}
+
+.kb-leds {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kb-led-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #728c7f;
+}
+
+.kb-led {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #15221b;
+  border: 1px solid #2d4538;
+  display: inline-block;
+}
+
+.kb-led.green-on {
+  background: #33ff66;
+  border-color: #52ff88;
+  box-shadow: 0 0 6px #33ff66;
+}
+
+.keyboard-keys-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kb-row {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  justify-content: center;
+}
+
+.kb-key {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  background: linear-gradient(180deg, #2d3832 0%, #202824 55%, #151b18 100%);
+  border: 1px solid #3d4d44;
+  border-bottom: 3px solid #0d1210;
+  border-radius: 4px;
+  color: #a4ceb8;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.7),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  transition: transform 0.06s ease, background 0.12s ease, border-color 0.12s ease;
+  user-select: none;
+}
+
+.kb-key:hover {
+  background: linear-gradient(180deg, #3d4d44 0%, #2b3630 100%);
+  border-color: #52ff88;
+  color: #52ff88;
+  box-shadow: 0 0 8px rgba(82, 255, 136, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.kb-key:active {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+  background: #52ff88;
+  color: #000;
+  box-shadow: 0 0 12px #52ff88;
+}
+
+.kb-key.key-backspace {
+  flex: 1.6;
+  font-size: 8.5px;
+  color: #ffa566;
+  border-color: rgba(255, 165, 102, 0.4);
+}
+
+.kb-key.key-tab {
+  flex: 1.3;
+  font-size: 8.5px;
+}
+
+.kb-key.key-caps {
+  flex: 1.4;
+  font-size: 8.5px;
+}
+
+.kb-key.key-shift {
+  flex: 1.6;
+  font-size: 8.5px;
+}
+
+.kb-key.key-enter {
+  flex: 1.8;
+  font-size: 9px;
+  font-weight: 900;
+  background: linear-gradient(180deg, #ff9436 0%, #d85c00 100%);
+  color: #ffffff;
+  border-color: #ffa959;
+  border-bottom: 3px solid #803000;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.kb-key.key-enter:hover {
+  background: linear-gradient(180deg, #ffa859 0%, #eb6800 100%);
+  box-shadow: 0 0 12px rgba(255, 148, 54, 0.6);
+  color: #fff;
+}
+
+.kb-key.key-enter:active {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+  background: #ffaa33;
+}
+
+.kb-key.key-space {
+  flex: 5.5;
+  font-size: 9.5px;
+  letter-spacing: 0.15em;
+  color: #72db9e;
+}
+
+.kb-key.key-clear {
+  flex: 1.4;
+  font-size: 9px;
+  font-weight: 900;
+  background: linear-gradient(180deg, #e63946 0%, #a81d28 100%);
+  color: #ffffff;
+  border-color: #f87171;
+  border-bottom: 3px solid #5a0c12;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.kb-key.key-clear:hover {
+  background: linear-gradient(180deg, #f04856 0%, #c42330 100%);
+  box-shadow: 0 0 12px rgba(230, 57, 70, 0.6);
+  color: #fff;
+}
+
+.kb-key.key-clear:active {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+  background: #ff4d5a;
+}
+
+.kb-key.key-mod {
+  flex: 1.1;
+  font-size: 8px;
+  color: #7e998c;
 }
 
 /* ─── ATTACHED NEON RULES PANEL ─── */
@@ -2765,30 +3733,35 @@
   box-shadow: inset 0 0 10px rgba(255, 209, 102, 0.1);
 }
 
-/* ─── 3. BOTTOM-LEFT: MANAGER GORDON BENNETT & COMIC SPEECH BUBBLE ─── */
+/* ─── BAY 1: FREESTANDING UNBOXED MANAGER GORDON BENNETT ─── */
 .vault-manager-corner {
-  position: absolute;
-  bottom: 0;
-  left: 24px;
-  z-index: 25;
+  position: relative;
+  z-index: 15;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  justify-content: flex-end;
+  align-items: center;
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
   pointer-events: none;
 }
 
 .manager-comic-bubble {
   pointer-events: auto;
-  max-width: clamp(300px, 25vw, 420px);
-  background: rgba(10, 16, 28, 0.95);
-  border: 2px solid #48D5D0;
+  max-width: clamp(280px, 24vw, 360px);
+  background: rgba(10, 16, 28, 0.96);
+  border: 2px solid var(--vice-turquoise, #48D5D0);
   border-radius: 14px;
-  padding: 12px 18px;
-  box-shadow: 0 0 25px rgba(72, 213, 208, 0.4), 0 10px 30px rgba(0, 0, 0, 0.8);
-  margin-bottom: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 0 25px rgba(72, 213, 208, 0.45), 0 10px 30px rgba(0, 0, 0, 0.9);
+  margin-bottom: 12px;
   position: relative;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   animation: comicBubblePop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -2805,20 +3778,21 @@
 
 .bubble-tail {
   position: absolute;
-  bottom: -9px;
-  left: 54px;
+  bottom: -10px;
+  left: 48px;
   width: 0;
   height: 0;
-  border-left: 9px solid transparent;
-  border-right: 9px solid transparent;
-  border-top: 9px solid #48D5D0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid var(--vice-turquoise, #48D5D0);
+  display: block !important;
 }
 
 .bubble-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   font-family: var(--font-mono, monospace);
   font-size: 11px;
 }
@@ -2853,23 +3827,25 @@
   font-weight: 700;
   padding: 3px 8px;
   border-radius: 4px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
 .bubble-speech-text {
   font-size: 13.5px;
   color: #FFFFFF;
-  line-height: 1.4;
+  line-height: 1.45;
   margin: 0;
   font-family: var(--font-ui, sans-serif);
 }
 
 .manager-bust-container {
   pointer-events: none;
-  width: clamp(280px, 24vw, 420px);
-  height: auto;
+  width: clamp(340px, 26vw, 480px);
+  max-height: 450px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
   transition: transform 0.3s ease;
-  animation: managerBustBreathe 5s ease-in-out infinite;
   transform-origin: bottom center;
   background: transparent !important;
 }
@@ -2884,11 +3860,19 @@
 }
 
 .manager-bust-image {
-  width: 100%;
-  height: auto;
+  width: auto;
+  max-width: 100%;
+  max-height: 440px;
   display: block;
   background: transparent !important;
-  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 20px rgba(72, 213, 208, 0.25));
+  /* Enhanced visibility: higher brightness and contrast, bold Miami rim light */
+  filter: 
+    brightness(1.26) 
+    contrast(1.12) 
+    drop-shadow(0 20px 40px rgba(0, 0, 0, 0.95)) 
+    drop-shadow(0 0 35px rgba(72, 213, 208, 0.55)) 
+    drop-shadow(0 0 16px rgba(248, 67, 145, 0.35)) !important;
+  animation: managerBustBreathe 5s ease-in-out infinite;
   transition: filter 0.3s ease;
 }
 
