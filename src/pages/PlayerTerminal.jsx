@@ -49,7 +49,6 @@ import {
   VisualLogicCircuit,
   VisualSwatchCard,
   VisualMacGuide,
-  VisualDuctMaze,
 } from "../components/VaultPuzzleVisuals";
 
 const CHANNEL_NAME = "vch-admin-bus";
@@ -2390,9 +2389,6 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                         )}
                         {rule.visualType === "macGuide" && (
                           <VisualMacGuide />
-                        )}
-                        {rule.visualType === "ductMaze" && (
-                          <VisualDuctMaze mazeData={rule.mazeData || sessionData?.ductMaze} />
                         )}
 
                         {isHinted && (

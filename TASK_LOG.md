@@ -21,11 +21,11 @@ Every task, bug, or error added to this log follows this format:
 
 ## 🚀 Session Resumption State (Checkpoint)
 
-- **Last Updated**: `2026-10-21 21:00:00 IST`
+- **Last Updated**: `2026-10-21 21:23:00 IST`
 - **Current Branch**: `main`
-- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 411ms)
-- **Active Focus**: Interactive cyberpunk visual puzzle widgets, floor-specific rule progression, tactical air duct maze mini-game & question clue removal
-- **Audit Summary**: Interactive visual puzzle components added (CAPTCHA, Resistor 4-band, Logic Gates, Optical Swatch, MAC Guide, Duct Maze), floor-level rule isolation verified across all 59 rules, and question clues removed to prevent answer leaking.
+- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 603ms)
+- **Active Focus**: Streamlined client architecture (excised Projector Stage and Duct Maze pages and routes)
+- **Audit Summary**: ProjectorStage and DuctMazePage removed; App routing simplified to PlayerTerminal and AdminCommand.
 
 ---
 
@@ -33,6 +33,7 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **TSK-007** | User Request | Architecture Refactoring | Excised Projector Stage and Duct Maze pages and routes | Normal | **COMPLETED** |
 | **TSK-006** | User Request + Game Design | Visual Puzzles & Pacing | Cyberpunk visual puzzle widgets, floor rule isolation & question clue removal | Critical | **COMPLETED** |
 | **ISS-003** | User Reported + Full Audit | System Security / Logic | Comprehensive audit: cryptographic/math cipher fixes, fullscreen anti-cheat race conditions, cumulative scoring, and NaN guards | Critical | **COMPLETED** |
 | **ISS-002** | User Reported + Code Scan | Audio / Video Cutscene | Sound of cutscene video lost due to autoplay policy mute fallback | High | **COMPLETED** |
@@ -209,6 +210,19 @@ Every task, bug, or error added to this log follows this format:
      - Preserved `{isSoloAllowed && ...}` button in lobby for developer local testing.
   3. **Question Clue Removal ([`src/utils/gameRules.js`](file:///d:/Association/vice-city-heist/src/utils/gameRules.js))**:
      - Removed explicit answers and giveaway hints from rule text headlines and speech prompts so players must actually solve the ciphers or consult the manager hint drawer.
+- **Status**: `COMPLETED`
+
+---
+
+### ✂️ TSK-007: Excised Stage and Maze Pages & Streamlined Routing
+- **Date Logged**: `2026-10-21 21:20:00 IST`
+- **Completed**: `2026-10-21 21:23:00 IST`
+- **Origin**: `[User Request]`
+- **Scope & Rectifications**:
+  1. Removed `ProjectorStage.jsx`, `ProjectorStage.css`, and `DuctMazePage.jsx`.
+  2. Removed `/stage`, `/leaderboard`, and `/maze` routes from [`src/App.jsx`](file:///d:/Association/vice-city-heist/src/App.jsx).
+  3. Cleaned unused `VisualDuctMaze` imports and checks from [`src/pages/PlayerTerminal.jsx`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.jsx).
+  4. Verified clean production bundle compilation with reduced payload size.
 - **Status**: `COMPLETED`
 
 ---
