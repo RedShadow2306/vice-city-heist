@@ -43,6 +43,14 @@ import {
 } from "../utils/gameRules";
 import "./PlayerTerminal.css";
 import LobbyVault3D from "../components/LobbyVault3D";
+import {
+  VisualCaptcha,
+  VisualResistor,
+  VisualLogicCircuit,
+  VisualSwatchCard,
+  VisualMacGuide,
+  VisualDuctMaze,
+} from "../components/VaultPuzzleVisuals";
 
 const CHANNEL_NAME = "vch-admin-bus";
 const ADMIN_API_URL = typeof window !== "undefined"
@@ -485,7 +493,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   const cfg = CAMPAIGN_LEVELS[currentLevel] || CAMPAIGN_LEVELS[1];
   const allRules = useMemo(() => buildAll59Rules(sessionData, cfg), [sessionData, cfg]);
-  const activeRulesList = useMemo(() => allRules.slice(0, cfg.rules), [allRules, cfg]);
+  const activeRulesList = useMemo(() => {
+    const floorRules = allRules.filter((r) => r.level === currentLevel);
+    return floorRules.slice(0, cfg.rules);
+  }, [allRules, currentLevel, cfg.rules]);
 
   /* ── Report Player Status to Supabase, Local Bus, & Admin Server ── */
   const reportToAdmin = useCallback(async (overrides = {}) => {
@@ -2363,6 +2374,26 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                             </button>
                           )}
                         </div>
+
+                        {/* Visual Puzzle Widgets (Distorted CAPTCHA, Electronic Resistor, Logic Circuit, Color Swatch, MAC Guide) */}
+                        {rule.visualType === "captcha" && (
+                          <VisualCaptcha token={rule.captchaToken || sessionData?.captcha} />
+                        )}
+                        {rule.visualType === "resistor" && (
+                          <VisualResistor resistor={rule.resistorData || sessionData?.resistor} />
+                        )}
+                        {rule.visualType === "logicCircuit" && (
+                          <VisualLogicCircuit circuit={rule.circuitData || sessionData?.logicCircuit} />
+                        )}
+                        {rule.visualType === "swatch" && (
+                          <VisualSwatchCard swatch={rule.swatchData || sessionData?.swatch} />
+                        )}
+                        {rule.visualType === "macGuide" && (
+                          <VisualMacGuide />
+                        )}
+                        {rule.visualType === "ductMaze" && (
+                          <VisualDuctMaze mazeData={rule.mazeData || sessionData?.ductMaze} />
+                        )}
 
                         {isHinted && (
                           <div className="neon-hint-drawer">

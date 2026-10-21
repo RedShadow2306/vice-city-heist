@@ -14,6 +14,7 @@ import DaemonLogo from "./components/DaemonLogo";
 import PlayerTerminal from "./pages/PlayerTerminal";
 import AdminCommand from "./pages/AdminCommand";
 import ProjectorStage from "./pages/ProjectorStage";
+import DuctMazePage from "./pages/DuctMazePage";
 import SoundEngine from "./utils/soundEngine";
 import { getAssetUrl } from "./utils/assetPath";
 import "./App.css";
@@ -91,6 +92,7 @@ function Shell() {
           <Route path="/admin" element={<AdminCommand />} />
           <Route path="/stage" element={<ProjectorStage />} />
           <Route path="/leaderboard" element={<ProjectorStage />} />
+          <Route path="/maze" element={<DuctMazePage />} />
           <Route path="*" element={<PlayerTerminal />} />
         </Routes>
       </div>

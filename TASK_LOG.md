@@ -21,11 +21,11 @@ Every task, bug, or error added to this log follows this format:
 
 ## 🚀 Session Resumption State (Checkpoint)
 
-- **Last Updated**: `2026-10-20 03:13:00 IST`
+- **Last Updated**: `2026-10-21 21:00:00 IST`
 - **Current Branch**: `main`
-- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 1.28s)
-- **Active Focus**: All technical, logical, cryptographic, and anti-cheat issues verified and rectified
-- **Audit Summary**: 15 concrete flaws rectified across gameRules, PlayerTerminal, AdminCommand, ProjectorStage, supabaseClient, App, and admin_server.
+- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 411ms)
+- **Active Focus**: Interactive cyberpunk visual puzzle widgets, floor-specific rule progression, tactical air duct maze mini-game & question clue removal
+- **Audit Summary**: Interactive visual puzzle components added (CAPTCHA, Resistor 4-band, Logic Gates, Optical Swatch, MAC Guide, Duct Maze), floor-level rule isolation verified across all 59 rules, and question clues removed to prevent answer leaking.
 
 ---
 
@@ -33,6 +33,7 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **TSK-006** | User Request + Game Design | Visual Puzzles & Pacing | Cyberpunk visual puzzle widgets, floor rule isolation & question clue removal | Critical | **COMPLETED** |
 | **ISS-003** | User Reported + Full Audit | System Security / Logic | Comprehensive audit: cryptographic/math cipher fixes, fullscreen anti-cheat race conditions, cumulative scoring, and NaN guards | Critical | **COMPLETED** |
 | **ISS-002** | User Reported + Code Scan | Audio / Video Cutscene | Sound of cutscene video lost due to autoplay policy mute fallback | High | **COMPLETED** |
 | **ISS-001** | User Reported + Code Scan | Audio / SoundEngine | Audio subsystem review & mute bypass in `soundEngine.js` | High | **COMPLETED** |
@@ -186,6 +187,28 @@ Every task, bug, or error added to this log follows this format:
      - Added Grand Winner priority sorting and `👑 HEIST DEFENDED` crown badges on the Projector stage.
      - Hidden secret organizer keyboard shortcut plaintext from public footer in `App.jsx`.
      - Fixed `admin_server/index.html` undefined variable crash (`isLocked` -> `p.isBreached`).
+- **Status**: `COMPLETED`
+
+---
+
+### 🧩 TSK-006: Cyberpunk Visual Puzzle Widgets, Floor-Specific Isolation & Question Clue Removal
+- **Date Logged**: `2026-10-21 18:30:00 IST`
+- **Completed**: `2026-10-21 21:00:00 IST`
+- **Origin**: `[User Request + Game Design Refinement]`
+- **Scope & Rectifications**:
+  1. **Visual Puzzle Widgets ([`src/components/VaultPuzzleVisuals.jsx`](file:///d:/Association/vice-city-heist/src/components/VaultPuzzleVisuals.jsx))**:
+     - **Distorted Security CAPTCHA (`VisualCaptcha`)**: Procedural SVG noise lines, grid overlays, jittered rotation, and dual neon gradient strokes for Rule 23.
+     - **Electronic 4-Band Resistor (`VisualResistor`)**: High-fidelity axial resistor with color-coded bands (1st digit, 2nd digit, multiplier, tolerance) and quick-reference calculation formula.
+     - **Digital Logic Circuit Schematic (`VisualLogicCircuit`)**: Input voltage lines, cyberpunk logic block, optional inversion bubble, and output line Q for boolean gate discovery.
+     - **Optical Swatch Sensor (`VisualSwatchCard`)**: Large tactile gloss color chip, laser target reticle, spectrum calibration steps, and hex code instructions.
+     - **Physical Hardware MAC Guide (`VisualMacGuide`)**: Byte format breakdown with demo blacklist warning (`00:1A:2B:3C:4D:5E`).
+     - **Tactical Duct Reconnaissance Maze (`VisualDuctMaze` & [`src/pages/DuctMazePage.jsx`](file:///d:/Association/vice-city-heist/src/pages/DuctMazePage.jsx))**: Interactive 60-second graph navigation mini-game with airlocks, exhaust hazards, laser tripwires, and target deposit slip #88 (routeable at `/maze`).
+  2. **Floor-Specific Rule Isolation ([`src/pages/PlayerTerminal.jsx`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.jsx))**:
+     - Replaced global slice `allRules.slice(0, cfg.rules)` with floor-specific filtering `allRules.filter((r) => r.level === currentLevel).slice(0, cfg.rules)`.
+     - Ensures Floor 1 challenges rules 1–10 (10 rules), Floor 2 challenges rules 11–23 (13 rules), Floor 3 challenges rules 24–39 (16 rules), and Floor 4 challenges rules 40–59 (20 rules) cleanly with fresh passwords per level.
+     - Preserved `{isSoloAllowed && ...}` button in lobby for developer local testing.
+  3. **Question Clue Removal ([`src/utils/gameRules.js`](file:///d:/Association/vice-city-heist/src/utils/gameRules.js))**:
+     - Removed explicit answers and giveaway hints from rule text headlines and speech prompts so players must actually solve the ciphers or consult the manager hint drawer.
 - **Status**: `COMPLETED`
 
 ---

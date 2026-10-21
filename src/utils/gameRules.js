@@ -27,6 +27,7 @@ export const CAMPAIGN_LEVELS = {
     shortName: "Level 1: Tellers Gate",
     subtitle: "Floor 01 · Teller Security Perimeter",
     rules: 10,
+    cumulativeRules: 10,
     startSeconds: 600, // 10:00 minutes
     drillSpeedMultiplier: 1.0,
     wantedStars: 2,
@@ -45,7 +46,8 @@ export const CAMPAIGN_LEVELS = {
     title: "LEVEL 2 // EXECUTIVE CASH CORRIDORS",
     shortName: "Level 2: Cash Corridor",
     subtitle: "Floor 02 · Safety Deposit Airlocks",
-    rules: 23,
+    rules: 13,
+    cumulativeRules: 23,
     startSeconds: 540, // 9:00 minutes
     drillSpeedMultiplier: 1.4,
     wantedStars: 3,
@@ -64,7 +66,8 @@ export const CAMPAIGN_LEVELS = {
     title: "LEVEL 3 // TITANIUM DEEP VAULT",
     shortName: "Level 3: Deep Vault",
     subtitle: "Sub-Level · Master Titanium Chamber",
-    rules: 39,
+    rules: 16,
+    cumulativeRules: 39,
     startSeconds: 480, // 8:00 minutes
     drillSpeedMultiplier: 1.8,
     wantedStars: 5,
@@ -83,7 +86,8 @@ export const CAMPAIGN_LEVELS = {
     title: "FINAL LEVEL 4 // OMEGA QUANTUM CORE",
     shortName: "Level 4: Omega Core",
     subtitle: "Subterranean · Quantum Cryptographic Sanctum",
-    rules: 59,
+    rules: 20,
+    cumulativeRules: 59,
     startSeconds: 420, // 7:00 minutes (Supreme Overdrive)
     drillSpeedMultiplier: 2.4,
     wantedStars: 6,
@@ -200,6 +204,56 @@ export const CODE_SNIPPET_PUZZLES = [
     hint: 'Fill in the blank: Keyword for class-level (non-instance) variables/methods: static (type directly, no quotes)',
     prompt: 'Fill in the missing Java/C# modifier: public _____ int MAX_SAFE_DEPOSITS = 1986;',
     managerSpeech: 'Class variable memory check! What modifier makes a field belong to the class itself?'
+  },
+  {
+    id: "const_js",
+    lang: "JavaScript",
+    title: "Immutable Variable Declaration",
+    snippet: '_____ VAULT_CIPHER_VERSION = 2026;',
+    blank: "const",
+    hint: 'Fill in the blank: JavaScript immutable constant keyword: const (type directly, no quotes)',
+    prompt: 'Fill in the missing JavaScript keyword: _____ VAULT_CIPHER_VERSION = 2026;',
+    managerSpeech: 'JavaScript syntax check! What keyword declares an immutable block-scoped constant?'
+  },
+  {
+    id: "async_js",
+    lang: "JavaScript / Python",
+    title: "Asynchronous Subroutine",
+    snippet: '_____ function decryptVaultPayload() {\n    await fetchAirlockStatus();\n}',
+    blank: "async",
+    hint: 'Fill in the blank: Keyword preceding an asynchronous function that uses await: async (type directly, no quotes)',
+    prompt: 'Fill in the missing async keyword: _____ function decryptVaultPayload() { ... }',
+    managerSpeech: 'Asynchronous event loop! What keyword marks a function as asynchronous?'
+  },
+  {
+    id: "sizeof_c",
+    lang: "C / C++",
+    title: "Memory Size Operator",
+    snippet: 'size_t bytes = _____(struct VaultKey);',
+    blank: "sizeof",
+    hint: 'Fill in the blank: C compile-time memory size operator: sizeof (type directly, no quotes)',
+    prompt: 'Fill in the missing C operator: size_t bytes = _____(struct VaultKey);',
+    managerSpeech: 'Memory calculation! What C operator evaluates the byte size of a data type?'
+  },
+  {
+    id: "len_py",
+    lang: "Python",
+    title: "Collection Length Function",
+    snippet: 'num_guards = _____(vault_guard_roster)',
+    blank: "len",
+    hint: 'Fill in the blank: Python built-in function to obtain length/count: len (type directly, no quotes)',
+    prompt: 'Fill in the missing Python function: num_guards = _____(vault_guard_roster)',
+    managerSpeech: 'Python built-in check! What function returns the length of a list or string?'
+  },
+  {
+    id: "import_kw",
+    lang: "Python / JS",
+    title: "Module Loading",
+    snippet: '_____ { sanitizeInput } from "./security";',
+    blank: "import",
+    hint: 'Fill in the blank: Keyword to load exported modules: import (type directly, no quotes)',
+    prompt: 'Fill in the missing module keyword: _____ { sanitizeInput } from "./security";',
+    managerSpeech: 'Module dependency loading! What keyword imports functions from another module?'
   }
 ];
 
@@ -348,6 +402,311 @@ export const TECH_COMMON_RIDDLES = [
   }
 ];
 
+/* ─── Exact Digit Sum Options (Rule 22 - Dynamic Balancing Puzzle) ─── */
+export const DIGIT_SUM_OPTIONS = [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 35];
+
+/* ─── Blacklisted Demo MAC Addresses (Rule 21 - Forbidden In Answer) ─── */
+export const FORBIDDEN_DEMO_MACS = [
+  "00:1A:2B:3C:4D:5E",
+  "00-1A-2B-3C-4D-5E",
+  "01:23:45:67:89:AB",
+  "01-23-45-67-89-AB",
+  "AA:BB:CC:DD:EE:FF",
+  "AA-BB-CC-DD-EE-FF",
+  "11:22:33:44:55:66",
+  "11-22-33-44-55-66",
+];
+
+/* ─── Tier 1 Logic & Coding Pool A (Rule 5 Dynamic Selection) ─── */
+export const TIER1_LOGIC_OPTIONS_A = [
+  {
+    id: "loop_construct",
+    category: "Loop Construct",
+    prompt: '🔁 LOOP CONSTRUCT: "What standard keyword is used to create a loop in C, C++, or Java?"',
+    badgeText: "Loop KW",
+    check: (pw) => /(for|while)/i.test(pw.replace(/["']/g, "")),
+    hint: 'Standard loop iteration keyword: for or while (type directly, no quotes).',
+    headline: "LOOP CONSTRUCT KEYWORD!",
+    managerSpeech: "Programming fundamentals check! What keyword is used to execute a loop in C, C++, or Java?",
+    expectedAnswer: "for (or while)",
+  },
+  {
+    id: "inverter_not",
+    category: "Logical Inverter",
+    prompt: '🔄 LOGIC INVERTER: "What boolean operator keyword flips a conditional state from true to false?"',
+    badgeText: "NOT Inverter",
+    check: (pw) => /(not|\!)/i.test(pw.replace(/["']/g, "")),
+    hint: 'Logical negation keyword or operator: not or ! (type directly, no quotes).',
+    headline: "BOOLEAN INVERTER OPERATOR!",
+    managerSpeech: "Binary inversion check! What operator or keyword flips true to false?",
+    expectedAnswer: "not (or !)",
+  },
+  {
+    id: "return_stmt",
+    category: "Function Exit",
+    prompt: '🚪 CONTROL FLOW: "What fundamental keyword terminates a function execution and returns a result value?"',
+    badgeText: "return",
+    check: (pw) => /return/i.test(pw.replace(/["']/g, "")),
+    hint: 'Keyword returning a value from a function: return (type directly, no quotes).',
+    headline: "RETURN STATEMENT KEYWORD!",
+    managerSpeech: "Subroutine control flow! What keyword passes the calculated value out of a function?",
+    expectedAnswer: "return",
+  },
+  {
+    id: "zero_index",
+    category: "Array Indexing",
+    prompt: '🔢 ARRAY INDEXING: "What numeric index represents the very first element of an array in C, Python, or JS?"',
+    badgeText: "Index 0",
+    check: (pw) => /(?:^|[^0-9])0(?:[^0-9]|$)|zero/i.test(pw.replace(/["']/g, "")),
+    hint: 'Standard zero-based index number: 0 or zero (type directly, no quotes).',
+    headline: "ZERO-BASED INDEX PROTOCOL!",
+    managerSpeech: "Memory offset indexing! What numeric digit addresses the first element of an array?",
+    expectedAnswer: "0",
+  },
+  {
+    id: "print_output",
+    category: "Console Output",
+    prompt: '🖨️ CONSOLE OUTPUT: "In Python, what built-in function outputs text to the standard console?"',
+    badgeText: "print",
+    check: (pw) => /print/i.test(pw.replace(/["']/g, "")),
+    hint: 'Python standard display function: print (type directly, no quotes).',
+    headline: "PYTHON PRINT FUNCTION!",
+    managerSpeech: "Console diagnostic check! What function prints output to the terminal in Python?",
+    expectedAnswer: "print",
+  },
+  {
+    id: "bitwise_and",
+    category: "Bitwise Mask",
+    prompt: '⚙️ BITWISE OPERATOR: "What single character operator performs a bitwise AND comparison in C, Python, and JavaScript?"',
+    badgeText: "& Mask",
+    check: (pw) => /(?:&|and)/i.test(pw.replace(/["']/g, "")),
+    hint: 'Single-ampersand bitwise operator: & (type directly, no quotes).',
+    headline: "BITWISE LOGIC OPERATOR!",
+    managerSpeech: "Low-level bit manipulation! What symbol performs bitwise conjunction?",
+    expectedAnswer: "& (or and)",
+  },
+  {
+    id: "modulo_rem",
+    category: "Arithmetic Remainder",
+    prompt: '➗ MODULO ARITHMETIC: "What arithmetic symbol calculates the remainder after integer division?"',
+    badgeText: "% Modulo",
+    check: (pw) => /(?:%|mod)/i.test(pw.replace(/["']/g, "")),
+    hint: 'Modulo remainder operator: % (type directly, no quotes).',
+    headline: "MODULO REMAINDER OPERATOR!",
+    managerSpeech: "Arithmetic tumbler calibration! What symbol returns the integer remainder?",
+    expectedAnswer: "% (or mod)",
+  },
+  {
+    id: "array_size",
+    category: "Collection Length",
+    prompt: '📏 BUFFER SIZE: "In JavaScript, what property name returns the total number of elements in an array or string?"',
+    badgeText: "length",
+    check: (pw) => /length/i.test(pw.replace(/["']/g, "")),
+    hint: 'Array size property identifier: length (type directly, no quotes).',
+    headline: "ARRAY BUFFER LENGTH PROPERTY!",
+    managerSpeech: "Buffer boundary verification! What property inspects collection length?",
+    expectedAnswer: "length",
+  },
+];
+
+/* ─── Tier 1 Logic & Coding Pool B (Rule 6 Dynamic Selection) ─── */
+export const TIER1_LOGIC_OPTIONS_B = [
+  {
+    id: "condition_if",
+    category: "Conditional Branch",
+    prompt: '🔀 CONDITIONAL BRANCH: "What fundamental keyword is used for conditional branching in C, Python, or Java?"',
+    badgeText: "if",
+    check: (pw) => /if/i.test(pw.replace(/["']/g, "")),
+    hint: 'Fundamental conditional statement keyword: if (type directly, no quotes).',
+    headline: "CONDITIONAL STATEMENT KEYWORD!",
+    managerSpeech: "Decision tree checkpoint! What keyword tests a condition?",
+    expectedAnswer: "if",
+  },
+  {
+    id: "boolean_true",
+    category: "Boolean State",
+    prompt: '💡 BOOLEAN TRUTH: "What lowercase keyword represents the affirmative/1 state in boolean algebra?"',
+    badgeText: "true",
+    check: (pw) => /true/i.test(pw.replace(/["']/g, "")),
+    hint: 'Affirmative boolean state: true (type directly, no quotes).',
+    headline: "BOOLEAN TRUE VERIFICATION!",
+    managerSpeech: "Logical truth condition! What keyword represents high/true state in code?",
+    expectedAnswer: "true",
+  },
+  {
+    id: "var_declaration",
+    category: "Variable Scoping",
+    prompt: '📦 VARIABLE SCOPING: "What modern JavaScript keyword declares a block-scoped reassignable variable?"',
+    badgeText: "let / var",
+    check: (pw) => /(let|var)/i.test(pw.replace(/["']/g, "")),
+    hint: 'Modern block-scoped declaration: let or var (type directly, no quotes).',
+    headline: "VARIABLE SCOPE DECLARATION!",
+    managerSpeech: "Scope memory allocation! What keyword declares a variable in JavaScript?",
+    expectedAnswer: "let (or var)",
+  },
+  {
+    id: "empty_null",
+    category: "Null Reference",
+    prompt: '🕳️ ABSENCE OF VALUE: "What keyword represents an intentional absence of any object value in JS or Python?"',
+    badgeText: "null / none",
+    check: (pw) => /(null|none)/i.test(pw.replace(/["']/g, "")),
+    hint: 'Empty object reference: null or none (type directly, no quotes).',
+    headline: "NULL VALUE REFERENCE!",
+    managerSpeech: "Pointer dereference safeguard! What keyword represents null/none?",
+    expectedAnswer: "null (or none)",
+  },
+  {
+    id: "const_immutable",
+    category: "Immutable Binding",
+    prompt: '🔒 IMMUTABILITY: "What JavaScript keyword declares an immutable, read-only constant variable binding?"',
+    badgeText: "const",
+    check: (pw) => /const/i.test(pw.replace(/["']/g, "")),
+    hint: 'Constant binding keyword: const (type directly, no quotes).',
+    headline: "IMMUTABLE VARIABLE CONSTANT!",
+    managerSpeech: "Lock variable reassignment! What keyword binds a constant?",
+    expectedAnswer: "const",
+  },
+  {
+    id: "loop_break",
+    category: "Loop Termination",
+    prompt: '⏹️ LOOP TERMINATION: "What control flow statement immediately exits or terminates a loop prematurely?"',
+    badgeText: "break",
+    check: (pw) => /break/i.test(pw.replace(/["']/g, "")),
+    hint: 'Loop exit keyword: break (type directly, no quotes).',
+    headline: "LOOP BREAK STATEMENT!",
+    managerSpeech: "Halt iterative execution! What keyword breaks out of a loop?",
+    expectedAnswer: "break",
+  },
+];
+
+/* ─── Electronics Resistor Color-Band Puzzles (Rule 23 Visual Decoder) ─── */
+export const RESISTOR_PUZZLES = [
+  {
+    id: "res_220",
+    name: "Circuit Resistor R1",
+    bands: ["Red", "Red", "Brown", "Gold"],
+    bandColors: ["#e53935", "#e53935", "#8d6e63", "#ffd700"],
+    value: 220,
+    notation: "220",
+    alt: ["220", "220ohm", "220ohms", "220r"],
+    clue: "Red · Red · Brown · Gold",
+  },
+  {
+    id: "res_1000",
+    name: "Circuit Resistor R2",
+    bands: ["Brown", "Black", "Red", "Gold"],
+    bandColors: ["#8d6e63", "#212121", "#e53935", "#ffd700"],
+    value: 1000,
+    notation: "1000",
+    alt: ["1000", "1k", "1kohm", "1000ohm"],
+    clue: "Brown · Black · Red · Gold",
+  },
+  {
+    id: "res_330",
+    name: "Circuit Resistor R3",
+    bands: ["Orange", "Orange", "Brown", "Gold"],
+    bandColors: ["#ff9800", "#ff9800", "#8d6e63", "#ffd700"],
+    value: 330,
+    notation: "330",
+    alt: ["330", "330ohm", "330ohms"],
+    clue: "Orange · Orange · Brown · Gold",
+  },
+  {
+    id: "res_47k",
+    name: "Circuit Resistor R4",
+    bands: ["Yellow", "Violet", "Orange", "Gold"],
+    bandColors: ["#ffeb3b", "#7e57c2", "#ff9800", "#ffd700"],
+    value: 47000,
+    notation: "47000",
+    alt: ["47000", "47k", "47kohm"],
+    clue: "Yellow · Violet · Orange · Gold",
+  },
+  {
+    id: "res_680",
+    name: "Circuit Resistor R5",
+    bands: ["Blue", "Grey", "Brown", "Gold"],
+    bandColors: ["#1e88e5", "#9e9e9e", "#8d6e63", "#ffd700"],
+    value: 680,
+    notation: "680",
+    alt: ["680", "680ohm", "680ohms"],
+    clue: "Blue · Grey · Brown · Gold",
+  },
+  {
+    id: "res_560",
+    name: "Circuit Resistor R6",
+    bands: ["Green", "Blue", "Brown", "Gold"],
+    bandColors: ["#43a047", "#1e88e5", "#8d6e63", "#ffd700"],
+    value: 560,
+    notation: "560",
+    alt: ["560", "560ohm", "560ohms"],
+    clue: "Green · Blue · Brown · Gold",
+  },
+];
+
+/* ─── Ventilation Duct Maze Reconnaissance Puzzles (Rule 16 Mini-Game) ─── */
+export const DUCT_MAZE_PUZZLES = [
+  { id: "slip_vent_bypass", secretWord: "VENT_BYPASS", slipId: "#88", clue: "Emergency bypass voucher recovered from executive office vent" },
+  { id: "slip_corrupto_slip", secretWord: "CORRUPTO_SLIP", slipId: "#42", clue: "Classified voucher slip recovered from office desk" },
+  { id: "slip_titanium_pass", secretWord: "TITANIUM_PASS", slipId: "#19", clue: "Titanium airlock voucher recovered from ventilation duct" },
+  { id: "slip_gordon_memo", secretWord: "GORDON_MEMO", slipId: "#07", clue: "Handwritten memo from Manager Gordon Bennett's private safe" },
+  { id: "slip_phantom_key", secretWord: "PHANTOM_KEY", slipId: "#99", clue: "Sub-floor ventilation slip found near deposit box #88" },
+  { id: "slip_airlock_override", secretWord: "AIRLOCK_99", slipId: "#51", clue: "Pneumatic airlock override voucher from executive office" },
+  { id: "slip_vercetti_grid", secretWord: "VERCETTI_GRID", slipId: "#86", clue: "Encrypted courier note recovered from the manager's office" },
+  { id: "slip_security_leak", secretWord: "SECURITY_LEAK", slipId: "#33", clue: "Classified dispatch voucher recovered from the air shaft" },
+];
+
+/* ─── Unix / Linux Terminal Shell Commands (Rule 31 Replacement - Eliminates duplicate SQL) ─── */
+export const UNIX_CMD_OPTIONS = [
+  { cmd: "grep", desc: "Search files for text patterns matching regular expressions", label: "Pattern Search" },
+  { cmd: "chmod", desc: "Modify file system read, write, or execute permissions", label: "File Permissions" },
+  { cmd: "sudo", desc: "Execute command with elevated superuser root privileges", label: "Elevated Sudo" },
+  { cmd: "curl", desc: "Transfer data from or to a server using HTTP or FTP", label: "Data Transfer" },
+  { cmd: "kill", desc: "Send termination signal to an active process ID", label: "Process Signal" },
+  { cmd: "mkdir", desc: "Create a new directory in the file system tree", label: "Make Directory" },
+  { cmd: "chown", desc: "Change user and group ownership of file objects", label: "Change Owner" },
+  { cmd: "systemctl", desc: "Control and inspect systemd daemon service units", label: "Service Manager" },
+];
+
+/* ─── Digital Logic Gate Circuit Schematics (Rule 39 Visual Diagram) ─── */
+export const LOGIC_CIRCUIT_PUZZLES = [
+  {
+    id: "gate_nand",
+    gateName: "NAND",
+    inputA: 1,
+    inputB: 1,
+    output: 0,
+    clue: "Both inputs are 1, but the inverted output Q is 0. What universal gate am I?",
+    alt: ["NAND", "nand"],
+  },
+  {
+    id: "gate_xor",
+    gateName: "XOR",
+    inputA: 1,
+    inputB: 0,
+    output: 1,
+    clue: "Input A is 1 and Input B is 0. Output Q is 1 (high). What parity gate am I?",
+    alt: ["XOR", "xor"],
+  },
+  {
+    id: "gate_nor",
+    gateName: "NOR",
+    inputA: 0,
+    inputB: 0,
+    output: 1,
+    clue: "Both inputs are 0, producing inverted high output Q = 1. What universal gate am I?",
+    alt: ["NOR", "nor"],
+  },
+  {
+    id: "gate_xnor",
+    gateName: "XNOR",
+    inputA: 1,
+    inputB: 1,
+    output: 1,
+    clue: "Outputs 1 when both inputs are identical (equivalence gate). What gate am I?",
+    alt: ["XNOR", "xnor"],
+  },
+];
+
 /* ─── Binary Options (Rule 9) ─── */
 export const BINARY_OPTIONS = [
   { dec: 5, bin: "101" },
@@ -362,7 +721,15 @@ export const BINARY_OPTIONS = [
   { dec: 15, bin: "1111" },
   { dec: 17, bin: "10001" },
   { dec: 18, bin: "10010" },
+  { dec: 19, bin: "10011" },
   { dec: 20, bin: "10100" },
+  { dec: 21, bin: "10101" },
+  { dec: 22, bin: "10110" },
+  { dec: 25, bin: "11001" },
+  { dec: 26, bin: "11010" },
+  { dec: 27, bin: "11011" },
+  { dec: 28, bin: "11100" },
+  { dec: 30, bin: "11110" },
 ];
 
 /* ─── Roman Numeral Options (Rule 17) ─── */
@@ -377,9 +744,14 @@ export const ROMAN_OPTIONS = [
   { num: 14, roman: "XIV" },
   { num: 15, roman: "XV" },
   { num: 16, roman: "XVI" },
+  { num: 17, roman: "XVII" },
+  { num: 18, roman: "XVIII" },
   { num: 19, roman: "XIX" },
   { num: 20, roman: "XX" },
   { num: 21, roman: "XXI" },
+  { num: 24, roman: "XXIV" },
+  { num: 26, roman: "XXVI" },
+  { num: 29, roman: "XXIX" },
 ];
 
 /* ─── ROT13 Options (Rule 24) ─── */
@@ -456,6 +828,36 @@ export const SYS_TECH_RIDDLES = [
     name: "CPU Cache",
     hint: "Fast CPU memory: cache (do NOT use quotes).",
   },
+  {
+    clue: "What lightweight unit of CPU execution shares memory space with other units within the same parent process?",
+    word: "thread",
+    name: "Process Thread",
+    hint: "Lightweight execution stream: thread (do NOT use quotes).",
+  },
+  {
+    clue: "What endpoint abstraction combines an IP address and a port number for bidirectional network communication?",
+    word: "socket",
+    name: "Network Socket",
+    hint: "IP and port communication endpoint: socket (do NOT use quotes).",
+  },
+  {
+    clue: "What hierarchical protocol translates human-friendly domain names into numerical IP addresses?",
+    word: "dns",
+    name: "DNS Protocol",
+    hint: "Domain Name System: dns (do NOT use quotes).",
+  },
+  {
+    clue: "What concurrency error state occurs when two or more processes permanently block each other waiting for held resources?",
+    word: "deadlock",
+    name: "System Deadlock",
+    hint: "Permanent mutual blocking state: deadlock (do NOT use quotes).",
+  },
+  {
+    clue: "What memory management scheme transfers fixed-size blocks of virtual memory between RAM and disk storage?",
+    word: "paging",
+    name: "Memory Paging",
+    hint: "Virtual memory block swapping: paging (do NOT use quotes).",
+  },
 ];
 
 /* ─── SQL Keyword Options (Rule 31) ─── */
@@ -517,14 +919,19 @@ export const CS_FUNDAMENTALS = [
   { clue: "An unhandled flaw or error in source code causing unintended program behavior. What term am I?", word: "bug", name: "Software Bug" },
   { clue: "A contiguous collection of elements of the same data type stored sequentially in memory. What data structure am I?", word: "array", name: "Array" },
   { clue: "A non-linear hierarchical data structure consisting of nodes connected by edges, starting from a root. What term am I?", word: "tree", name: "Tree Structure" },
+  { clue: "What non-linear structure consists of a finite set of vertices (or nodes) and a set of edges connecting them?", word: "graph", name: "Graph Structure" },
+  { clue: "What mathematical function maps keys of arbitrary size to fixed-size values for rapid table lookup?", word: "hash", name: "Hash Function" },
+  { clue: "What specialized tree-based structure guarantees that parent nodes are always sorted relative to their children?", word: "heap", name: "Binary Heap" },
+  { clue: "What variable type stores the memory address of another variable rather than a direct value?", word: "pointer", name: "Memory Pointer" },
+  { clue: "What contiguous data structure represents a sequential chain or array of text characters?", word: "string", name: "Text String" },
 ];
 
-/* ─── Persistent Non-Repeating Pool Picker ─── */
+/* ─── Persistent Non-Repeating Pool Picker (Supports Cross-Team Randomization) ─── */
 export function pickNonRepeating(category, pool, keyFn) {
   if (!pool || pool.length === 0) return null;
   let usedKeys = [];
   try {
-    const raw = sessionStorage.getItem("vch_recent_pool_" + category);
+    const raw = sessionStorage.getItem("vch_recent_pool_" + category) || localStorage.getItem("vch_recent_pool_" + category);
     if (raw) usedKeys = JSON.parse(raw);
   } catch (_) {}
 
@@ -541,6 +948,7 @@ export function pickNonRepeating(category, pool, keyFn) {
   const updatedKeys = [...usedKeys.filter((k) => k !== pickedKey), pickedKey].slice(-maxHistory);
   try {
     sessionStorage.setItem("vch_recent_pool_" + category, JSON.stringify(updatedKeys));
+    localStorage.setItem("vch_recent_pool_" + category, JSON.stringify(updatedKeys));
   } catch (_) {}
 
   return picked;
@@ -558,6 +966,8 @@ export function loadSavedSessionData() {
   return null;
 }
 
+export const getSessionData = loadSavedSessionData;
+
 export function saveSessionData(session) {
   try {
     localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(session));
@@ -569,7 +979,7 @@ export function saveSessionData(session) {
   } catch (_) {}
 }
 
-/* ─── Session Randomizer ─── */
+/* ─── Session Randomizer (Fresh per Team / Match Round) ─── */
 export function createSessionData(customOverrides = {}) {
   const letters = "ABCDEFGHJKLNPQRSTUVWXYZ";
   let captcha = "";
@@ -582,6 +992,11 @@ export function createSessionData(customOverrides = {}) {
   }
 
   const defaultSession = {
+    exactDigitSum: pickNonRepeating("exactDigitSum", DIGIT_SUM_OPTIONS, (n) => n) || 25,
+    tier1LogicA: pickNonRepeating("tier1LogicA", TIER1_LOGIC_OPTIONS_A, (t) => t.id),
+    tier1LogicB: pickNonRepeating("tier1LogicB", TIER1_LOGIC_OPTIONS_B, (t) => t.id),
+    resistor: pickNonRepeating("resistor", RESISTOR_PUZZLES, (r) => r.id),
+    logicCircuit: pickNonRepeating("logicCircuit", LOGIC_CIRCUIT_PUZZLES, (l) => l.id),
     codeSnippet: pickNonRepeating("codeSnippet", CODE_SNIPPET_PUZZLES, (c) => c.id),
     binaryTarget: pickNonRepeating("binaryTarget", BINARY_OPTIONS, (b) => b.dec),
     romanTarget: pickNonRepeating("romanTarget", ROMAN_OPTIONS, (r) => r.num),
@@ -598,6 +1013,8 @@ export function createSessionData(customOverrides = {}) {
     shaPhrase: pickNonRepeating("shaPhrase", SHA_PHRASES, (s) => s.phrase),
     swatch: pickNonRepeating("swatch", SWATCH_OPTIONS, (s) => s.hex),
     csPioneer: pickNonRepeating("csPioneer", CS_PIONEERS, (c) => c.code),
+    ductMaze: pickNonRepeating("ductMaze", DUCT_MAZE_PUZZLES, (d) => d.id),
+    unixCmd: pickNonRepeating("unixCmd", UNIX_CMD_OPTIONS, (u) => u.cmd),
     ...customOverrides,
   };
 
@@ -612,6 +1029,14 @@ export function getDigitSum(pw) {
 /* ─── Build Full 59-Rule Security Suite with 5-Tier Gradual Difficulty ─── */
 export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
   const safeSession = session && typeof session === "object" ? session : {};
+
+  const ductMaze =
+    DUCT_MAZE_PUZZLES.find((d) => d.id === (safeSession.ductMaze?.id || safeSession.ductMaze)) ||
+    DUCT_MAZE_PUZZLES[0];
+
+  const unixCmd =
+    UNIX_CMD_OPTIONS.find((u) => u.cmd === (safeSession.unixCmd?.cmd || safeSession.unixCmd)) ||
+    UNIX_CMD_OPTIONS[0];
 
   const codeSnippet =
     CODE_SNIPPET_PUZZLES.find((c) => c.id === (safeSession.codeSnippet?.id || safeSession.codeSnippet)) ||
@@ -675,6 +1100,24 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     CS_PIONEERS.find((c) => c.code === (safeSession.csPioneer?.code || safeSession.csPioneer)) ||
     CS_PIONEERS[0];
 
+  const exactDigitSum = Number(safeSession.exactDigitSum || 25);
+
+  const tier1LogicA =
+    TIER1_LOGIC_OPTIONS_A.find((t) => t.id === (safeSession.tier1LogicA?.id || safeSession.tier1LogicA)) ||
+    TIER1_LOGIC_OPTIONS_A[0];
+
+  const tier1LogicB =
+    TIER1_LOGIC_OPTIONS_B.find((t) => t.id === (safeSession.tier1LogicB?.id || safeSession.tier1LogicB)) ||
+    TIER1_LOGIC_OPTIONS_B[0];
+
+  const resistor =
+    RESISTOR_PUZZLES.find((r) => r.id === (safeSession.resistor?.id || safeSession.resistor)) ||
+    RESISTOR_PUZZLES[0];
+
+  const logicCircuit =
+    LOGIC_CIRCUIT_PUZZLES.find((l) => l.id === (safeSession.logicCircuit?.id || safeSession.logicCircuit)) ||
+    LOGIC_CIRCUIT_PUZZLES[0];
+
   return [
     /* ════ LEVEL 1: TELLERS GATE (Rules 1 - 10) [10 Rules] ════
        Difficulty Curve: Tier 1 (Recruit: Q1-4) -> Tier 2 (Operator: Q5-8) -> Tier 3 (Specialist: Q9-10)
@@ -705,12 +1148,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★☆☆☆☆",
       difficultyTier: "TIER 1 · RECRUIT",
       difficultyColor: "#00E676",
-      text: "Include at least one uppercase letter (A-Z)",
+      text: "DIRECTIVE: Incorporate uppercase authority — include at least one capital letter",
       badge: (pw) => ((pw.match(/[A-Z]/g) || []).length >= 1 ? "Upper ✓" : "Upper ?"),
       hint: "Include at least one capital letter (A-Z).",
       check: (pw) => /[A-Z]/.test(pw),
       headline: "UPPERCASE CLEARANCE!",
-      managerSpeech: "Include at least one capital letter in the cipher!",
+      managerSpeech: "Directive from Bennett: Incorporate uppercase authority! Include at least one capital letter in the cipher!",
       expectedAnswer: "Any capital letter A-Z",
     },
     {
@@ -722,12 +1165,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★☆☆☆☆",
       difficultyTier: "TIER 1 · RECRUIT",
       difficultyColor: "#00E676",
-      text: "Include at least one lowercase letter (a-z)",
+      text: "DIRECTIVE: Inject lowercase encryption clearance — include at least one lowercase letter",
       badge: (pw) => ((pw.match(/[a-z]/g) || []).length >= 1 ? "Lower ✓" : "Lower ?"),
       hint: "Include at least one lowercase letter (a-z).",
       check: (pw) => /[a-z]/.test(pw),
       headline: "LOWERCASE CLEARANCE!",
-      managerSpeech: "We need case variation! Include at least one lowercase letter!",
+      managerSpeech: "Directive from Bennett: We need case variation! Include at least one lowercase letter!",
       expectedAnswer: "Any lowercase letter a-z",
     },
     {
@@ -739,49 +1182,51 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★☆☆☆☆",
       difficultyTier: "TIER 1 · RECRUIT",
       difficultyColor: "#00E676",
-      text: "Include at least one numeric digit (0-9)",
+      text: "DIRECTIVE: Tumbler lock requires numerical pressure — include at least one numeric digit",
       badge: (pw) => (/\d/.test(pw) ? "Digit ✓" : "Digit ?"),
       hint: "Include at least one numeric digit (0-9).",
       check: (pw) => /\d/.test(pw),
       headline: "NUMERIC PRESSURE!",
-      managerSpeech: "The tumbler lock requires numerical pressure—insert at least one vault digit from 0 to 9!",
+      managerSpeech: "Directive from Bennett: The tumbler lock requires numerical pressure—insert at least one vault digit from 0 to 9!",
       expectedAnswer: "Any digit 0-9",
     },
     {
       id: 5,
       level: 1,
       section: "Outer Lobby & Tellers Gate",
-      category: "Loop Construct",
+      category: tier1LogicA.category || "Loop Construct",
       difficulty: 2,
       difficultyStars: "★★☆☆☆",
       difficultyTier: "TIER 2 · OPERATOR",
       difficultyColor: "#48D5D0",
       isRiddle: true,
-      text: '🔁 LOOP CONSTRUCT: "What standard keyword is used to create a loop in C, C++, or Java?"',
-      badge: (pw) => (/(for|while)/i.test(pw.replace(/["']/g, "")) ? "Loop KW ✓" : "Loop KW ?"),
-      hint: 'Standard loop iteration keyword: "for" or "while" (type directly, no quotes).',
-      check: (pw) => /(for|while)/i.test(pw.replace(/["']/g, "")),
-      headline: "LOOP CONSTRUCT KEYWORD!",
-      managerSpeech: "Programming fundamentals check! What keyword is used to execute a loop in C, C++, or Java?",
-      expectedAnswer: "for (or while)",
+      poolCategory: "tier1LogicA",
+      text: tier1LogicA.prompt,
+      badge: (pw) => (tier1LogicA.check(pw) ? `${tier1LogicA.badgeText} ✓` : `${tier1LogicA.badgeText} ?`),
+      hint: tier1LogicA.hint,
+      check: (pw) => tier1LogicA.check(pw),
+      headline: tier1LogicA.headline,
+      managerSpeech: tier1LogicA.managerSpeech,
+      expectedAnswer: tier1LogicA.expectedAnswer,
     },
     {
       id: 6,
       level: 1,
       section: "Outer Lobby & Tellers Gate",
-      category: "Conditional Branch",
+      category: tier1LogicB.category || "Conditional Branch",
       difficulty: 2,
       difficultyStars: "★★☆☆☆",
       difficultyTier: "TIER 2 · OPERATOR",
       difficultyColor: "#48D5D0",
       isRiddle: true,
-      text: '🔀 CONDITIONAL BRANCH: "What fundamental keyword is used for conditional branching in C, Python, or Java?"',
-      badge: (pw) => (/if/i.test(pw.replace(/["']/g, "")) ? "if ✓" : "Condition KW ?"),
-      hint: 'Fundamental conditional statement keyword: "if" (type directly, no quotes).',
-      check: (pw) => /if/i.test(pw.replace(/["']/g, "")),
-      headline: "CONDITIONAL STATEMENT KEYWORD!",
-      managerSpeech: "Decision tree checkpoint! What keyword tests a condition?",
-      expectedAnswer: "if",
+      poolCategory: "tier1LogicB",
+      text: tier1LogicB.prompt,
+      badge: (pw) => (tier1LogicB.check(pw) ? `${tier1LogicB.badgeText} ✓` : `${tier1LogicB.badgeText} ?`),
+      hint: tier1LogicB.hint,
+      check: (pw) => tier1LogicB.check(pw),
+      headline: tier1LogicB.headline,
+      managerSpeech: tier1LogicB.managerSpeech,
+      expectedAnswer: tier1LogicB.expectedAnswer,
     },
     {
       id: 7,
@@ -792,12 +1237,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★☆☆☆",
       difficultyTier: "TIER 2 · OPERATOR",
       difficultyColor: "#48D5D0",
-      text: "Include at least one special character (!@#$%^&*)",
+      text: "DIRECTIVE: Shield transmission channel — inject at least one special character symbol",
       badge: (pw) => (/[^a-zA-Z0-9\s]/.test(pw) ? "Special ✓" : "Special ?"),
       hint: "Include at least one special character (!@#$%^&*).",
       check: (pw) => /[^a-zA-Z0-9\s]/.test(pw),
       headline: "ENCRYPT SECURITY SIGNAL!",
-      managerSpeech: "Our security transmission needs noise shielding! Inject at least one special symbol into the cipher!",
+      managerSpeech: "Directive from Bennett: Shield our transmission! Inject at least one special character symbol into the cipher!",
       expectedAnswer: "Any symbol !@#$%^&*",
     },
     {
@@ -967,18 +1412,22 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       id: 16,
       level: 2,
       section: "Executive Cash Corridors",
-      category: "Encapsulation",
+      category: "Reconnaissance",
       difficulty: 2,
       difficultyStars: "★★☆☆☆",
       difficultyTier: "TIER 2 · OPERATOR",
       difficultyColor: "#48D5D0",
-      text: "Parameter encapsulation: Enclose any token inside square brackets: [ ... ]",
-      badge: (pw) => (/\[[^\]\s]+\]/.test(pw.replace(/["']/g, "")) ? "[OK] ✓" : "[ ... ] ?"),
-      hint: "Wrap any word or token in square brackets like [1010] or [js] (type directly, do NOT use quotes).",
-      check: (pw) => /\[[^\]\s]+\]/.test(pw.replace(/["']/g, "")),
-      headline: "ENCAPSULATE PARAMETERS!",
-      managerSpeech: "Security parameters must be bounded! Wrap any token inside square brackets like [1010]!",
-      expectedAnswer: "[token], [101], [js], etc.",
+      isRiddle: true,
+      visualType: "ductMaze",
+      mazeData: ductMaze,
+      poolCategory: "ductMaze",
+      text: "DIRECTIVE: Infiltrate Bennett's ventilation network — pilot the drone probe to Point B and recover the classified voucher code",
+      badge: (pw) => (new RegExp(ductMaze.secretWord, "i").test(pw.replace(/["']/g, "")) ? `${ductMaze.secretWord} ✓` : "Vent Maze ?"),
+      hint: `Navigate the ventilation blueprint to Point B (Executive Office) or open #/maze in a separate tactical tab. Codeword to submit: ${ductMaze.secretWord}`,
+      check: (pw) => new RegExp(ductMaze.secretWord, "i").test(pw.replace(/["']/g, "")),
+      headline: "VENTILATION SHAFT RECONNAISSANCE!",
+      managerSpeech: "Security probe deployed into the air ducts! Guide it through the junctions to Point B inside my private office before the 60-second airlocks seal!",
+      expectedAnswer: ductMaze.secretWord,
     },
     {
       id: 17,
@@ -1059,13 +1508,39 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a valid physical MAC address format",
-      badge: (pw) => (/(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/.test(pw.replace(/["']/g, "")) ? "MAC ✓" : "MAC Format ?"),
-      hint: "Include 6 pairs of hex digits separated by colons or hyphens, e.g. 01:23:45:67:89:AB (do NOT use quotes).",
-      check: (pw) => /(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/.test(pw.replace(/["']/g, "")),
+      isRiddle: true,
+      visualType: "macGuide",
+      text: "Include a valid physical MAC address format (Demo address from hint is forbidden!)",
+      badge: (pw) => {
+        const clean = pw.replace(/["']/g, "");
+        const macRegex = /(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/g;
+        const matches = clean.match(macRegex);
+        if (!matches || matches.length === 0) return "MAC Format ?";
+        const hasForbidden = matches.some((mac) => FORBIDDEN_DEMO_MACS.some((f) => f.toUpperCase() === mac.toUpperCase()));
+        const hasValid = matches.some((mac) => !FORBIDDEN_DEMO_MACS.some((f) => f.toUpperCase() === mac.toUpperCase()));
+        if (hasValid) return "MAC ✓";
+        if (hasForbidden) return "⚠️ DEMO MAC REJECTED!";
+        return "MAC Format ?";
+      },
+      hint: "Format reference: 00:1A:2B:3C:4D:5E (FOR REFERENCE ONLY — DO NOT USE THIS EXACT ADDRESS!). Include any other valid 6-byte hexadecimal MAC address (e.g. your device's NIC address or custom hex pairs).",
+      check: (pw) => {
+        const clean = pw.replace(/["']/g, "");
+        const macRegex = /(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/g;
+        const matches = clean.match(macRegex);
+        if (!matches || matches.length === 0) return false;
+        return matches.some((mac) => !FORBIDDEN_DEMO_MACS.some((f) => f.toUpperCase() === mac.toUpperCase()));
+      },
       headline: "PHYSICAL MAC ADDRESS!",
-      managerSpeech: "Hardware NIC layer verification! Include a standard MAC address format!",
-      expectedAnswer: "01:23:45:67:89:AB",
+      managerSpeech: (pw) => {
+        const clean = pw.replace(/["']/g, "");
+        const macRegex = /(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/g;
+        const matches = clean.match(macRegex);
+        if (matches && matches.some((mac) => FORBIDDEN_DEMO_MACS.some((f) => f.toUpperCase() === mac.toUpperCase()))) {
+          return "Nice try, team! That MAC address is just the demo reference from the hint! You can't use the demo address—generate your own unique hardware MAC!";
+        }
+        return "Hardware NIC layer verification! Include a standard MAC address format (do NOT use the demo address)!";
+      },
+      expectedAnswer: "Valid MAC (excluding 00:1A:2B:3C:4D:5E demo)",
     },
     {
       id: 22,
@@ -1076,31 +1551,51 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: `Tumbler arithmetic: Numeric digits must sum up to at least ${cfg?.digitSumTarget || 28}`,
-      badge: (pw) => `Sum: ${getDigitSum(pw)}/${cfg?.digitSumTarget || 28}`,
-      hint: (pw) => `Current digit sum is ${getDigitSum(pw)}. Must be at least ${cfg?.digitSumTarget || 28}.`,
-      check: (pw) => getDigitSum(pw) >= (cfg?.digitSumTarget || 28),
-      headline: "ARITHMETIC PRESSURE!",
-      managerSpeech: (pw, c) => `The mechanical tumbler requires numerical pressure! The numbers in your password must sum up to at least ${c?.digitSumTarget || cfg?.digitSumTarget || 28}! Current sum: ${getDigitSum(pw)}!`,
-      expectedAnswer: `>= ${cfg?.digitSumTarget || 28}`,
+      isRiddle: true,
+      poolCategory: "exactDigitSum",
+      text: `⚡ TUMBLER ARITHMETIC: The sum of ALL numeric digits in your password must equal EXACTLY ${exactDigitSum}`,
+      badge: (pw) => {
+        const sum = getDigitSum(pw);
+        if (sum === exactDigitSum) return `Sum: ${sum}=${exactDigitSum} ✓`;
+        const diff = sum - exactDigitSum;
+        return `Sum: ${sum}/${exactDigitSum} (${diff > 0 ? `+${diff}` : diff})`;
+      },
+      hint: (pw) => {
+        const sum = getDigitSum(pw);
+        if (sum === exactDigitSum) return `Perfect! Total digit sum is exactly ${exactDigitSum}.`;
+        if (sum < exactDigitSum) return `Current digit sum is ${sum}. You need ${exactDigitSum - sum} more to reach exactly ${exactDigitSum}!`;
+        return `Current digit sum is ${sum}. You are ${sum - exactDigitSum} over the target! Adjust or replace other numbers so the total digit sum equals exactly ${exactDigitSum}.`;
+      },
+      check: (pw) => getDigitSum(pw) === exactDigitSum,
+      headline: "EXACT ARITHMETIC BALANCING!",
+      managerSpeech: (pw) => {
+        const sum = getDigitSum(pw);
+        if (sum === exactDigitSum) return `Tumblers locked in balance! Digit sum across your entire key is precisely ${exactDigitSum}!`;
+        if (sum < exactDigitSum) return `The tumblers need more weight! Total numeric digits must sum to EXACTLY ${exactDigitSum}! Currently at ${sum} (need +${exactDigitSum - sum})!`;
+        return `Too much weight on the tumblers! Current digit sum is ${sum}, but target is EXACTLY ${exactDigitSum}! You're +${sum - exactDigitSum} over! Adjust your numbers together!`;
+      },
+      expectedAnswer: `Exactly ${exactDigitSum}`,
     },
     {
       id: 23,
       level: 2,
       section: "Executive Cash Corridors",
-      category: "Parallel GPU Tech",
+      category: "Circuit Hardware",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
       isRiddle: true,
-      text: '⚡ NVIDIA PARALLEL COMPUTING: "What proprietary parallel computing platform developed by Nvidia powers modern AI GPU training?"',
-      badge: (pw) => (/cuda/i.test(pw.replace(/["']/g, "")) ? "CUDA ✓" : "GPU Platform ?"),
-      hint: 'Nvidia parallel computing architecture: "cuda" (type directly, no quotes).',
-      check: (pw) => /cuda/i.test(pw.replace(/["']/g, "")),
-      headline: "NVIDIA CUDA ARCHITECTURE!",
-      managerSpeech: "Hardware acceleration protocol! What Nvidia parallel platform runs neural network training?",
-      expectedAnswer: "cuda",
+      visualType: "resistor",
+      resistorData: resistor,
+      poolCategory: "resistor",
+      text: "⚡ VISUAL CIRCUIT: Inspect the 4-band resistor diagram below. Calculate its resistance in Ohms and include the resistance value",
+      badge: (pw) => (resistor.alt.some((w) => new RegExp(w, "i").test(pw.replace(/["']/g, ""))) ? `${resistor.notation}Ω ✓` : "Resistor Ω ?"),
+      hint: `Calculate from color bands: (Band 1 · Band 2) × Multiplier. Resistance is ${resistor.notation} (type directly, no quotes).`,
+      check: (pw) => resistor.alt.some((w) => new RegExp(w, "i").test(pw.replace(/["']/g, ""))),
+      headline: "ELECTRONICS RESISTOR CALCULATION!",
+      managerSpeech: "Hardware circuit calibration! Calculate the resistance in Ohms from the color bands on the diagram!",
+      expectedAnswer: resistor.notation,
     },
 
     /* ════ LEVEL 3: TITANIUM DEEP VAULT (Rules 24 - 39) [16 Rules] ════
@@ -1171,12 +1666,15 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
       isRiddle: true,
-      text: `Security CAPTCHA verification: Include verification token (${captcha})`,
-      badge: (pw) => (pw.includes(captcha) ? `${captcha} ✓` : "CAPTCHA ?"),
-      hint: `Security clearance token is ${captcha} (case-sensitive, type directly, no quotes).`,
+      visualType: "captcha",
+      captchaToken: captcha,
+      poolCategory: "captcha",
+      text: "🔐 OPTICAL CLEARANCE CAPTCHA: Inspect the security matrix graphic below and transcribe the 5-character clearance token into your master key",
+      badge: (pw) => (pw.includes(captcha) ? "CAPTCHA ✓" : "CAPTCHA ?"),
+      hint: `Security clearance token shown in the optical card is ${captcha} (case-sensitive, type directly, no quotes).`,
       check: (pw) => pw.includes(captcha),
       headline: "CLEARANCE CAPTCHA!",
-      managerSpeech: `Security verification challenge! Type the 5-character token ${captcha} into your cipher!`,
+      managerSpeech: `Security verification challenge! Transcribe the 5-character token from the optical security graphic into your cipher!`,
       expectedAnswer: captcha,
     },
     {
@@ -1188,13 +1686,13 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Security containment: Enclose any token inside curly brackets: { ... }",
+      text: "DIRECTIVE: Cryptographic closure — enclose any parameter token inside curly brackets: { ... }",
       badge: (pw) => (/\{[^}\s]+\}/.test(pw.replace(/["']/g, "")) ? "{OK} ✓" : "{ ... } ?"),
       hint: "Wrap any word or token in curly braces like {code} or {token} (type directly, no quotes).",
       check: (pw) => /\{[^}\s]+\}/.test(pw.replace(/["']/g, "")),
       headline: "CURLY BRACE ENCAPSULATION!",
-      managerSpeech: "Cryptographic closure! Enclose any token inside curly braces like {code}!",
-      expectedAnswer: "{code}, {token}, etc.",
+      managerSpeech: "Cryptographic closure! Enclose any token inside curly brackets { ... }!",
+      expectedAnswer: "{token}, {code}, etc.",
     },
     {
       id: 29,
@@ -1205,12 +1703,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a standard SQL clause (SELECT, FROM, WHERE, GROUP BY, ORDER BY, etc.)",
+      text: "DIRECTIVE: Audit the bank financial database — inject a core SQL query clause",
       badge: (pw) => (/(SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|JOIN|GROUP\s+BY|ORDER\s+BY|HAVING|LIMIT)/i.test(pw.replace(/["']/g, "")) ? "SQL Clause ✓" : "SQL Clause ?"),
-      hint: "Include a core SQL clause keyword (e.g. SELECT, FROM, WHERE). Do NOT use quotes.",
+      hint: "Include a core SQL query clause keyword (e.g. for retrieving, filtering, or sorting tables). Do NOT use quotes.",
       check: (pw) => /(SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|JOIN|GROUP\s+BY|ORDER\s+BY|HAVING|LIMIT)/i.test(pw.replace(/["']/g, "")),
       headline: "DATABASE SQL QUERY CLAUSE!",
-      managerSpeech: "Audit the bank ledger! Inject a standard SQL query clause like SELECT or WHERE!",
+      managerSpeech: "Audit the bank ledger! Inject a standard SQL query clause into the key!",
       expectedAnswer: "SELECT, WHERE, FROM, etc.",
     },
     {
@@ -1222,32 +1720,32 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a valid HTTP request method (GET, POST, PUT, DELETE, PATCH)",
+      text: "DIRECTIVE: REST API authorization — include a primary HTTP request method",
       badge: (pw) => (/(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)/i.test(pw.replace(/["']/g, "")) ? "HTTP Verb ✓" : "HTTP Verb ?"),
-      hint: "Include a primary REST HTTP method in uppercase or lowercase (e.g. GET, POST, PUT). Do NOT use quotes.",
+      hint: "Include a primary REST HTTP request method in uppercase or lowercase. Do NOT use quotes.",
       check: (pw) => /(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)/i.test(pw.replace(/["']/g, "")),
       headline: "HTTP REST API VERB!",
-      managerSpeech: "Transmit the API payload! Inject a valid HTTP request verb like GET, POST, or PUT!",
+      managerSpeech: "Transmit the API payload! Inject a valid HTTP request verb!",
       expectedAnswer: "GET, POST, PUT, etc.",
     },
     {
       id: 31,
       level: 3,
       section: "Titanium Deep Vault",
-      category: "SQL Protocols",
+      category: "Terminal Shell Commands",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
       isRiddle: true,
-      poolCategory: "sqlKeyword",
-      text: `🧩 DATABASE PROTOCOL: Include SQL query instruction to ${(sqlKeyword.desc || "execute query").toLowerCase()}`,
-      badge: (pw) => (new RegExp(sqlKeyword.word, "i").test(pw.replace(/["']/g, "")) ? `${sqlKeyword.word} ✓` : "SQL Cmd ?"),
-      hint: `SQL command is ${sqlKeyword.word} (type directly, no quotes).`,
-      check: (pw) => new RegExp(sqlKeyword.word, "i").test(pw.replace(/["']/g, "")),
-      headline: "SQL COMMAND INJECTION!",
-      managerSpeech: `Query the financial accounts! What is the SQL keyword to ${(sqlKeyword.desc || "execute query").toLowerCase()}?`,
-      expectedAnswer: sqlKeyword.word,
+      poolCategory: "unixCmd",
+      text: `DIRECTIVE: Mainframe terminal shell instruction to ${unixCmd.desc.toLowerCase()}`,
+      badge: (pw) => (new RegExp(unixCmd.cmd, "i").test(pw.replace(/["']/g, "")) ? `${unixCmd.cmd} ✓` : "Unix Cmd ?"),
+      hint: `Unix shell command is ${unixCmd.cmd} (type directly, no quotes).`,
+      check: (pw) => new RegExp(unixCmd.cmd, "i").test(pw.replace(/["']/g, "")),
+      headline: "UNIX TERMINAL COMMAND INJECTION!",
+      managerSpeech: `Access the mainframe terminal! What Unix command is used to ${unixCmd.desc.toLowerCase()}?`,
+      expectedAnswer: unixCmd.cmd,
     },
     {
       id: 32,
@@ -1296,7 +1794,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★☆☆",
       difficultyTier: "TIER 3 · SPECIALIST",
       difficultyColor: "#FFD166",
-      text: "Include a valid semantic versioning string (e.g. v1.0.0 or 2.1.3)",
+      text: "DIRECTIVE: Software versioning stamp — include a valid semantic versioning string (SemVer format)",
       badge: (pw) => (/(?:v)?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/.test(pw.replace(/["']/g, "")) ? "SemVer ✓" : "SemVer ?"),
       hint: "Include standard semantic versioning like v1.0.0 or 2.4.1 (type directly, no quotes).",
       check: (pw) => /(?:v)?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/.test(pw.replace(/["']/g, "")),
@@ -1385,13 +1883,16 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isRiddle: true,
-      text: '🧩 DIGITAL LOGIC: "I am the universal boolean logic gate that outputs 0 ONLY when both inputs are 1. What gate am I?"',
-      badge: (pw) => (/NAND/i.test(pw.replace(/["']/g, "")) ? "NAND ✓" : "Logic Gate ?"),
-      hint: 'Universal logic gate: "NAND" (type directly, no quotes).',
-      check: (pw) => /NAND/i.test(pw.replace(/["']/g, "")),
-      headline: "UNIVERSAL GATE RIDDLE!",
-      managerSpeech: "Universal digital circuits! What gate produces 0 only on two 1s?",
-      expectedAnswer: "NAND",
+      visualType: "logicCircuit",
+      circuitData: logicCircuit,
+      poolCategory: "logicCircuit",
+      text: `🧩 VISUAL LOGIC CIRCUIT: Inspect the digital circuit schematic below. ${logicCircuit.clue}`,
+      badge: (pw) => (logicCircuit.alt.some((w) => new RegExp(w, "i").test(pw.replace(/["']/g, ""))) ? `${logicCircuit.gateName} ✓` : "Logic Gate ?"),
+      hint: `Universal logic circuit gate: "${logicCircuit.gateName}" (type directly, no quotes).`,
+      check: (pw) => logicCircuit.alt.some((w) => new RegExp(w, "i").test(pw.replace(/["']/g, ""))),
+      headline: "UNIVERSAL GATE SCHEMATIC!",
+      managerSpeech: "Universal digital circuits! What gate satisfies this circuit truth table?",
+      expectedAnswer: logicCircuit.gateName,
     },
 
     /* ════ LEVEL 4: OMEGA QUANTUM CORE (Rules 40 - 59) [20 Rules] ════
@@ -1406,12 +1907,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★★☆",
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
-      text: "Include an uppercase environment variable declaration pattern (e.g. PORT=5173 or API_KEY=secret)",
+      text: "DIRECTIVE: Subsystem environment configuration — include an uppercase environment variable assignment",
       badge: (pw) => (/[A-Z_]{3,}=[a-zA-Z0-9_\-]+/.test(pw.replace(/["']/g, "")) ? "ENV=VAR ✓" : "ENV Pattern ?"),
       hint: "Include an environment variable assignment like PORT=5173 or KEY=vault (type directly, no quotes).",
       check: (pw) => /[A-Z_]{3,}=[a-zA-Z0-9_\-]+/.test(pw.replace(/["']/g, "")),
       headline: "ENVIRONMENT VARIABLE SPECIFICATION!",
-      managerSpeech: "Subsystem environment configuration! Include an uppercase environment variable declaration like PORT=5173!",
+      managerSpeech: "Subsystem environment configuration! Include an uppercase environment variable declaration!",
       expectedAnswer: "PORT=5173, KEY=secret, etc.",
     },
     {
@@ -1423,12 +1924,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★★☆",
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
-      text: "Include ES6 arrow function syntax (e.g. () => or (x) => or e =>)",
+      text: "DIRECTIVE: Modernize runtime logic — include ES6 arrow function notation",
       badge: (pw) => (/(?:\([a-zA-Z0-9_,\s]*\)|[a-zA-Z_][a-zA-Z0-9_]*)\s*=>/.test(pw.replace(/["']/g, "")) ? "() => ✓" : "Arrow Syntax ?"),
       hint: "Include JavaScript ES6 arrow function syntax like () => or (x) => (type directly, no quotes).",
       check: (pw) => /(?:\([a-zA-Z0-9_,\s]*\)|[a-zA-Z_][a-zA-Z0-9_]*)\s*=>/.test(pw.replace(/["']/g, "")),
       headline: "ES6 ARROW FUNCTION SYNTAX!",
-      managerSpeech: "Modernize runtime logic! Inject ES6 arrow function notation like () => into your cipher!",
+      managerSpeech: "Modernize runtime logic! Inject ES6 arrow function notation into your cipher!",
       expectedAnswer: "() =>, (x) =>, etc.",
     },
     {
@@ -1495,7 +1996,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★★☆",
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
-      text: "Include a valid regular expression pattern (e.g. ^[0-9]+$ or \\d+ or [a-z]*)",
+      text: "DIRECTIVE: Token validation scanner — include a valid regular expression pattern",
       badge: (pw) => (/(?:\^[a-zA-Z0-9_\\\[\].+*?^$]+\$|\\[dswDSW][+*?]?|\[[a-zA-Z0-9_\-]+\][+*?]?)/.test(pw.replace(/["']/g, "")) ? "Regex OK ✓" : "Regex ?"),
       hint: "Include a standard regex pattern like ^[0-9]+$ or \\d+ or [a-z]+ (type directly, no quotes).",
       check: (pw) => /(?:\^[a-zA-Z0-9_\\\[\].+*?^$]+\$|\\[dswDSW][+*?]?|\[[a-zA-Z0-9_\-]+\][+*?]?)/.test(pw.replace(/["']/g, "")),
@@ -1512,12 +2013,12 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★★☆",
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
-      text: "Subnet CIDR mask: Include a valid IPv4 CIDR prefix notation (/24, /16, /8, /28, or /32)",
+      text: "DIRECTIVE: Network boundary routing — include an IPv4 slash CIDR subnet prefix mask",
       badge: (pw) => (/\/(?:3[0-2]|[12]?[0-9])\b/.test(pw.replace(/["']/g, "")) ? "CIDR ✓" : "CIDR ?"),
       hint: "Include an IPv4 slash CIDR prefix length like /24 or /16 (type directly, no quotes).",
       check: (pw) => /\/(?:3[0-2]|[12]?[0-9])\b/.test(pw.replace(/["']/g, "")),
       headline: "IPV4 CIDR SUBNET MASK!",
-      managerSpeech: "Define the network boundaries! Route our IP through a valid slash CIDR mask like /24!",
+      managerSpeech: "Define the network boundaries! Route our IP through a valid slash CIDR mask!",
       expectedAnswer: "/24, /16, /8, etc.",
     },
     {
@@ -1529,7 +2030,7 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyStars: "★★★★☆",
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
-      text: "Prime number encryption: Include a two-digit prime number (13, 17, 19, 23, 29, 31, 37, etc.)",
+      text: "DIRECTIVE: Asymmetric prime factorization — include a two-digit prime number",
       badge: (pw) => (/13|17|19|23|29|31|37|41|43|47|53|59|61|67|71|73|79|83|89|97/.test(pw.replace(/["']/g, "")) ? "Prime ✓" : "Prime ?"),
       hint: "Include any two-digit prime number (e.g. 13, 17, 19, 23, 29). Do NOT use quotes.",
       check: (pw) => /13|17|19|23|29|31|37|41|43|47|53|59|61|67|71|73|79|83|89|97/.test(pw.replace(/["']/g, "")),
@@ -1565,9 +2066,11 @@ export function buildAll59Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       difficultyTier: "TIER 4 · EXPERT",
       difficultyColor: "#F84391",
       isSwatch: true,
+      visualType: "swatch",
+      swatchData: swatch,
       poolCategory: "swatch",
       swatchColor: swatch.css,
-      text: `Include 3-character uppercase hex code for vault color swatch`,
+      text: "🎨 OPTICAL SENSOR CALIBRATION: Inspect the optical color tile below and include its 3-character uppercase hex code",
       badge: (pw) => {
         const clean = pw.replace(/["']/g, "").toUpperCase();
         const rawHex = swatch.hex.replace("#", "").toUpperCase();
