@@ -7,6 +7,7 @@
     "dev": "vite",
     "admin": "node admin_server/server.cjs",
     "build": "vite build",
+    "test:rules": "node scripts/test_game_rules.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },

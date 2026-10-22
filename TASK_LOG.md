@@ -21,11 +21,10 @@ Every task, bug, or error added to this log follows this format:
 
 ## 🚀 Session Resumption State (Checkpoint)
 
-- **Last Updated**: `2026-10-22 09:36:00 IST`
+- **Last Updated**: `2026-10-23 00:05:00 IST`
 - **Current Branch**: `main`
-- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly, 0 lint errors)
-- **Active Focus**: Tier 4 & 5 puzzle redesign: surface-level math puzzles, deductive thinking clues, and true hints (no direct answer giveaways)
-- **Audit Summary**: Updated Rules 37–59 and associated pools (NET_PORT_OPTIONS, CS_PIONEERS, SWATCH_OPTIONS, SHA_PHRASES, LOGIC_CIRCUIT_PUZZLES) with surface-level math/port puzzles and true thinking hints.
+- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 0.95s, 0 errors)
+- **Active Focus**: End-to-end live browser gameplay playthrough verified (lobby -> cutscene -> Level 1 solving -> Level 1 clearance slideshow -> Level 2 Executive Cash Corridors terminal transition). All servers running.
 
 ---
 
@@ -33,6 +32,9 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **TSK-011** | User Request | Gameplay Playthrough | Autonomous end-to-end live browser playthrough verified from registration/lobby through Level 1 completion and transition into Level 2 | Critical | **COMPLETED** |
+| **TSK-010** | User Request (Audio Directive) | Game Design & UX | Sanitized all rule prompts, hints, badges, and manager speeches to eliminate answer giveaways (e.g. `LOCK`, `DW`, formulas, exact answers in hints) | Critical | **COMPLETED** |
+| **TSK-009** | User Request (Audio Directives) | Game Design & Rules | Eliminated all maze questions/code, removed randomization, reordered rules with early digit sum = 25 puzzle constraint, and replaced advanced technical/social questions with direction & reasoning aptitude questions | Critical | **COMPLETED** |
 | **TSK-008** | User Request | Game Design & Riddles | Tier 4 & 5 puzzle rework: surface-level math/port puzzles and true hints (prevent direct answer spoilers) | High | **COMPLETED** |
 | **TSK-007** | User Request | Architecture Refactoring | Excised Projector Stage and Duct Maze pages and routes | Normal | **COMPLETED** |
 | **TSK-006** | User Request + Game Design | Visual Puzzles & Pacing | Cyberpunk visual puzzle widgets, floor rule isolation & question clue removal | Critical | **COMPLETED** |
@@ -49,7 +51,78 @@ Every task, bug, or error added to this log follows this format:
 
 ## 📝 Detailed Task & Error Logs
 
-### 🔊 ISS-002: Video Cutscene Audio Lost Due to Autoplay Policy Mute Fallback
+### 🎮 TSK-011: Live Browser Playthrough & Level Transition Verification
+- **Date Logged**: `2026-10-23 00:00:00 IST`
+- **Completed**: `2026-10-23 00:05:00 IST`
+- **Origin**: User Verification Request:
+  - *"is it done properly did u laythruogh it fully by urself"*
+- **Execution & Playthrough Steps Performed**:
+  1. Spun up autonomous browser subagents interacting with the live application on `http://localhost:5173/#/`.
+  2. Registered a two-player team from the waiting lobby and initiated the heist defense story mission.
+  3. Advanced through the intro cutscene directly into the Player Terminal (`screen === "game"`).
+  4. Tested the dynamic CRT keyboard and cipher input field by typing the verified solving master key:
+     `Va!E10.0.0.1_01-01-2000_991`
+  5. Verified all 10 rules for Level 1 evaluated dynamically and turned green (`✓`).
+  6. Submitted the password: Level 1 completed immediately, triggering the GTA Vice City victory intermission slideshow (`"THREE DAYS LATER IN VICE CITY... TOMMY VERCETTI REFUSED TO ACCEPT DEFEAT!"`) with confetti and audio triggers.
+  7. Advanced from the clearance screen into **Level 2 // Executive Cash Corridors**:
+     - Header confirmed: `LEVEL 2 // EXECUTIVE CASH CORRIDORS · Layer 1 of 13 · SPEED 1.4x`.
+     - Rule 11 loaded properly: Direction Reasoning (midway between North and West, NW) with spoiler-free `Bearing ?` badge and clean Gordon Bennett dialogue.
+  8. Verified live admin sync: Admin server at `http://localhost:5176/api/state` correctly updated the live player's status, level progress, and score (1933 pts).
+- **Artifacts Generated**:
+  - Full playthrough video: `full_game_playthrough_1792693821978.webp`
+  - Level 1 Terminal screenshot: `level_1_completed_1792693871792.png`
+  - Level 1 Victory Intermission screenshot: `level_1_entered_1792693881178.png`
+  - Level 2 Terminal screenshot: `level_2_terminal_verified.png`
+- **Status**: `COMPLETED`
+
+---
+
+### 🚫 TSK-010: Answer Giveaway Sanitization & Spoiler-Free Conditions
+- **Date Logged**: `2026-10-22 23:35:00 IST`
+- **Completed**: `2026-10-22 23:45:00 IST`
+- **Origin**: User Audio Directive:
+  - *"Don't specify the answer in the condition. I saw some one or two questions which it indicates include DW or answer is something, answer is mentioned in the condition. Remove that. They should find the answer. They shouldn't be spoon fed the answer. Okay?"*
+- **Root Cause**:
+  1. Historical prompt variants had remnants such as `(Include: DW)` in Rule 14 or `: LOCK` in Rule 59 prompt text.
+  2. Rule 59 badge displayed `LOCK ?` when unfulfilled, giving away the answer before the player typed anything.
+  3. Hints for algebraic/arithmetic questions (Fibonacci, Train speed, Binary conversion, Clock geometry, Ratio) provided computed arithmetic values (e.g. `(8 + 13)`, `(15 / 3 = 5)`, `100 / 5`) instead of guiding methodology.
+  4. Gordon Bennett's dialogue in Rule 57 and Rule 59 referenced specific answers (`like MOM or WOW`, `'LOCK' DIRECTIVE`).
+- **Files Modified**:
+  - [`src/utils/gameRules.js`](file:///d:/Association/vice-city-heist/src/utils/gameRules.js):
+    - Sanitized Rule 8: Removed example IPv4 text from condition prompt.
+    - Sanitized Rule 12: Replaced formula breakdown in hint with geometric guidance.
+    - Sanitized Rule 14: Confirmed zero answer mention in question prompt, hint, or dialogue.
+    - Sanitized Rule 21 & 22: Converted hints to conceptual guidance without solution formulas.
+    - Sanitized Rule 33 & 35: Replaced explicit equation hints with algebraic reasoning.
+    - Sanitized Rule 41, 43, 44, 45, 46: Excised computed values (e.g. `(8 + 13)`, `n(n-1)/2`, binary arithmetic) from hints.
+    - Sanitized Rule 47: Excised explicit solution words (`radar, level, rotor`) from hint.
+    - Sanitized Rule 50, 52, 53, 56: Removed arithmetic shortcuts from hints.
+    - Sanitized Rule 57: Excised `MOM or WOW` from hint and manager speech.
+    - Sanitized Rule 59: Excised `: LOCK` from condition prompt, replaced `LOCK ?` unfulfilled badge with `Directive ?`, removed `L-O-C-K` from hint, and updated manager speech.
+- **Verification**:
+  - `node scripts/test_game_rules.js`: 67/67 tests passed (100%).
+  - Automated scanner confirmed zero riddle conditions leak their target answer.
+  - `npm run build`: Production bundle compiled in 954ms with 0 errors.
+
+---
+
+### 🧠 TSK-009: Maze Removal, Deterministic Order & Reasoning / Aptitude Question Overhaul
+- **Date Logged**: `2026-10-22 22:45:00 IST`
+- **Completed**: `2026-10-22 23:00:00 IST`
+- **Origin**: User Audio Directives (5 voice recordings):
+  1. *Remove all maze questions and maze trip references completely due to tomorrow's event timeline.*
+  2. *Replace advanced technical (syntax, frameworks, system calls) and socially relevant pop-tech questions with logical thinking, reasoning, and aptitude test questions (e.g., direction sense, navigation, turns, shortest distance).*
+  3. *Remove session randomization to give a fixed, fair, and deterministic sequence for tournament play.*
+  4. *Enforce strict strategic order: Length (>=8) -> Uppercase -> Lowercase -> Digit -> Special -> No spaces -> Digit sum = EXACTLY 25 -> IPv4 address -> Date (DD-MM-YYYY) -> Aptitude direction reasoning, forcing players to dynamically re-balance their numbers to keep the digit sum at 25.*
+  5. *Keep password size reasonable with standard short-form answers for directions (`NW`, `SW`, `NE`, `SE`, `E`, etc.).*
+- **Files Modified**:
+  - [`src/utils/gameRules.js`](file:///d:/Association/vice-city-heist/src/utils/gameRules.js): Rewrote full 59-rule campaign with deterministic aptitude suite, removed `DUCT_MAZE_PUZZLES`, removed session randomization, set `digitSumTarget: 25` across all levels, and structured proper progressive order.
+  - [`src/components/VaultPuzzleVisuals.jsx`](file:///d:/Association/vice-city-heist/src/components/VaultPuzzleVisuals.jsx): Excised `VisualDuctMaze` and `DUCT_GRAPH` entirely.
+  - [`src/pages/PlayerTerminal.css`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.css): Excised all visual duct maze CSS rules.
+- **Verification**:
+  - `npm run build` passed cleanly with 0 errors in 8.89s.
+  - Verified 0 remaining maze references across the entire `src/` directory.
+
 - **Date Logged**: `2026-10-19 17:38:48 IST`
 - **Completed**: `2026-10-19 17:51:50 IST`
 - **Origin**:
