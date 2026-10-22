@@ -21,11 +21,11 @@ Every task, bug, or error added to this log follows this format:
 
 ## 🚀 Session Resumption State (Checkpoint)
 
-- **Last Updated**: `2026-10-21 21:23:00 IST`
+- **Last Updated**: `2026-10-22 09:36:00 IST`
 - **Current Branch**: `main`
-- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 603ms)
-- **Active Focus**: Streamlined client architecture (excised Projector Stage and Duct Maze pages and routes)
-- **Audit Summary**: ProjectorStage and DuctMazePage removed; App routing simplified to PlayerTerminal and AdminCommand.
+- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly, 0 lint errors)
+- **Active Focus**: Tier 4 & 5 puzzle redesign: surface-level math puzzles, deductive thinking clues, and true hints (no direct answer giveaways)
+- **Audit Summary**: Updated Rules 37–59 and associated pools (NET_PORT_OPTIONS, CS_PIONEERS, SWATCH_OPTIONS, SHA_PHRASES, LOGIC_CIRCUIT_PUZZLES) with surface-level math/port puzzles and true thinking hints.
 
 ---
 
@@ -33,6 +33,7 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **TSK-008** | User Request | Game Design & Riddles | Tier 4 & 5 puzzle rework: surface-level math/port puzzles and true hints (prevent direct answer spoilers) | High | **COMPLETED** |
 | **TSK-007** | User Request | Architecture Refactoring | Excised Projector Stage and Duct Maze pages and routes | Normal | **COMPLETED** |
 | **TSK-006** | User Request + Game Design | Visual Puzzles & Pacing | Cyberpunk visual puzzle widgets, floor rule isolation & question clue removal | Critical | **COMPLETED** |
 | **ISS-003** | User Reported + Full Audit | System Security / Logic | Comprehensive audit: cryptographic/math cipher fixes, fullscreen anti-cheat race conditions, cumulative scoring, and NaN guards | Critical | **COMPLETED** |
@@ -223,6 +224,56 @@ Every task, bug, or error added to this log follows this format:
   2. Removed `/stage`, `/leaderboard`, and `/maze` routes from [`src/App.jsx`](file:///d:/Association/vice-city-heist/src/App.jsx).
   3. Cleaned unused `VisualDuctMaze` imports and checks from [`src/pages/PlayerTerminal.jsx`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.jsx).
   4. Verified clean production bundle compilation with reduced payload size.
+- **Status**: `COMPLETED`
+
+---
+
+### 🧩 TSK-008: Tier 4 & 5 Clues, Hints & Surface-Level Math/Port Puzzle Rework
+- **Date Logged**: `2026-10-22 09:30:00 IST`
+- **Completed**: `2026-10-22 09:36:00 IST`
+- **Origin**: `[User Request]`
+- **Scope & Rectifications**:
+  1. **True Hints (No Direct Answer Spoilers)**:
+     - Previously, hints for Tier 4 and Tier 5 literally printed the exact answer string (e.g. `is 443`, `torvalds`, `recursion`, `singleton`, `motherboard`, `VAULT_LOCKED`, `aws`, `satoshi`).
+     - Rewrote all hints in Rules 37–59 and associated pools (`NET_PORT_OPTIONS`, `CS_PIONEERS`, `SWATCH_OPTIONS`, `SHA_PHRASES`, `LOGIC_CIRCUIT_PUZZLES`) to provide intuitive conceptual nudges and structural clues without giving away the raw answer.
+  2. **Surface-Level Math & Network Port Puzzles**:
+     - Formulated simple arithmetic and logic clues into questions (e.g., HTTPS port `400 + 43`, HTTP `100 - 20`, SSH `20 + 2`, FTP `3 × 7`, DNS `50 + 3`, MySQL `3300 + 6`, PostgreSQL countdown `5, 4, 3, 2`, HTTP-Alt duplicate `80`).
+     - Added simple math puzzles for CIDR subnetting (`32 - 8 = 24`), prime number discovery, parity modulo 2, 7-bit character encoding (`2^7 = 128`), and Bitcoin atomic units (`10^8 = 100,000,000`).
+  3. **Logical Thinking & Pacing**:
+     - Eliminated textbook trivia phrasing and manager speech spoilers (e.g. Rule 57 manager speech no longer spoils "motherboard").
+     - Kept questions and clues surface-level, accessible, and fun rather than overly complex or deep.
+  4. **Build & Lint Verification**:
+     - Passed `oxlint` with 0 errors.
+     - Passed `vite build` with clean bundle generation.
+- **Status**: `COMPLETED`
+
+---
+
+### 🎨 TSK-009: Short-Word Password Rules, Layout Texture Matching & Game Audit
+- **Date Logged**: `2026-10-22 09:55:00 IST`
+- **Completed**: `2026-10-22 10:20:00 IST`
+- **Origin**: `[User Request]`
+- **Scope & Rectifications**:
+  1. **Eliminated Long-Word Password Rules (Max 3–5 Characters)**:
+     - Player password bloat eliminated across Tier 3, 4, and 5 rules:
+     - **Rule 38**: Replaced 9-letter word `recursion` with 5-letter LIFO data structure `stack` (check maintains backward-compatible regex `/(stack|recursion)/i`).
+     - **Rule 50**: Allowed 4-letter financial vault word `bank` alongside `banker` (check: `/(bank|banker)/i`).
+     - **Rule 52**: Standardized all Computer Science Pioneers to short codes (3–5 letters: `lee`, `ada`, `kay`, `boole`, `moore`, `knuth`, `alan`, `grace`) and wired `alt` pattern checking.
+     - **Rule 54**: Replaced 7-letter word `satoshi` with 3-letter cryptocurrency ticker `BTC` (check: `/(BTC|satoshi|sats)/i`).
+     - **Rule 57**: Replaced 11-letter word `motherboard` with 3-letter central processor acronym `CPU` (check: `/(CPU|motherboard)/i`).
+     - **Rule 58**: Replaced 9-letter word `singleton` with 3-letter architectural pattern `MVC` (check: `/(MVC|singleton)/i`).
+     - **Rule 59**: Replaced 12-letter directive `VAULT_LOCKED` with concise 4-letter directive `LOCK` (check: `/LOCK/i`).
+     - **Rule 31/32/33 Options Pools**: Replaced long command `systemctl` with `ps` (alt: `["ps", "systemctl"]`), added short alts `lock` for `deadlock`, `page` for `paging`, `ptr` for `pointer`, and `str` for `string`.
+  2. **Layout Design & Association Page Texture Match**:
+     - Upgraded `.vault-game-stage` and `.locker-briefing-stage` with authentic multi-layered Vice City sunset background textures (`/images/vice-hero.jpg`).
+     - Added warm atmospheric sunset gradient overlay (`linear-gradient(to top, rgba(38, 24, 47, 0.88), ...)`).
+     - Added Association micro-dot grain overlay (`.vault-screen-association-texture` / `.briefing-association-texture` with 24px radial dot pattern).
+     - Added ambient sunflare glow (`.vault-screen-sunflare`) matching the main Association website waiting lobby.
+  3. **Game & Code Audit**:
+     - Verified visual puzzle widgets (CAPTCHA, Resistor Color Bands, Logic Circuit Schematics, Swatch, MAC guide).
+     - Verified audio feedback, timer mechanics, typing input handlers, and CRT screen.
+     - Verified `oxlint` (0 errors).
+     - Verified production build (`vite build` exited 0).
 - **Status**: `COMPLETED`
 
 ---

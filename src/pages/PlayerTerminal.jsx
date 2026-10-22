@@ -1904,7 +1904,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       {/* ── SCREEN 3: LOCKER ROOM BRIEFING & MANAGER GBA BOX (CINEMATIC FULL-SCREEN) ── */}
       {screen === "briefing" && (
         <section className="locker-briefing-stage">
-          {/* Ambient Airlock VFX Overlays */}
+          {/* Ambient Airlock VFX & Association Texture Overlays */}
+          <div className="briefing-association-texture" aria-hidden="true" />
+          <div className="vault-screen-sunflare" aria-hidden="true" />
           <div className="briefing-siren-sweep" aria-hidden="true" />
           <div className="airlock-steam-vent steam-left" aria-hidden="true" />
           <div className="airlock-steam-vent steam-right" aria-hidden="true" />
@@ -2024,7 +2026,9 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       {/* ── SCREEN 4: ACTIVE PASSWORD DEFENSE GAME (Full Setup: Vault Background + Zoomed-In CRT + Attached Rules Panel + Manager Bubble) ── */}
       {screen === "game" && (
         <section className="vault-game-stage">
-          {/* Ambient overlays */}
+          {/* Ambient overlays & Association Texture Layers */}
+          <div className="vault-screen-association-texture" aria-hidden="true" />
+          <div className="vault-screen-sunflare" aria-hidden="true" />
           <div className="vault-screen-vignette" aria-hidden="true" />
           <div className="vault-screen-scanlines" aria-hidden="true" />
 

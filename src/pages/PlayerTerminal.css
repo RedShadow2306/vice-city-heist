@@ -2079,8 +2079,9 @@
   height: 100vh;
   z-index: 9500;
   background: 
-    radial-gradient(ellipse at 50% 40%, rgba(8, 12, 24, 0.45) 0%, rgba(4, 6, 14, 0.92) 100%),
-    url('/images/vault_neon_bg.jpg') center center / cover no-repeat;
+    linear-gradient(to top, rgba(38, 24, 47, 0.84) 0%, rgba(18, 11, 32, 0.65) 50%, rgba(7, 9, 19, 0.88) 100%),
+    radial-gradient(ellipse at 50% 40%, rgba(248, 67, 145, 0.12) 0%, rgba(4, 6, 14, 0.94) 100%),
+    url('/images/vice-hero.jpg') center 20% / cover no-repeat;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2089,6 +2090,17 @@
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Authentic Association Micro-Grain Dot Texture */
+.briefing-association-texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.32;
+  z-index: 1;
 }
 
 /* Ambient Volumetric Siren Sweeps */
@@ -2511,14 +2523,40 @@
   height: 100vh;
   z-index: 9500;
   background: 
-    radial-gradient(circle at center, rgba(7, 9, 19, 0.4) 0%, rgba(5, 7, 14, 0.9) 100%),
-    url('/images/vault_neon_bg.jpg') center center / cover no-repeat;
+    linear-gradient(to top, rgba(38, 24, 47, 0.88) 0%, rgba(18, 11, 32, 0.72) 50%, rgba(7, 9, 19, 0.9) 100%),
+    radial-gradient(circle at center, rgba(248, 67, 145, 0.12) 0%, rgba(5, 6, 12, 0.92) 100%),
+    url('/images/vice-hero.jpg') center 20% / cover no-repeat;
   padding: 16px clamp(16px, 2.5vw, 36px) 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+/* Authentic Association Dot-Grid Micro Texture */
+.vault-screen-association-texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.35;
+  z-index: 1;
+}
+
+/* Atmospheric Sunflare Accent */
+.vault-screen-sunflare {
+  position: absolute;
+  top: 15%;
+  left: 25%;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 196, 154, 0.25) 0%, transparent 70%);
+  filter: blur(55px);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .vault-screen-vignette {
