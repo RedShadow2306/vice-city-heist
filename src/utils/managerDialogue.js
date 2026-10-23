@@ -2,18 +2,20 @@
  * managerDialogue.js  –  Bank Manager Reaction & Directive Engine
  *
  * The Bank Manager (Gordon Bennett) speaks to the player (his Assistant)
- * dynamically reacting to the current password and providing urgent directives.
+ * dynamically reacting to the current password and providing urgent directives
+ * WITHOUT EVER SPOILING OR LEAKING THE RAW ANSWERS.
  */
 
-export function getManagerDirective(rule, pw, session, cfg) {
+export function getManagerDirective(rule, pw, session = {}, cfg = {}) {
   if (!rule) {
     return {
       mood: "urgent",
-      headline: "START TYPING, KID!",
+      headline: "START TYPING, ROOKIE!",
       speech: "Tommy Vercetti's thermal drill is already spinning at the lobby doors! Type in an initial master password so the security encryption can initialize!",
     };
   }
 
+  // 1. If rule defines a custom manager speech, use it directly
   if (rule.managerSpeech) {
     const speech = typeof rule.managerSpeech === "function"
       ? rule.managerSpeech(pw, cfg)
@@ -30,259 +32,69 @@ export function getManagerDirective(rule, pw, session, cfg) {
   const currentSum = digits.reduce((a, b) => a + b, 0);
   const uppers = (pw.match(/[A-Z]/g) || []).length;
 
-  switch (rule.id) {
-    case 1:
-      return {
-        mood: "panicked",
-        headline: "TOO SHORT, KID!",
-        speech: `That's way too short, rookie! Tommy's decryption brute-forcer will crack that in two seconds! Give me at least ${cfg.minLength} characters! (Currently: ${pwLen}/${cfg.minLength})`,
-      };
-
-    case 2:
-      return {
-        mood: "demanding",
-        headline: "WE NEED NUMBERS!",
-        speech: "That's all letters! The tumbler lock requires numerical pressure—insert at least one vault digit from 0 to 9!",
-      };
-
-    case 3:
-      return {
-        mood: "demanding",
-        headline: "NOT SECURE ENOUGH!",
-        speech: `It's not secure enough, kid! Tommy's syndicate uses rainbow tables! Add at least ${cfg.minUpper} capital letters to strengthen the cipher! (Currently: ${uppers}/${cfg.minUpper})`,
-      };
-
-    case 4:
-      return {
-        mood: "urgent",
-        headline: "ADD SPECIAL SYMBOLS!",
-        speech: "Scramble their electronic probes! Throw in at least one special security symbol like ! @ # $ % & *!",
-      };
-
-    case 5:
-      return {
-        mood: "calculating",
-        headline: "CHECK THE ARITHMETIC LOCK!",
-        speech: `Wait, look at the cipher dial! The digits in your password have to mathematically add up to exactly ${cfg.digitSumTarget}! Right now your digits sum to ${currentSum}! Adjust the numbers!`,
-      };
-
-    case 6:
-      return {
-        mood: "demanding",
-        headline: "AUDIT CALENDAR REQUIRED!",
-        speech: "The bank mainframe was logged under an annual schedule! Include the full English name of any month (like October, May, or June)!",
-      };
-
-    case 7:
-      return {
-        mood: "urgent",
-        headline: "ROMAN NUMERAL LOCK!",
-        speech: `Quick, look at secondary deadbolt #${session.romanTarget?.num || 9}! We need its Roman numeral! Work it out and punch it in!`,
-      };
-
-    case 8:
-      return {
-        mood: "demanding",
-        headline: "AUTHORIZE OUR SYNDICATE!",
-        speech: `The bank's emergency insurance contractor requires our syndicate keyword! Type "${session.sponsor}" into the passphrase!`,
-      };
-
-    case 9:
-      return {
-        mood: "panicked",
-        headline: "BIOMETRIC CAPTCHA VERIFICATION!",
-        speech: `Look at the retinal security monitor! The security chip flashes "${session.captcha}"! Enter that 5-letter code in exact uppercase!`,
-      };
-
-    case 10:
-      return {
-        mood: "calculating",
-        headline: "PRIME NUMBERS PROTOCOL!",
-        speech: `The vault logic circuit needs mathematical primes! Add at least ${cfg.primeCountReq} prime digit(s) (2, 3, 5, or 7)!`,
-      };
-
-    case 11:
-      return {
-        mood: "urgent",
-        headline: "BULLION ELEMENT CODE!",
-        speech: `Our deep deposit holds ${session.element?.name || "Gold"}! Insert its chemical element symbol from the periodic table!`,
-      };
-
-    case 12:
-      return {
-        mood: "panicked",
-        headline: "WHERE IS THE MASTER KEY?!",
-        speech: "Quick, enter our vault master clearance keyword 'KEY' in capital letters! Don't let them bypass it!",
-      };
-
-    case 13:
-      return {
-        mood: "demanding",
-        headline: "FESTIVAL EPOCH YEAR!",
-        speech: "The central server timestamp needs the current fest year (2026) converted into Roman numerals!",
-      };
-
-    case 14:
-      return {
-        mood: "urgent",
-        headline: "COASTAL ESCAPE ROUTE!",
-        speech: "Listen, the getaway squad is watching our coastal getaway boulevard! Include that coastal boulevard keyword!",
-      };
-
-    case 15:
-      return {
-        mood: "panicked",
-        headline: "DISPATCH TWIN SURVEILLANCE!",
-        speech: "Tommy's squad is advancing through the teller stalls! Station our twin patrol unit code — type two zeros '00'!",
-      };
-
-    case 16:
-      return {
-        mood: "calculating",
-        headline: "FOREIGN EXCHANGE ROUTING!",
-        speech: `What's the capital of ${session.geo?.country || "France"}? Quick, type its capital city into the routing cipher!`,
-      };
-
-    case 17:
-      return {
-        mood: "demanding",
-        headline: "PHONETIC SYNTHESIZER VOWELS!",
-        speech: `The acoustic voice locks need resonance! Include at least ${cfg.vowelCountReq} uppercase vowels (A, E, I, O, U)!`,
-      };
-
-    case 18:
-      return {
-        mood: "calculating",
-        headline: "BINARY SWITCH CODE!",
-        speech: "Flip the secondary mainframe relay! Convert decimal 2 into binary!",
-      };
-
-    case 19:
-      return {
-        mood: "demanding",
-        headline: "CHESS GRANDMASTER LOCK!",
-        speech: "The old bank president was obsessed with chess! Type a checkmate notation with Queen or Knight!",
-      };
-
-    case 20:
-      return {
-        mood: "urgent",
-        headline: "PALINDROME ENCRYPTION!",
-        speech: "Throw Tommy's code-crackers off! Insert a 4-letter palindrome like 'noon' or 'deed'!",
-      };
-
-    case 21:
-      return {
-        mood: "panicked",
-        headline: "THE THERMAL DRILL IS OVERHEATING!",
-        speech: "The vault door hinges are glowing red! Inject the universal water coolant formula right now!",
-      };
-
-    case 22:
-      return {
-        mood: "urgent",
-        headline: "EMERGENCY COLOR SWATCH!",
-        speech: "Match the vault strobe sensor! Type the 3-letter hex code for our color swatch!",
-      };
-
-    case 23:
-      return {
-        mood: "demanding",
-        headline: "HALON GAS SUPPRESSION!",
-        speech: "Arm the fire suppression tanks! Type the name of a noble gas: 'neon', 'argon', or 'krypton'!",
-      };
-
-    case 24:
-      return {
-        mood: "calculating",
-        headline: "ENCAPSULATE IN BRACKETS!",
-        speech: "Wrap the encryption payload! Enclose characters between square brackets [ and ]!",
-      };
-
-    case 25:
-      return {
-        mood: "urgent",
-        headline: "THIS IS A BANK, ROOKIE!",
-        speech: "Put some real currency in there! Add a currency symbol: $, €, £, ¥, or ₹!",
-      };
-
-    case 26:
-      return {
-        mood: "demanding",
-        headline: "DIGITAL LOGIC GATE!",
-        speech: "Engage the digital gate arrays! Enter a universal logic gate in capital letters!",
-      };
-
-    case 27:
-      return {
-        mood: "urgent",
-        headline: "VICE CITY SYNTH CHORD!",
-        speech: "Tune the acoustic harmonic scanner! Enter an 80s sharp synth note!",
-      };
-
-    case 28:
-      return {
-        mood: "calculating",
-        headline: "SATELLITE ORBIT RELAY!",
-        speech: "The satellite uplink needs planetary alignment! Type the largest planet in our solar system!",
-      };
-
-    case 29:
-      return {
-        mood: "urgent",
-        headline: "SERVER HANDSHAKE OK!",
-        speech: "Send the HTTP status acknowledgement! Type 'OK' in capital letters!",
-      };
-
-    case 30:
-      return {
-        mood: "calculating",
-        headline: "DNA BIOMETRIC CODON!",
-        speech: "The vault's genetic scanner is asking for the universal biological start codon!",
-      };
-
-    case 31:
-      return {
-        mood: "panicked",
-        headline: "SEAL THE CIPHER ARCHIVE!",
-        speech: "Tommy's crowbar is at the door! Seal the encrypted vault archive with file extension '.enc'!",
-      };
-
-    case 32:
-      return {
-        mood: "demanding",
-        headline: "MATHEMATICAL OPERATORS!",
-        speech: "The equation must balance! Include both '+' and '=' operators!",
-      };
-
-    case 33:
-      return {
-        mood: "demanding",
-        headline: "NO GAPS IN THE WIRE!",
-        speech: "Spaces create vulnerabilities in the protocol! Remove every single space character!",
-      };
-
-    case 34:
-      return {
-        mood: "calculating",
-        headline: "BOOKEND SYMMETRY!",
-        speech: "Mirror the perimeter! Make sure the very first character and very last character match!",
-      };
-
-    case 35:
-      return {
-        mood: "urgent",
-        headline: "FINAL PARITY BALANCE!",
-        speech: "This is it, kid! Final layer! The total length of the master password must be an EVEN number!",
-      };
-
-    default:
-      return {
-        mood: "urgent",
-        headline: "STRENGTHEN THE CIPHER!",
-        speech: "Keep going, kid! Satisfy the mainframe conditions before Tommy burns through the doors!",
-      };
+  // 2. Dynamic guidance based on rule characteristics or general types
+  if (rule.category === "Length" || rule.id === 1) {
+    return {
+      mood: "panicked",
+      headline: "TOO SHORT, ROOKIE!",
+      speech: `That's way too short, rookie! Tommy's decryption brute-forcer will crack that in two seconds! Give me at least ${cfg.minLength || 10} characters! (Currently: ${pwLen}/${cfg.minLength || 10})`,
+    };
   }
+
+  if (rule.category === "Digits" || rule.id === 2) {
+    return {
+      mood: "demanding",
+      headline: "WE NEED NUMBERS!",
+      speech: "That's all letters! The tumbler lock requires numerical pressure—insert at least one vault digit from 0 to 9!",
+    };
+  }
+
+  if (rule.category === "Uppercase" || rule.id === 3) {
+    return {
+      mood: "demanding",
+      headline: "NOT SECURE ENOUGH!",
+      speech: `It's not secure enough, kid! Tommy's syndicate uses rainbow tables! Add at least ${cfg.minUpper || 2} capital letters to strengthen the cipher! (Currently: ${uppers}/${cfg.minUpper || 2})`,
+    };
+  }
+
+  if (rule.category === "Special Characters" || rule.id === 4) {
+    return {
+      mood: "urgent",
+      headline: "ADD SPECIAL SYMBOLS!",
+      speech: "Scramble their electronic probes! Throw in at least one special security symbol like ! @ # $ % & *!",
+    };
+  }
+
+  if (rule.category === "Digit Sum" || rule.id === 5) {
+    return {
+      mood: "calculating",
+      headline: "CHECK THE ARITHMETIC LOCK!",
+      speech: `Wait, look at the cipher dial! The digits in your password must mathematically add up to exactly ${cfg.digitSumTarget || 25}! Right now your digits sum to ${currentSum}! Adjust the numbers!`,
+    };
+  }
+
+  if (rule.category === "Calendar" || rule.id === 6) {
+    return {
+      mood: "demanding",
+      headline: "AUDIT CALENDAR REQUIRED!",
+      speech: "The bank mainframe was logged under an annual schedule! Include the full English name of any month of the year!",
+    };
+  }
+
+  if (rule.category === "Roman Numerals" || rule.id === 7) {
+    return {
+      mood: "urgent",
+      headline: "ROMAN NUMERAL LOCK!",
+      speech: `Quick, look at secondary deadbolt #${session.romanTarget?.num || 9}! We need its Roman numeral notation! Work it out and punch it in!`,
+    };
+  }
+
+  // 3. For any other riddle, puzzle, or cipher: Provide atmospheric tactical directives without giveaways
+  return {
+    mood: rule.isRiddle ? "calculating" : "urgent",
+    headline: rule.headline || "CRITICAL DIRECTIVE:",
+    speech: `Assistant! Tommy's drill is biting into layer ${rule.id}! Solve the security condition before the blast gate collapses! Stay focused!`,
+  };
 }
 
 export const MANAGER_PRAISE = [
