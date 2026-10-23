@@ -32,6 +32,7 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **TSK-018** | User Request (Audio Directives) | UI/UX & Character Design | Enlarged Managing Director Gordon Bennett bust (220px x 250px), removed bounding box, radar ring, and dark background container in Briefing & Story Slideshows; preserved Adam voice tracks | High | **COMPLETED** |
 | **TSK-017** | User Request (Audio Directives) | Audio & Admin Previews | ElevenLabs Adam voice synthesis script with auto-indentation dramatic pauses, Web Audio decoded buffer autoplay bypass, and 6-track Admin Audio Preview Deck on Port 5173 and 5176 | Critical | **COMPLETED** |
 | **TSK-016** | User Request (Audio Directives) | Campaign Level Rebalance | Rebalanced campaign timing & question quotas to exactly 20 rules per floor (Floor 1: 15m/20q, Floor 2: 13m/20q, Floor 3: 11m/20q, Floor 4: 9m/20q) — 80 rules across 48 minutes | Critical | **COMPLETED** |
 | **TSK-015** | User Request (Audio Directives) | Game Design & Aptitude | Simplified clues for beginner engineers (Age math shortcut, 2D/3D distinction for Cube) and supported synonymous answers (`HOLE` or `PIT`) | High | **COMPLETED** |
@@ -56,6 +57,23 @@ Every task, bug, or error added to this log follows this format:
 ---
 
 ## 📝 Detailed Task & Error Logs
+
+### 👔 TSK-018: Enlarged Director Portrait & Removed Box Boundary / Background
+- **Date Logged**: `2026-10-23 13:35:00 IST`
+- **Completed**: `2026-10-23 13:42:00 IST`
+- **Origin**: User Audio Directives:
+  - *"Make the director bit more bigger and remove that boundary or background for the director."*
+  - *"Hey don't do that, just halt the changing of the audio and just commit what has been done just before changing this audio. Means just before I added a new audio file now, commit the things just before that. Till where you made the manager little bigger and removed the background for manager."*
+- **Execution & Revisions Performed**:
+  1. **Removed Bounding Box & Background**: In [`src/pages/PlayerTerminal.css`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.css), stripped out `.manager-comms-bay` dark background (`rgba(8, 12, 22, 0.7)`), cyan border, and box-shadow. Removed background, border, and box-shadow from `.manager-portrait-frame`.
+  2. **Eliminated Radar Ring**: Set `.manager-radar-ring` to `display: none !important` to remove the dashed boundary box.
+  3. **Enlarged Character Bust**: Scaled up `.manager-portrait-frame` from 96px x 96px to an imposing `220px x 250px` with `overflow: visible`. Set `.manager-portrait-img` to `object-fit: contain` with natural silhouette drop-shadows (`filter: drop-shadow(0 14px 28px rgba(0,0,0,0.85)) drop-shadow(0 0 20px rgba(72,213,208,0.45))`).
+  4. **Dynamic Speaking Animation**: Added smooth `managerCutoutBob` scale/breathing animation and gold drop-shadow glow when the manager is speaking.
+  5. **Halted Audio Changes**: Maintained the clean ElevenLabs Adam voiceover assets and rebalanced campaign audio suite.
+  6. **Build & Test Verification**: Tested with 68/68 unit tests passing and `npm run build` cleanly generating production bundle in under 500ms.
+- **Status**: `COMPLETED`
+
+---
 
 ### 📱 TSK-012: Pop-Tech & Manager Suggestion Questions (Instagram/WhatsApp AI, Spotify, ChatGPT, etc.)
 - **Date Logged**: `2026-10-23 10:00:00 IST`
