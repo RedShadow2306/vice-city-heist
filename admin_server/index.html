@@ -289,6 +289,120 @@
       color: var(--vice-purple);
     }
 
+    /* Audio Preview Deck */
+    .audio-panel {
+      margin-bottom: 24px;
+      border: 1px solid rgba(224, 64, 251, 0.4);
+      box-shadow: 0 0 25px rgba(224, 64, 251, 0.15);
+    }
+
+    .audio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .audio-card {
+      background: rgba(14, 20, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-left: 4px solid var(--card-color, #FFD700);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .audio-card:hover {
+      background: rgba(22, 30, 50, 0.95);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .audio-card.is-active {
+      border-color: var(--card-color, #FFD700);
+      background: rgba(224, 64, 251, 0.1);
+      box-shadow: 0 0 15px rgba(224, 64, 251, 0.25);
+    }
+
+    .audio-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .audio-card-badge {
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid;
+    }
+
+    .audio-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFF;
+      margin: 0;
+    }
+
+    .audio-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-audio-stop {
+      padding: 4px 12px;
+      font-size: 11px;
+      background: rgba(255, 23, 68, 0.2);
+      border-color: #FF1744;
+      color: #FF5252;
+    }
+
+    .audio-card-quote {
+      font-family: monospace;
+      font-size: 10px;
+      color: rgba(255, 215, 0, 0.8);
+      font-style: italic;
+      margin: 0;
+      display: -webkit-box;
+      line-clamp: 2;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.3;
+    }
+
+    .audio-card-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 800;
+      transition: all 0.2s ease;
+      color: inherit;
+    }
+
+    .audio-card-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 10px currentColor;
+    }
+
+    .audio-card-btn.playing {
+      background: currentColor;
+      color: #000 !important;
+    }
+
     /* Live Player Roster */
     .roster-card {
       background: var(--vice-card);
@@ -616,6 +730,17 @@
         <button class="btn-action btn-siren" onclick="sendCommand('TRIGGER_SIREN')">
           <span>🚨 TRIGGER SIREN ALARM</span>
         </button>
+      </div>
+    </div>
+
+    <!-- MANAGER BENNETT AI VOICE PREVIEW DECK -->
+    <div class="controls-panel audio-panel">
+      <div class="panel-header audio-panel-header">
+        <span>🎙️ MANAGER BENNETT AI VOICE PREVIEW DECK (ALL 5 CAMPAIGN AUDIOS + DEFEAT)</span>
+        <button class="btn-action btn-audio-stop" onclick="stopAllAdminAudio()">⏹ STOP ALL</button>
+      </div>
+      <div class="audio-grid" id="audio-preview-grid">
+        <!-- Rendered by JavaScript -->
       </div>
     </div>
 
@@ -1020,7 +1145,120 @@
       }
     }
 
+    const ADMIN_AUDIO_TRACKS = [
+      {
+        id: "intro",
+        title: "Level 1: Outer Lobby Briefing",
+        floor: "FLOOR 01 · 15m / 20q",
+        url: "/audio/manager/manager_intro.mp3",
+        color: "#48D5D0",
+        quote: "Assistant! Tommy Vercetti and his crew just blasted through the lobby! You have fifteen minutes to solve twenty security cipher layers...",
+      },
+      {
+        id: "intermission_1",
+        title: "Level 2: Executive Corridors",
+        floor: "FLOOR 02 · 13m / 20q",
+        url: "/audio/manager/manager_intermission_1.mp3",
+        color: "#FFD166",
+        quote: "Rookie! He didn't accept his loss! He's drilling twice as fast—we need to calibrate twenty cipher layers in thirteen minutes...",
+      },
+      {
+        id: "intermission_2",
+        title: "Level 3: Titanium Deep Vault",
+        floor: "FLOOR 03 · 11m / 20q",
+        url: "/audio/manager/manager_intermission_2.mp3",
+        color: "#F84391",
+        quote: "Hold the line, Assistant! All twenty security layers must be locked simultaneously in eleven minutes! Secure the Titanium Vault!",
+      },
+      {
+        id: "intermission_3",
+        title: "Level 4: Omega Quantum Core",
+        floor: "FLOOR 04 · 9m / 20q",
+        url: "/audio/manager/manager_intermission_3.mp3",
+        color: "#9B00FF",
+        quote: "Officer! He penetrated the Omega Quantum Core! The final twenty ultra-cryptographic lock tumblers must be calibrated in under nine minutes!",
+      },
+      {
+        id: "victory",
+        title: "Grand Championship Victory",
+        floor: "VICTORY · 80 RULES CLEARED",
+        url: "/audio/manager/manager_victory.mp3",
+        color: "#00E676",
+        quote: "Unbelievable! You defended all four security vaults across forty-eight minutes of intense siege, solving all eighty cipher protocols!",
+      },
+      {
+        id: "defeat",
+        title: "Mission Failed / Overrun",
+        floor: "DEFEAT · AIRLOCK BREACHED",
+        url: "/audio/manager/manager_defeat.mp3",
+        color: "#FF1744",
+        quote: "We lost the vault! Vercetti's syndicate forced the multi-cipher airlock and emptied the entire bank! Disengage immediately!",
+      },
+    ];
+
+    let currentAdminAudio = null;
+    let currentAdminTrackId = null;
+
+    function renderAudioPreviewGrid() {
+      const container = document.getElementById('audio-preview-grid');
+      if (!container) return;
+      container.innerHTML = ADMIN_AUDIO_TRACKS.map(t => {
+        const isPlaying = currentAdminTrackId === t.id;
+        return `
+          <div class="audio-card ${isPlaying ? 'is-active' : ''}" style="--card-color:${t.color}">
+            <div class="audio-card-top">
+              <span class="audio-card-badge" style="border-color:${t.color}; color:${t.color}">${t.floor}</span>
+              ${isPlaying ? '<span style="font-family:monospace; font-size:10px; color:#00E676; font-weight:800;">● AUDITIONING</span>' : ''}
+            </div>
+            <h4 class="audio-card-title">${t.title}</h4>
+            <p class="audio-card-quote">"${t.quote}"</p>
+            <button class="audio-card-btn ${isPlaying ? 'playing' : ''}" style="border-color:${t.color}; color:${t.color};" onclick="toggleAdminAudio('${t.id}', '${t.url}')">
+              <span>${isPlaying ? '⏸ PAUSE AUDITION' : '▶ PLAY AUDITION'}</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleAdminAudio(trackId, url) {
+      if (currentAdminAudio) {
+        currentAdminAudio.pause();
+        currentAdminAudio.currentTime = 0;
+      }
+      if (currentAdminTrackId === trackId) {
+        currentAdminTrackId = null;
+        currentAdminAudio = null;
+        renderAudioPreviewGrid();
+        return;
+      }
+      currentAdminTrackId = trackId;
+      renderAudioPreviewGrid();
+      currentAdminAudio = new Audio(url);
+      currentAdminAudio.play().catch(e => {
+        console.warn('Playback error:', e);
+        currentAdminTrackId = null;
+        currentAdminAudio = null;
+        renderAudioPreviewGrid();
+      });
+      currentAdminAudio.onended = () => {
+        currentAdminTrackId = null;
+        currentAdminAudio = null;
+        renderAudioPreviewGrid();
+      };
+    }
+
+    function stopAllAdminAudio() {
+      if (currentAdminAudio) {
+        currentAdminAudio.pause();
+        currentAdminAudio.currentTime = 0;
+        currentAdminAudio = null;
+      }
+      currentAdminTrackId = null;
+      renderAudioPreviewGrid();
+    }
+
     function startPolling() {
+      renderAudioPreviewGrid();
       pollState();
       setInterval(pollState, 800);
     }

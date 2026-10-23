@@ -14,6 +14,8 @@ class SoundEngine {
   static _passedAudio = null;
   static _wastedAudio = null;
   static _activeManagerAudio = null;
+  static _activeVoiceSource = null;
+  static _managerBuffers = {};
   static _managerVoiceUrls = {
     intro: getAssetUrl('/audio/manager/manager_intro.mp3'),
     intermission_1: getAssetUrl('/audio/manager/manager_intermission_1.mp3'),
@@ -41,6 +43,22 @@ class SoundEngine {
     if (this._ctx?.state === 'suspended') this._ctx.resume();
   }
 
+  static async preloadVoices() {
+    this.init();
+    if (!this._ctx) return;
+    for (const [key, url] of Object.entries(this._managerVoiceUrls)) {
+      if (this._managerBuffers[key]) continue;
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) continue;
+        const arrayBuf = await resp.arrayBuffer();
+        this._ctx.decodeAudioData(arrayBuf, (decoded) => {
+          this._managerBuffers[key] = decoded;
+        }, () => {});
+      } catch (_) {}
+    }
+  }
+
   static mute(v) {
     this._muted = v;
     if (this._masterGain && this._ctx) {
@@ -52,17 +70,52 @@ class SoundEngine {
       this._activeManagerAudio.muted = Boolean(v);
       if (v) this.stopManagerVoice();
     }
+    if (v) this.stopManagerVoice();
   }
 
   static get isMuted() { return this._muted; }
 
   static isManagerVoicePlaying() {
-    return Boolean(this._activeManagerAudio && !this._activeManagerAudio.paused && !this._activeManagerAudio.ended);
+    return Boolean(
+      this._activeVoiceSource || 
+      (this._activeManagerAudio && !this._activeManagerAudio.paused && !this._activeManagerAudio.ended)
+    );
   }
 
   static playManagerVoice(key, { onStart, onEnded, onError } = {}) {
     this.stopManagerVoice();
     if (this._muted) return null;
+    this.resume();
+
+    // 1. If pre-decoded Web Audio buffer exists, use AudioBufferSourceNode
+    // Immune to HTML5 browser autoplay policy restrictions!
+    const buffer = this._managerBuffers[key];
+    if (buffer && this._ctx && this._ctx.state === 'running') {
+      try {
+        const srcNode = this._ctx.createBufferSource();
+        srcNode.buffer = buffer;
+        const voiceGain = this._ctx.createGain();
+        voiceGain.gain.setValueAtTime(0.95, this._ctx.currentTime);
+        srcNode.connect(voiceGain);
+        voiceGain.connect(this._masterGain);
+        
+        this._activeVoiceSource = srcNode;
+        srcNode.onended = () => {
+          if (this._activeVoiceSource === srcNode) {
+            this._activeVoiceSource = null;
+          }
+          if (onEnded) onEnded();
+        };
+
+        srcNode.start(0);
+        if (onStart) onStart();
+        return srcNode;
+      } catch (err) {
+        console.warn(`[ManagerVoice WebAudio] Fallback to HTML5 Audio:`, err);
+      }
+    }
+
+    // 2. HTML5 Audio Element Fallback / Dual Mode
     const url = this._managerVoiceUrls[key];
     if (!url) return null;
 
@@ -74,24 +127,33 @@ class SoundEngine {
       if (onEnded) {
         audio.addEventListener('ended', () => {
           if (this._activeManagerAudio === audio) this._activeManagerAudio = null;
-          onEnded();
+          if (onEnded) onEnded();
         });
       }
       if (onError) {
         audio.addEventListener('error', (e) => {
           if (this._activeManagerAudio === audio) this._activeManagerAudio = null;
-          onError(e);
+          if (onError) onError(e);
         });
       }
-      
+
       const p = audio.play();
       if (p !== undefined) {
         p.catch((err) => {
-          console.warn(`[ManagerVoice] Autoplay restricted for ${key}:`, err);
+          console.warn(`[ManagerVoice] HTML5 Autoplay restricted for ${key}:`, err);
           if (this._activeManagerAudio === audio) this._activeManagerAudio = null;
           if (onError) onError(err);
         });
       }
+
+      // Also trigger background buffer decoding for future instant replay
+      if (!this._managerBuffers[key] && this._ctx) {
+        fetch(url)
+          .then(r => r.arrayBuffer())
+          .then(ab => this._ctx.decodeAudioData(ab, b => { this._managerBuffers[key] = b; }))
+          .catch(() => {});
+      }
+
       return audio;
     } catch (err) {
       console.warn(`[ManagerVoice] Failed to play ${key}:`, err);
@@ -102,6 +164,13 @@ class SoundEngine {
   }
 
   static stopManagerVoice() {
+    if (this._activeVoiceSource) {
+      try {
+        this._activeVoiceSource.stop();
+        this._activeVoiceSource.disconnect();
+      } catch (_) {}
+      this._activeVoiceSource = null;
+    }
     if (this._activeManagerAudio) {
       try {
         this._activeManagerAudio.pause();
@@ -398,6 +467,17 @@ class SoundEngine {
       this._droneOsc = null;
     }
   }
+}
+
+// Global user interaction listener to immediately unlock AudioContext and preload voiceovers
+if (typeof window !== "undefined") {
+  const handleUserGestureUnlock = () => {
+    SoundEngine.resume();
+    SoundEngine.preloadVoices();
+  };
+  window.addEventListener("pointerdown", handleUserGestureUnlock, { passive: true, once: false });
+  window.addEventListener("keydown", handleUserGestureUnlock, { passive: true, once: false });
+  window.addEventListener("touchstart", handleUserGestureUnlock, { passive: true, once: false });
 }
 
 export default SoundEngine;

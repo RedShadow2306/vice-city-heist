@@ -134,7 +134,7 @@ const server = http.createServer((req, res) => {
           currentLevel: 1,
           rulesCleared: 0,
           score: 0,
-          timeLeft: 600,
+          timeLeft: 900,
           isBreached: false,
           isFrozen: false,
           currentPassword: data.currentPassword || '',
@@ -388,6 +388,30 @@ const server = http.createServer((req, res) => {
       res.end(html);
     });
     return;
+  }
+
+  // 6. Serve static audio & images from public/ directory on port 5176
+  if (req.method === 'GET' && (url.pathname.startsWith('/audio/') || url.pathname.startsWith('/images/'))) {
+    const publicDir = path.join(__dirname, '..', 'public');
+    const safePath = path.normalize(path.join(publicDir, url.pathname));
+    if (safePath.startsWith(publicDir) && fs.existsSync(safePath) && fs.statSync(safePath).isFile()) {
+      const ext = path.extname(safePath).toLowerCase();
+      const mimeTypes = {
+        '.mp3': 'audio/mpeg',
+        '.ogg': 'audio/ogg',
+        '.wav': 'audio/wav',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.svg': 'image/svg+xml',
+      };
+      res.writeHead(200, {
+        'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+        'Access-Control-Allow-Origin': '*',
+      });
+      fs.createReadStream(safePath).pipe(res);
+      return;
+    }
   }
 
   // Fallback 404

@@ -18,29 +18,29 @@ PITCH = "+1Hz"
 DIALOGUES = {
     "manager_intro.mp3": (
         "Assistant! Tommy Vercetti and his crew just blasted through the lobby! "
-        "Tommy has an armed crew drilling before each blast gate breaches! "
-        "You must set an unbreakable cipher on this terminal immediately! "
+        "Tommy has an armed syndicate drilling before each blast gate breaches! "
+        "You have fifteen minutes to solve fifteen security cipher layers on this terminal immediately! "
         "Every suggestion you make, I will verify the security protocols! Move fast!"
     ),
     "manager_intermission_1.mp3": (
         "Rookie! He didn't accept his loss! "
-        "He's drilling twice as fast—we need to make the password stronger, and faster than before! "
+        "He's drilling twice as fast—we need to calibrate eighteen cipher layers simultaneously in thirteen minutes! "
         "Move to Level 2 Executive Corridors now!"
     ),
     "manager_intermission_2.mp3": (
         "Hold the line, Assistant! "
-        "All security layers must be locked simultaneously—and faster than ever! "
+        "All twenty-one security layers must be locked simultaneously in eleven minutes! "
         "If you fail, the bank's entire gold reserve is his! "
         "Secure the Titanium Vault!"
     ),
     "manager_intermission_3.mp3": (
         "Officer! He penetrated the Omega Quantum Core! "
-        "Ultra-cryptographic lock tumblers must now be calibrated simultaneously in under ten minutes! "
+        "Twenty-six ultra-cryptographic lock tumblers must now be calibrated simultaneously in under nine minutes! "
         "His drill is operating at overdrive! "
         "Stand firm and engage the Omega cipher!"
     ),
     "manager_victory.mp3": (
-        "Unbelievable! You defended all four security vaults across forty minutes of intense siege! "
+        "Unbelievable! You defended all four security vaults across forty-eight minutes of intense siege, solving all eighty cipher protocols! "
         "The Omega Quantum Vault is permanently clamped shut, and V C P D SWAT arrested Vercetti's crew! "
         "By order of the Board, you are hereby appointed Legendary Grand Defender of Vice City!"
     ),

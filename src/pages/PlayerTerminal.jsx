@@ -65,19 +65,19 @@ const INTERMISSION_STORIES = {
     location: "🌴 THREE DAYS LATER IN VICE CITY... 🌴",
     story: "Word on Ocean Beach is Tommy Vercetti trashed the Malibu Club in a blind fury after being repelled at the Tellers Gate! He refused to accept defeat! He regrouped his syndicate, acquired high-yield thermal drills, and is storming the Executive Cash Corridors right now!",
     mood: "ALARMED",
-    speech: '"ROOKIE! HE DIDN\'T ACCEPT HIS LOSS! He\'s drilling twice as fast—we need to make the password STRONGER, and FASTER than before! Move to Level 2 Executive Corridors NOW!"',
-    cta: "ENGAGE LEVEL 2 DEFENSE (FASTER DRILL) ➔",
+    speech: '"ROOKIE! HE DIDN\'T ACCEPT HIS LOSS! He\'s drilling twice as fast—we need to calibrate 20 cipher layers simultaneously in 13 minutes! Move to Level 2 Executive Corridors NOW!"',
+    cta: "ENGAGE LEVEL 2 DEFENSE (20 RULES · 13m) ➔",
     targetLevel: 2,
   },
   2: {
     timeJump: "ONE WEEK LATER... STARFISH ISLAND",
-    timeJumpSub: "VERCETTI'S ALL-OUT ASSAULT ON THE DEEP VAULT!",
-    headline: "THE FINAL SIEGE: VERCETTI'S ALL-OUT ASSAULT ON THE DEEP VAULT!",
+    timeJumpSub: "VERCETTI\'S ALL-OUT ASSAULT ON THE DEEP VAULT!",
+    headline: "THE FINAL SIEGE: VERCETTI\'S ALL-OUT ASSAULT ON THE DEEP VAULT!",
     location: "🌴 ONE WEEK LATER... STARFISH ISLAND 🌴",
     story: "Furious after two failed attempts, Tommy Vercetti deployed an industrial laser drill directly into the Sub-Level Titanium Deep Vault! This is his last, most desperate heist attempt!",
     mood: "DESPERATE",
-    speech: '"HOLD THE LINE, ASSISTANT! All 32 security layers must be locked simultaneously—and FASTER than ever! If you fail, the bank\'s entire gold reserve is his! SECURE THE TITANIUM VAULT!"',
-    cta: "DEPLOY LEVEL 3 MAXIMUM CIPHER ➔",
+    speech: '"HOLD THE LINE, ASSISTANT! All 20 security layers must be locked simultaneously in 11 minutes! If you fail, the bank\'s entire gold reserve is his! SECURE THE TITANIUM VAULT!"',
+    cta: "DEPLOY LEVEL 3 MAXIMUM CIPHER (20 RULES · 11m) ➔",
     targetLevel: 3,
   },
   3: {
@@ -85,10 +85,10 @@ const INTERMISSION_STORIES = {
     timeJumpSub: "CODE RED: OMEGA QUANTUM SANCTUM UNDER ATTACK!",
     headline: "CODE RED: OMEGA QUANTUM CORE UNDER DIRECT ASSAULT!",
     location: "🌴 MIDNIGHT IN VICE CITY... 🌴",
-    story: "Repelled from the Titanium Deep Vault, Tommy Vercetti deployed military-grade diamond plasma cutters and cyber-jamming arrays into the subterranean Omega Quantum Sanctum! If this final core breaches, Vice City's entire treasury will be wiped out!",
+    story: "Repelled from the Titanium Deep Vault, Tommy Vercetti deployed military-grade diamond plasma cutters and cyber-jamming arrays into the subterranean Omega Quantum Sanctum! If this final core breaches, Vice City\'s entire treasury will be wiped out!",
     mood: "MAXIMUM CRISIS",
-    speech: '"OFFICER! HE PENETRATED THE OMEGA QUANTUM CORE! 45 ultra-cryptographic lock tumblers must now be calibrated simultaneously in under 10 minutes! His drill is operating at 240% overdrive! STAND FIRM AND ENGAGE THE OMEGA CIPHER!"',
-    cta: "ENGAGE LEVEL 4 OMEGA CIPHER ➔",
+    speech: '"OFFICER! HE PENETRATED THE OMEGA QUANTUM CORE! The final 20 ultra-cryptographic lock tumblers must now be calibrated simultaneously in under 9 minutes! His drill is operating at overdrive! STAND FIRM AND ENGAGE THE OMEGA CIPHER!"',
+    cta: "ENGAGE LEVEL 4 OMEGA CIPHER (20 RULES · 9m) ➔",
     targetLevel: 4,
   },
 };
@@ -275,7 +275,11 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   }, [screen, storySlideshow.stage, isPreviewMode, soundEnabled]);
 
   /* Auto-play Manager Voice upon entering briefing / intermissions / victory / defeat */
+  const prevScreenRef = useRef(null);
   useEffect(() => {
+    if (prevScreenRef.current === screen) return;
+    prevScreenRef.current = screen;
+
     if (screen === "briefing") {
       playManagerVoice("intro");
     } else if (screen === "end") {
@@ -285,20 +289,22 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
     } else if (screen !== "story_slideshow") {
       stopManagerVoice();
     }
-    return () => {
-      if (screen !== "story_slideshow") {
-        stopManagerVoice();
-      }
-    };
   }, [screen, playManagerVoice, stopManagerVoice]);
 
+  const prevSlideshowKeyRef = useRef(null);
   useEffect(() => {
-    if (screen === "story_slideshow") {
-      if (storySlideshow.stage === "briefing") {
-        playManagerVoice(`intermission_${storySlideshow.levelCleared}`);
-      } else {
-        stopManagerVoice();
-      }
+    if (screen !== "story_slideshow") {
+      prevSlideshowKeyRef.current = null;
+      return;
+    }
+    const currentKey = `${storySlideshow.levelCleared}_${storySlideshow.stage}`;
+    if (prevSlideshowKeyRef.current === currentKey) return;
+    prevSlideshowKeyRef.current = currentKey;
+
+    if (storySlideshow.stage === "briefing") {
+      playManagerVoice(`intermission_${storySlideshow.levelCleared}`);
+    } else {
+      stopManagerVoice();
     }
   }, [screen, storySlideshow.stage, storySlideshow.levelCleared, playManagerVoice, stopManagerVoice]);
 
@@ -501,7 +507,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* Game Session */
   const [password, setPassword] = useState("");
   const [unlockedCount, setUnlockedCount] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(600); // 10:00 minutes
+  const [timeLeft, setTimeLeft] = useState(() => CAMPAIGN_LEVELS[1]?.startSeconds || 900);
   const [survivedSeconds, setSurvivedSeconds] = useState(0);
   const [revealedHints, setRevealedHints] = useState(() => new Set());
   const [bonusFloat, setBonusFloat] = useState(null);
@@ -717,6 +723,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       requestFullscreenSafe();
       setScreen("cutscene");
       setCurrentLevel(1);
+      setTimeLeft(CAMPAIGN_LEVELS[1].startSeconds);
+      timeLeftRef.current = CAMPAIGN_LEVELS[1].startSeconds;
       setVaultDoorState("locked");
       reportToAdmin({ status: "STORY_CUTSCENE", currentLevel: 1 });
     }, 1800);
@@ -1349,7 +1357,10 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   /* ── Cutscene Completion & Audio Controls ── */
   const handleCutsceneDone = useCallback(() => {
     if (videoRef.current) videoRef.current.pause();
+    SoundEngine.resume();
     if (soundEnabled) SoundEngine.playClick();
+    setTimeLeft(CAMPAIGN_LEVELS[1].startSeconds);
+    timeLeftRef.current = CAMPAIGN_LEVELS[1].startSeconds;
     setScreen("briefing");
     reportToAdmin({ status: "BRIEFING" });
   }, [soundEnabled, reportToAdmin]);
@@ -2037,7 +2048,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               <div className="scene-badge-row">
                 <span className="scene-badge emergency-alarm">🚨 EMERGENCY AIRLOCK // SUB-LEVEL 1</span>
                 <span className="threat-indicator-pill">THREAT: CRITICAL</span>
-                <span className="time-limit-badge">⏱️ 15:00 TIMER · FLOOR 1</span>
+                <span className="time-limit-badge">⏱️ {Math.floor(cfg.startSeconds / 60)}:00 TIMER · FLOOR {currentLevel}</span>
               </div>
               <h2 className="vice-display-lg scene-title">{cfg.title}</h2>
               <p className="scene-sub">VERCETTI'S GANG HAS INFILTRATED THE OUTER PERIMETER — BLAST GATES ARMED</p>
@@ -2078,7 +2089,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 </div>
                 <div className="gba-text-content">
                   <p className="gba-typewriter-text">
-                    "ASSISTANT! Tommy Vercetti and his crew just blasted through the lobby! Tommy has an armed crew drilling before each blast gate breaches! You must set an unbreakable cipher on this terminal immediately! Every suggestion you make, I will verify the security protocols! Move fast!"
+                    "ASSISTANT! Tommy Vercetti and his crew just blasted through the lobby! Tommy has an armed syndicate drilling before each blast gate breaches! You have 15 minutes to solve 20 security cipher layers on this terminal immediately! Every suggestion you make, I will verify the security protocols! Move fast!"
                   </p>
                 </div>
 
@@ -2109,14 +2120,14 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                     <span className="param-icon">⏱️</span>
                     <div className="param-text">
                       <span className="param-label">TIME LIMIT</span>
-                      <span className="param-val">15 MINUTES</span>
+                      <span className="param-val">{Math.floor(cfg.startSeconds / 60)} MINUTES</span>
                     </div>
                   </div>
                   <div className="param-chip">
                     <span className="param-icon">🔒</span>
                     <div className="param-text">
                       <span className="param-label">DEFENSE PROTOCOL</span>
-                      <span className="param-val">CIPHER INJECTION</span>
+                      <span className="param-val">{cfg.rules} CIPHER LAYERS</span>
                     </div>
                   </div>
                   <div className="param-chip">

@@ -26,8 +26,8 @@ export const CAMPAIGN_LEVELS = {
     title: "LEVEL 1 // OUTER LOBBY & TELLERS GATE",
     shortName: "Level 1: Tellers Gate",
     subtitle: "Floor 01 · Teller Security Perimeter",
-    rules: 15,
-    cumulativeRules: 15,
+    rules: 20,
+    cumulativeRules: 20,
     startSeconds: 900, // 15:00 minutes
     drillSpeedMultiplier: 1.0,
     wantedStars: 2,
@@ -46,8 +46,8 @@ export const CAMPAIGN_LEVELS = {
     title: "LEVEL 2 // EXECUTIVE CASH CORRIDORS",
     shortName: "Level 2: Cash Corridor",
     subtitle: "Floor 02 · Executive Safety Vaults",
-    rules: 18,
-    cumulativeRules: 33,
+    rules: 20,
+    cumulativeRules: 40,
     startSeconds: 780, // 13:00 minutes
     drillSpeedMultiplier: 1.4,
     wantedStars: 3,
@@ -66,8 +66,8 @@ export const CAMPAIGN_LEVELS = {
     title: "LEVEL 3 // TITANIUM DEEP VAULT",
     shortName: "Level 3: Deep Vault",
     subtitle: "Sub-Level · Master Titanium Chamber",
-    rules: 21,
-    cumulativeRules: 54,
+    rules: 20,
+    cumulativeRules: 60,
     startSeconds: 660, // 11:00 minutes
     drillSpeedMultiplier: 1.8,
     wantedStars: 5,
@@ -86,7 +86,7 @@ export const CAMPAIGN_LEVELS = {
     title: "FINAL LEVEL 4 // OMEGA QUANTUM CORE",
     shortName: "Level 4: Omega Core",
     subtitle: "Subterranean · Quantum Cryptographic Sanctum",
-    rules: 26,
+    rules: 20,
     cumulativeRules: 80,
     startSeconds: 540, // 9:00 minutes
     drillSpeedMultiplier: 2.4,
@@ -198,7 +198,7 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
   const captchaToken = safeSession.captcha || "VD79K";
 
   return [
-    /* ════ LEVEL 1: TELLERS GATE (Rules 1 - 15) [15 Rules · 15 Minutes] ════
+    /* ════ LEVEL 1: TELLERS GATE (Rules 1 - 20) [20 Rules · 15 Minutes] ════
        Progressive Foundation: Length -> Casing -> Numbers -> Symbols -> Whitespace ->
        Digit Sum = 25 -> IPv4 Address -> Calendar Date (DD-MM-YYYY) -> Direction Reasoning ->
        Modern Pop-Tech & Vowel/Alphabet Clearances (Zero Whitespace & Continuous Concatenation Ready)
@@ -485,13 +485,13 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       expectedAnswer: "At least 5 letters",
     },
 
-    /* ════ LEVEL 2: EXECUTIVE CASH CORRIDORS (Rules 16 - 33) [18 Rules · 13 Minutes] ════
+    /* ════ LEVEL 2: EXECUTIVE CASH CORRIDORS (Rules 21 - 40) [20 Rules · 13 Minutes] ════
        Aptitude, Logical Thinking & Mathematical Reasoning Challenges
     */
     {
       id: 16,
-      level: 2,
-      section: "Executive Cash Corridors",
+      level: 1,
+      section: "Outer Lobby & Tellers Gate",
       category: "Length Requirement",
       difficulty: 2,
       difficultyStars: "★★☆☆☆",
@@ -507,8 +507,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 17,
-      level: 2,
-      section: "Executive Cash Corridors",
+      level: 1,
+      section: "Outer Lobby & Tellers Gate",
       category: "Case Sensitivity",
       difficulty: 2,
       difficultyStars: "★★☆☆☆",
@@ -524,8 +524,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 18,
-      level: 2,
-      section: "Executive Cash Corridors",
+      level: 1,
+      section: "Outer Lobby & Tellers Gate",
       category: "Manager's Suggestion: Everyday AI",
       difficulty: 2,
       difficultyStars: "★★☆☆☆",
@@ -542,8 +542,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 19,
-      level: 2,
-      section: "Executive Cash Corridors",
+      level: 1,
+      section: "Outer Lobby & Tellers Gate",
       category: "Distance Reasoning",
       difficulty: 2,
       difficultyStars: "★★☆☆☆",
@@ -560,8 +560,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 20,
-      level: 2,
-      section: "Executive Cash Corridors",
+      level: 1,
+      section: "Outer Lobby & Tellers Gate",
       category: "Zero Tumbler Quorum",
       difficulty: 2,
       difficultyStars: "★★☆☆☆",
@@ -815,13 +815,13 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       expectedAnswer: "At least 3 capital letters",
     },
 
-    /* ════ LEVEL 3: TITANIUM DEEP VAULT (Rules 34 - 54) [21 Rules · 11 Minutes] ════
+    /* ════ LEVEL 3: TITANIUM DEEP VAULT (Rules 41 - 60) [20 Rules · 11 Minutes] ════
        Progressive Passphrase Architecture: Curly Encapsulation {Token} -> Words -> Numbers -> Lateral Riddles
     */
     {
       id: 34,
-      level: 3,
-      section: "Titanium Deep Vault",
+      level: 2,
+      section: "Executive Cash Corridors",
       category: "Length Requirement",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
@@ -837,8 +837,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 35,
-      level: 3,
-      section: "Titanium Deep Vault",
+      level: 2,
+      section: "Executive Cash Corridors",
       category: "Encapsulation",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
@@ -854,8 +854,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 36,
-      level: 3,
-      section: "Titanium Deep Vault",
+      level: 2,
+      section: "Executive Cash Corridors",
       category: "Optical Clearance Token",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
@@ -874,8 +874,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 37,
-      level: 3,
-      section: "Titanium Deep Vault",
+      level: 2,
+      section: "Executive Cash Corridors",
       category: "Manager's Suggestion: AI Chatbot",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
@@ -892,8 +892,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 38,
-      level: 3,
-      section: "Titanium Deep Vault",
+      level: 2,
+      section: "Executive Cash Corridors",
       category: "Speed-Distance-Time",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
@@ -910,8 +910,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 39,
-      level: 3,
-      section: "Titanium Deep Vault",
+      level: 2,
+      section: "Executive Cash Corridors",
       category: "Manager's Suggestion: Streaming Giant",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
@@ -928,8 +928,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 40,
-      level: 3,
-      section: "Titanium Deep Vault",
+      level: 2,
+      section: "Executive Cash Corridors",
       category: "Squares Series",
       difficulty: 3,
       difficultyStars: "★★★☆☆",
@@ -1200,13 +1200,13 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
       expectedAnswer: "STAMP",
     },
 
-    /* ════ LEVEL 4: OMEGA QUANTUM CORE (Rules 55 - 80) [26 Rules · 9 Minutes] ════
+    /* ════ LEVEL 4: OMEGA QUANTUM CORE (Rules 61 - 80) [20 Rules · 9 Minutes] ════
        Supreme Passphrase Synthesis: Words, Numbers, Lineage & Grand Equilibrium
     */
     {
       id: 55,
-      level: 4,
-      section: "Omega Quantum Core",
+      level: 3,
+      section: "Titanium Deep Vault",
       category: "Length Requirement",
       difficulty: 4,
       difficultyStars: "★★★★☆",
@@ -1222,8 +1222,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 56,
-      level: 4,
-      section: "Omega Quantum Core",
+      level: 3,
+      section: "Titanium Deep Vault",
       category: "Manager's Suggestion: Google AI",
       difficulty: 4,
       difficultyStars: "★★★★☆",
@@ -1240,8 +1240,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 57,
-      level: 4,
-      section: "Omega Quantum Core",
+      level: 3,
+      section: "Titanium Deep Vault",
       category: "Fibonacci Sequence",
       difficulty: 4,
       difficultyStars: "★★★★☆",
@@ -1258,8 +1258,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 58,
-      level: 4,
-      section: "Omega Quantum Core",
+      level: 3,
+      section: "Titanium Deep Vault",
       category: "Manager's Suggestion: Music App",
       difficulty: 4,
       difficultyStars: "★★★★☆",
@@ -1276,8 +1276,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 59,
-      level: 4,
-      section: "Omega Quantum Core",
+      level: 3,
+      section: "Titanium Deep Vault",
       category: "Arithmetic Mean",
       difficulty: 4,
       difficultyStars: "★★★★☆",
@@ -1294,8 +1294,8 @@ export function buildAll80Rules(session = {}, cfg = CAMPAIGN_LEVELS[1]) {
     },
     {
       id: 60,
-      level: 4,
-      section: "Omega Quantum Core",
+      level: 3,
+      section: "Titanium Deep Vault",
       category: "River Crossing Riddle",
       difficulty: 4,
       difficultyStars: "★★★★☆",

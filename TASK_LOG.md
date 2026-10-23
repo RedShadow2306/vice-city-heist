@@ -21,10 +21,10 @@ Every task, bug, or error added to this log follows this format:
 
 ## 🚀 Session Resumption State (Checkpoint)
 
-- **Last Updated**: `2026-10-23 11:40:00 IST`
+- **Last Updated**: `2026-10-23 13:20:00 IST`
 - **Current Branch**: `main`
-- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 624ms, 0 errors, 85/85 test suite pass)
-- **Active Focus**: Push verified release to GitHub.
+- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 579ms, 0 errors, 68/68 test suite pass)
+- **Active Focus**: Ready for Git push to main.
 
 ---
 
@@ -32,6 +32,8 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **TSK-017** | User Request (Audio Directives) | Audio & Admin Previews | ElevenLabs Adam voice synthesis script with auto-indentation dramatic pauses, Web Audio decoded buffer autoplay bypass, and 6-track Admin Audio Preview Deck on Port 5173 and 5176 | Critical | **COMPLETED** |
+| **TSK-016** | User Request (Audio Directives) | Campaign Level Rebalance | Rebalanced campaign timing & question quotas to exactly 20 rules per floor (Floor 1: 15m/20q, Floor 2: 13m/20q, Floor 3: 11m/20q, Floor 4: 9m/20q) — 80 rules across 48 minutes | Critical | **COMPLETED** |
 | **TSK-015** | User Request (Audio Directives) | Game Design & Aptitude | Simplified clues for beginner engineers (Age math shortcut, 2D/3D distinction for Cube) and supported synonymous answers (`HOLE` or `PIT`) | High | **COMPLETED** |
 | **TSK-014** | User Request (Audio Directive) | Admin & Analytics | Real-time tiebreaker podium rankings: sorted by conditions cleared then least total elapsed time, with 1st (Cash Prize), 2nd, 3rd badges on both Port 5173 and 5176 dashboards | High | **COMPLETED** |
 | **TSK-013** | User Request (Audio Directive) | Game Design & Rules | Fixed Rule 15 validation by replacing riddle with Null-byte 4 zeros requirement (`0000`), relaxed `\b` regexes for concatenated typing, and interleaved words/numbers for strong password construction | Critical | **COMPLETED** |
@@ -377,6 +379,59 @@ Every task, bug, or error added to this log follows this format:
      - Verified `oxlint` (0 errors).
      - Verified production build (`vite build` exited 0).
 - **Status**: `COMPLETED`
+
+---
+
+### ⏱️ TSK-016: 4-Floor Campaign Timing & Question Rebalance (15m, 13m, 11m, 9m · 20 Rules Each · 80 Total)
+- **Date Logged**: `2026-10-23 12:45:00 IST`
+- **Completed**: `2026-10-23 13:10:00 IST`
+- **Origin**: User Audio Directives:
+  - *"First level should be 15 minutes, second level should be 13 minutes, third level should be 11 minutes, and fourth level should be 9 minutes... and the number of questions should increase accordingly to maintain those difficulties... and also make sure to make those changes in the page where manager explains the situation also..."*
+  - *"For 15 minutes, is 15 questions enough? There's no need for that much time for each question. You better increase the number of questions for each level or something, because we want to make them interested in this game. Just make it something like 20 or something, that's all."*
+- **Execution & Revisions Performed**:
+  1. **Strict 20-Rule Uniform Floor Distribution (80 Handcrafted Rules Total)**:
+     - Configured each of the 4 campaign floors to feature exactly 20 cipher rules:
+       * **Level 1 (Floor 01 · Tellers Gate)**: Rules 1 to 20 | 15:00 Minutes (900s) | 45s per rule.
+       * **Level 2 (Floor 02 · Executive Cash Corridors)**: Rules 21 to 40 | 13:00 Minutes (780s) | 39s per rule | Cumulative 40 rules.
+       * **Level 3 (Floor 03 · Titanium Deep Vault)**: Rules 41 to 60 | 11:00 Minutes (660s) | 33s per rule | Cumulative 60 rules.
+       * **Level 4 (Floor 04 · Omega Quantum Core)**: Rules 61 to 80 | 9:00 Minutes (540s) | 27s per rule | Cumulative 80 rules.
+       * Total across all 4 floors: Exactly 80 rules across 48 minutes of tournament gameplay.
+  2. **Briefing Screen & Story Intermission Alignment**:
+     - Updated dynamic parameter chips and badges in [`src/pages/PlayerTerminal.jsx`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.jsx) to dynamically evaluate `{Math.floor(cfg.startSeconds / 60)} MINUTES` and `{cfg.rules} CIPHER LAYERS`.
+     - Updated typewriter dialogue text for Gordon Bennett's intro to explicitly state: `"You have 15 minutes to solve 20 security cipher layers on this terminal immediately!"`.
+     - Updated all intermission stories, speech bubbles, and call-to-action buttons:
+       * Level 2 CTA: `"ENGAGE LEVEL 2 DEFENSE (20 RULES · 13m) ➔"`
+       * Level 3 CTA: `"DEPLOY LEVEL 3 MAXIMUM CIPHER (20 RULES · 11m) ➔"`
+       * Level 4 CTA: `"ENGAGE LEVEL 4 OMEGA CIPHER (20 RULES · 9m) ➔"`
+  3. **Verification & Test Suite**:
+     - Updated [`scripts/test_game_rules.js`](file:///d:/Association/vice-city-heist/scripts/test_game_rules.js) to assert 20 rules per level and verify start seconds (900s, 780s, 660s, 540s).
+     - Ran test suite: All 68/68 unit tests passed with 100%.
+
+---
+
+### 🎙️ TSK-017: Manager Bennett Voice Synthesis (ElevenLabs Adam / Dramatic Pauses), Autoplay, & Admin Audio Preview Deck
+- **Date Logged**: `2026-10-23 12:55:00 IST`
+- **Completed**: `2026-10-23 13:20:00 IST`
+- **Origin**: User Audio Directives:
+  - *"Make the manager use voice to speak... not only by text, it should also speak up... play an audio of like manager is explaining this thing..."*
+  - *"Hey, can you use the Adam voice called as Adam from ElevenLabs? Also add auto-indentations, like leave necessary gaps... Can you generate using ElevenLabs?"*
+  - *"It should autoplay also admin should be able to preview all 5 audios"*
+- **Execution & Architecture**:
+  1. **ElevenLabs Adam Voice Generator with Dramatic Pauses & Auto-Indentations**:
+     - Created [`scripts/generate_manager_voices_elevenlabs.py`](file:///d:/Association/vice-city-heist/scripts/generate_manager_voices_elevenlabs.py) targeting ElevenLabs Voice: `Adam - Dominant, Firm` (`voice_id: pNInz6obpgDQGcFmaJgB`).
+     - Engineered natural dramatic pauses and auto-indentations ("necessary gaps") using ellipses, dashes, and breath points across all 6 voiceover tracks (Intro, Intermissions 1–3, Victory, Defeat).
+     - Implemented dual mode: direct ElevenLabs API generation if `ELEVENLABS_API_KEY` is present, with automatic fallback to high-fidelity Edge Neural TTS (`en-US-GuyNeural`) preserving the exact same pauses.
+  2. **Browser Autoplay Restriction Bypass via Web Audio Buffer Preloading**:
+     - Modern browsers block `audio.play()` in asynchronous callbacks like `<video onEnded>` due to expired transient user gestures.
+     - Implemented early gesture capture in [`src/utils/soundEngine.js`](file:///d:/Association/vice-city-heist/src/utils/soundEngine.js): On the player's first interaction in the lobby (`pointerdown`, `keydown`, `touchstart`), `SoundEngine.init()` unlocks `AudioContext` and asynchronously preloads/decodes all MP3 files into memory as `AudioBuffer`s.
+     - Playback routes through `AudioBufferSourceNode` -> `_masterGain`, which is 100% immune to HTML5 autoplay blocks!
+     - Added `prevScreenRef` and `prevSlideshowKeyRef` in [`src/pages/PlayerTerminal.jsx`](file:///d:/Association/vice-city-heist/src/pages/PlayerTerminal.jsx) to prevent state updates (like `isManagerSpeaking`) from cutting off voice playback prematurely.
+  3. **Executive Admin Audio Preview Deck (Port 5173 & Port 5176)**:
+     - **React Admin (`src/pages/AdminCommand.jsx` / `AdminCommand.css`)**: Added `🎙️ MANAGER VOICES (6)` toolbar button and a dedicated modal preview deck featuring all 6 voiceover tracks with live play/pause controls, floor badges, timing/rule parameters, speech quote transcripts, and animated equalizer bars.
+     - **Express Standalone Admin (`admin_server/index.html` / `server.cjs`)**: Added static `/audio/` and `/images/` file serving on port 5176 and embedded an interactive Audio Preview Deck card with direct play/pause auditioning and stop-all controls.
+  4. **Lint & Problem Resolution**:
+     - Resolved `@current_problems` warnings in `admin_server/index.html` (standard `line-clamp: 2` and moved inline styles to `.audio-panel-header` and `.btn-audio-stop`).
+     - Passed `npm run build` cleanly (579ms, 0 errors).
 
 ---
 

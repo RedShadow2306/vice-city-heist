@@ -28,10 +28,10 @@ const level2Rules = rules.filter((r) => r.level === 2);
 const level3Rules = rules.filter((r) => r.level === 3);
 const level4Rules = rules.filter((r) => r.level === 4);
 
-assert(level1Rules.length === 15, `Level 1 must have 15 rules (received: ${level1Rules.length})`);
-assert(level2Rules.length === 18, `Level 2 must have 18 rules (received: ${level2Rules.length})`);
-assert(level3Rules.length === 21, `Level 3 must have 21 rules (received: ${level3Rules.length})`);
-assert(level4Rules.length === 26, `Level 4 must have 26 rules (received: ${level4Rules.length})`);
+assert(level1Rules.length === 20, `Level 1 must have 20 rules (received: ${level1Rules.length})`);
+assert(level2Rules.length === 20, `Level 2 must have 20 rules (received: ${level2Rules.length})`);
+assert(level3Rules.length === 20, `Level 3 must have 20 rules (received: ${level3Rules.length})`);
+assert(level4Rules.length === 20, `Level 4 must have 20 rules (received: ${level4Rules.length})`);
 
 // 2. Timers configured in CAMPAIGN_LEVELS
 console.log("\n▶ TEST 2: Campaign Level Timers (15m, 13m, 11m, 9m)");

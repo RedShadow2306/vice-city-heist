@@ -73,6 +73,76 @@ const VAULT_FLOORS = {
   4: { name: "FLOOR 4: OMEGA CORE", short: "FL.4 OMEGA", color: "#9B00FF" },
 };
 
+/* ─── Campaign Voiceover Audios for Admin Preview ─────── */
+const CAMPAIGN_AUDIO_TRACKS = [
+  {
+    id: "intro",
+    title: "Level 1: Outer Lobby Briefing",
+    filename: "manager_intro.mp3",
+    path: "/audio/manager/manager_intro.mp3",
+    floor: "FLOOR 01",
+    parameters: "15:00 MINUTES · 20 CIPHER LAYERS",
+    color: "#48D5D0",
+    description: "Manager Bennett briefs the assistant after Vercetti's gang breaches the front lobby.",
+    quote: '"Assistant! Tommy Vercetti and his crew just blasted through the lobby! Tommy has an armed syndicate drilling before each blast gate breaches! You have fifteen minutes to solve twenty security cipher layers on this terminal immediately! Every suggestion you make, I will verify the security protocols! Move fast!"',
+  },
+  {
+    id: "intermission_1",
+    title: "Level 2: Executive Corridors Intermission",
+    filename: "manager_intermission_1.mp3",
+    path: "/audio/manager/manager_intermission_1.mp3",
+    floor: "FLOOR 02",
+    parameters: "13:00 MINUTES · 20 CIPHER LAYERS",
+    color: "#FFD166",
+    description: "3 days later: Vercetti refused to accept defeat and storms Floor 02 with accelerated thermal drills.",
+    quote: '"Rookie! He didn\'t accept his loss! He\'s drilling twice as fast—we need to calibrate twenty cipher layers simultaneously in thirteen minutes! Move to Level 2 Executive Corridors now!"',
+  },
+  {
+    id: "intermission_2",
+    title: "Level 3: Titanium Deep Vault Intermission",
+    filename: "manager_intermission_2.mp3",
+    path: "/audio/manager/manager_intermission_2.mp3",
+    floor: "FLOOR 03",
+    parameters: "11:00 MINUTES · 20 CIPHER LAYERS",
+    color: "#F84391",
+    description: "1 week later: Vercetti's syndicate attacks the Sub-Level Titanium Deep Vault.",
+    quote: '"Hold the line, Assistant! All twenty security layers must be locked simultaneously in eleven minutes! If you fail, the bank\'s entire gold reserve is his! Secure the Titanium Vault!"',
+  },
+  {
+    id: "intermission_3",
+    title: "Level 4: Omega Quantum Core Intermission",
+    filename: "manager_intermission_3.mp3",
+    path: "/audio/manager/manager_intermission_3.mp3",
+    floor: "FINAL FLOOR 04",
+    parameters: "9:00 MINUTES · 20 CIPHER LAYERS",
+    color: "#9B00FF",
+    description: "Midnight emergency: Vercetti deploys military diamond cutters against the subterranean Omega Core.",
+    quote: '"Officer! He penetrated the Omega Quantum Core! The final twenty ultra-cryptographic lock tumblers must now be calibrated simultaneously in under nine minutes! His drill is operating at overdrive! Stand firm, and engage the Omega cipher!"',
+  },
+  {
+    id: "victory",
+    title: "Grand Championship Victory Announcement",
+    filename: "manager_victory.mp3",
+    path: "/audio/manager/manager_victory.mp3",
+    floor: "GRAND VICTORY",
+    parameters: "ALL 80 RULES DEFENDED · 48m CAMPAIGN",
+    color: "#00E676",
+    description: "Gordon Bennett awards the agent the title of Legendary Grand Defender of Vice City.",
+    quote: '"Unbelievable! You defended all four security vaults across forty-eight minutes of intense siege, solving all eighty cipher protocols! The Omega Quantum Vault is permanently clamped shut, and Vice City SWAT arrested Vercetti\'s crew! By order of the Board, you are hereby appointed Legendary Grand Defender of Vice City!"',
+  },
+  {
+    id: "defeat",
+    title: "Mission Failed: Vault Overrun",
+    filename: "manager_defeat.mp3",
+    path: "/audio/manager/manager_defeat.mp3",
+    floor: "BREACH PROTOCOL",
+    parameters: "ALL ASSETS DRAINED · DISENGAGE",
+    color: "#FF1744",
+    description: "Bennett calls emergency retreat after Vercetti forces the multi-cipher airlock.",
+    quote: '"We lost the vault! Vercetti\'s syndicate forced the multi-cipher airlock and emptied the entire bank! Disengage immediately, and await Central Security orders!"',
+  },
+];
+
 /* ─── Executive PIN Gate ────────────────────────────────── */
 function PinGate({ onSuccess }) {
   const [pin, setPin]       = useState("");
@@ -256,6 +326,57 @@ function AdminDashboard() {
   });
   const [editFormData, setEditFormData] = useState({ text: "", expectedAnswer: "", hint: "" });
   const [copiedRulesSummary, setCopiedRulesSummary] = useState(false);
+
+  /* ── Campaign Audio Preview Deck State ── */
+  const [showAudioPreview, setShowAudioPreview] = useState(false);
+  const [currentPlayingAudio, setCurrentPlayingAudio] = useState(null);
+  const audioPlayerRef = useRef(null);
+
+  const stopAllPreviewAudio = useCallback(() => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+      audioPlayerRef.current = null;
+    }
+    setCurrentPlayingAudio(null);
+  }, []);
+
+  const playPreviewAudio = useCallback((track) => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+    }
+    if (currentPlayingAudio === track.id) {
+      setCurrentPlayingAudio(null);
+      return;
+    }
+    SoundEngine.init();
+    SoundEngine.resume();
+    const audio = new Audio(getAssetPath(track.path));
+    audioPlayerRef.current = audio;
+    setCurrentPlayingAudio(track.id);
+    audio.play().catch((err) => {
+      console.warn("Audio preview error:", err);
+      setCurrentPlayingAudio(null);
+    });
+    audio.onended = () => {
+      setCurrentPlayingAudio(null);
+      audioPlayerRef.current = null;
+    };
+    audio.onerror = () => {
+      setCurrentPlayingAudio(null);
+      audioPlayerRef.current = null;
+    };
+  }, [currentPlayingAudio]);
+
+  useEffect(() => {
+    return () => {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+    };
+  }, []);
 
   /* Listen for session updates from other admin windows or sync channels */
   useEffect(() => {
@@ -1468,6 +1589,27 @@ function AdminDashboard() {
           </button>
 
           <button
+            id="audio-preview-deck-btn"
+            type="button"
+            className="boss-btn"
+            style={{
+              borderColor: "#E040FB",
+              background: "rgba(224, 64, 251, 0.18)",
+              color: "#E040FB",
+              fontWeight: 800,
+            }}
+            onClick={() => {
+              SoundEngine.init();
+              SoundEngine.playClick();
+              setShowAudioPreview(true);
+            }}
+            title="Preview all 5 campaign voiceover audios, victory, and defeat"
+          >
+            <span className="btn-icon">🎙️</span>
+            <span className="btn-text">MANAGER VOICES (6)</span>
+          </button>
+
+          <button
             id="reset-ejected-btn"
             type="button"
             className="boss-btn boss-btn-nameinput"
@@ -2570,6 +2712,131 @@ function AdminDashboard() {
                 onClick={() => setShowRulesInspector(false)}
               >
                 Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CAMPAIGN AUDIO PREVIEW DECK MODAL ── */}
+      {showAudioPreview && (
+        <div className="boss-modal-overlay" onClick={() => { setShowAudioPreview(false); stopAllPreviewAudio(); }}>
+          <div
+            className="boss-audio-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label="Manager Bennett AI Voice Preview Deck"
+          >
+            {/* Modal Header */}
+            <div className="inspector-modal-header" style={{ borderBottomColor: "rgba(224, 64, 251, 0.3)" }}>
+              <div className="inspector-title-group">
+                <span className="inspector-crown-icon" style={{ textShadow: "0 0 16px #E040FB" }}>🎙️</span>
+                <div>
+                  <h2 className="inspector-modal-title" style={{ color: "#E040FB" }}>
+                    MANAGER GORDON BENNETT · AI VOICE PREVIEW DECK
+                  </h2>
+                  <p className="inspector-modal-subtitle">
+                    Live audition of all 5 story campaign voiceover tracks, Grand Victory, and Defeat. Formatted with natural dramatic pauses and auto-indentations (ElevenLabs Adam / Neural TTS).
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <button
+                  type="button"
+                  className="boss-btn"
+                  style={{
+                    borderColor: "#FF1744",
+                    background: "rgba(255, 23, 68, 0.18)",
+                    color: "#FF5252",
+                    fontSize: "11px",
+                    padding: "6px 14px",
+                  }}
+                  onClick={stopAllPreviewAudio}
+                  title="Halt all playing audio"
+                >
+                  ⏹️ STOP ALL
+                </button>
+                <button
+                  type="button"
+                  className="inspector-close-btn"
+                  onClick={() => { setShowAudioPreview(false); stopAllPreviewAudio(); }}
+                  title="Close Preview Deck"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Audio Tracks List */}
+            <div className="audio-preview-list">
+              {CAMPAIGN_AUDIO_TRACKS.map((track) => {
+                const isPlaying = currentPlayingAudio === track.id;
+                return (
+                  <div
+                    key={track.id}
+                    className={`audio-preview-row ${isPlaying ? "is-playing" : ""}`}
+                    style={{ "--track-color": track.color }}
+                  >
+                    <div className="audio-row-left">
+                      <button
+                        type="button"
+                        className={`audio-play-btn ${isPlaying ? "playing" : ""}`}
+                        style={{ borderColor: track.color, color: track.color }}
+                        onClick={() => playPreviewAudio(track)}
+                        title={isPlaying ? "Pause track" : `Play ${track.title}`}
+                      >
+                        <span className="play-icon">{isPlaying ? "⏸" : "▶"}</span>
+                      </button>
+
+                      <div className="audio-track-info">
+                        <div className="audio-badge-line">
+                          <span className="track-floor-badge" style={{ borderColor: track.color, color: track.color }}>
+                            {track.floor}
+                          </span>
+                          <span className="track-params-badge">
+                            {track.parameters}
+                          </span>
+                          {isPlaying && (
+                            <span className="track-live-badge">
+                              ● LIVE AUDITION
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="audio-track-title">{track.title}</h3>
+                        <p className="audio-track-desc">{track.description}</p>
+                        <blockquote className="audio-track-quote">{track.quote}</blockquote>
+                      </div>
+                    </div>
+
+                    <div className="audio-row-right">
+                      {isPlaying && (
+                        <div className="audio-equalizer-bars" aria-hidden="true">
+                          <span className="eq-bar bar1" />
+                          <span className="eq-bar bar2" />
+                          <span className="eq-bar bar3" />
+                          <span className="eq-bar bar4" />
+                          <span className="eq-bar bar5" />
+                        </div>
+                      )}
+                      <span className="audio-filename-tag">{track.filename}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="inspector-modal-footer">
+              <span className="footer-directive">
+                👔 ElevenLabs Voice: Adam (ID: pNInz6obpgDQGcFmaJgB) with auto-indentation pauses. All tracks cached in public/audio/manager/.
+              </span>
+              <button
+                type="button"
+                className="inspector-close-btn"
+                onClick={() => { setShowAudioPreview(false); stopAllPreviewAudio(); }}
+              >
+                Close Deck
               </button>
             </div>
           </div>
