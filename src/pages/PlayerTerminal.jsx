@@ -524,6 +524,25 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       ? overrides.score
       : (cumulativeRules * 150 + (curLevel - 1) * 600 + Math.max(0, curTime || 0));
 
+    // Calculate total elapsed seconds across all levels played + active level survived time
+    const activeLevelTimes = overrides.levelTimes || levelTimes || {};
+    const curSurvivedSec = overrides.survivedSeconds !== undefined 
+      ? overrides.survivedSeconds 
+      : (survivedSecondsRef.current || 0);
+    let computedElapsed = 0;
+    for (let lvl = 1; lvl < curLevel; lvl++) {
+      computedElapsed += (activeLevelTimes[lvl] || 0);
+    }
+    computedElapsed += curSurvivedSec;
+
+    const totalElapsedSeconds = overrides.totalElapsedSeconds !== undefined
+      ? overrides.totalElapsedSeconds
+      : (overrides.totalClearanceSeconds || completionData?.totalClearanceSeconds || computedElapsed);
+
+    const elapsedMins = Math.floor(totalElapsedSeconds / 60);
+    const elapsedSecs = totalElapsedSeconds % 60;
+    const elapsedFormatted = `${String(elapsedMins).padStart(2, "0")}m ${String(elapsedSecs).padStart(2, "0")}s`;
+
     const payload = {
       id: playerId,
       name: effectiveName,
@@ -543,6 +562,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       rulesCleared: cumulativeRules,
       score: calculatedScore,
       timeLeft: curTime,
+      totalElapsedSeconds,
+      elapsedFormatted,
       isBreached: curBreach,
       isFrozen: curFrozen,
       isEjected: overrides.isEjected !== undefined ? overrides.isEjected : isEjected,
@@ -552,8 +573,8 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       completionStats: overrides.completionStats || completionData,
       completedAt: overrides.completedAt || completionData?.completedAt || "",
       completedTimestamp: overrides.completedTimestamp || completionData?.completedTimestamp || 0,
-      totalClearanceSeconds: overrides.totalClearanceSeconds || completionData?.totalClearanceSeconds || 0,
-      clearanceFormatted: overrides.clearanceFormatted || completionData?.clearanceFormatted || "",
+      totalClearanceSeconds: overrides.totalClearanceSeconds || completionData?.totalClearanceSeconds || totalElapsedSeconds,
+      clearanceFormatted: overrides.clearanceFormatted || completionData?.clearanceFormatted || elapsedFormatted,
       isGrandWinner: overrides.isGrandWinner || Boolean(completionData),
       violations: overrides.violations || violations,
       currentPassword: curPassword,

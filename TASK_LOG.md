@@ -21,10 +21,10 @@ Every task, bug, or error added to this log follows this format:
 
 ## 🚀 Session Resumption State (Checkpoint)
 
-- **Last Updated**: `2026-10-23 00:05:00 IST`
+- **Last Updated**: `2026-10-23 11:40:00 IST`
 - **Current Branch**: `main`
-- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 0.95s, 0 errors)
-- **Active Focus**: End-to-end live browser gameplay playthrough verified (lobby -> cutscene -> Level 1 solving -> Level 1 clearance slideshow -> Level 2 Executive Cash Corridors terminal transition). All servers running.
+- **Build Status**: ✅ Passing (`vite v8.3.4` production bundle built cleanly in 624ms, 0 errors, 85/85 test suite pass)
+- **Active Focus**: Push verified release to GitHub.
 
 ---
 
@@ -32,6 +32,10 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **TSK-015** | User Request (Audio Directives) | Game Design & Aptitude | Simplified clues for beginner engineers (Age math shortcut, 2D/3D distinction for Cube) and supported synonymous answers (`HOLE` or `PIT`) | High | **COMPLETED** |
+| **TSK-014** | User Request (Audio Directive) | Admin & Analytics | Real-time tiebreaker podium rankings: sorted by conditions cleared then least total elapsed time, with 1st (Cash Prize), 2nd, 3rd badges on both Port 5173 and 5176 dashboards | High | **COMPLETED** |
+| **TSK-013** | User Request (Audio Directive) | Game Design & Rules | Fixed Rule 15 validation by replacing riddle with Null-byte 4 zeros requirement (`0000`), relaxed `\b` regexes for concatenated typing, and interleaved words/numbers for strong password construction | Critical | **COMPLETED** |
+| **TSK-012** | User Request | Game Design & UX | Replaced obscure/GK tech questions with simple, everyday generation tech questions framed as Bank Manager suggestions ("MANAGER'S TIP: Try including the name of the AI model used in Instagram...") | Critical | **COMPLETED** |
 | **TSK-011** | User Request | Gameplay Playthrough | Autonomous end-to-end live browser playthrough verified from registration/lobby through Level 1 completion and transition into Level 2 | Critical | **COMPLETED** |
 | **TSK-010** | User Request (Audio Directive) | Game Design & UX | Sanitized all rule prompts, hints, badges, and manager speeches to eliminate answer giveaways (e.g. `LOCK`, `DW`, formulas, exact answers in hints) | Critical | **COMPLETED** |
 | **TSK-009** | User Request (Audio Directives) | Game Design & Rules | Eliminated all maze questions/code, removed randomization, reordered rules with early digit sum = 25 puzzle constraint, and replaced advanced technical/social questions with direction & reasoning aptitude questions | Critical | **COMPLETED** |
@@ -50,6 +54,31 @@ Every task, bug, or error added to this log follows this format:
 ---
 
 ## 📝 Detailed Task & Error Logs
+
+### 📱 TSK-012: Pop-Tech & Manager Suggestion Questions (Instagram/WhatsApp AI, Spotify, ChatGPT, etc.)
+- **Date Logged**: `2026-10-23 10:00:00 IST`
+- **Completed**: `2026-10-23 10:05:00 IST`
+- **Origin**: User Request:
+  - *"hey avoid gk types questions about current tech just ask llike simple abd basic stuff like what ai is used in instagram and whatsapp ...which is obviously meta ...add questions which anyone who lives in this generation can answer"*
+  - *"hey make it as the manager is suggesting it like try including the name of ai model used in instagram... like that"*
+- **Execution & Revisions Performed**:
+  1. Replaced redundant/academic questions (e.g. 7 repeated compass directions, logic gates, train speed) with simple, modern, generation-relevant questions.
+  2. Framed prompts directly in Bank Manager Gordon Bennett's voice using the requested `"MANAGER'S TIP: Try including..."` style:
+     - **Rule 11 (Level 2)**: `"📱 MANAGER'S TIP: Try including the name of the AI model used in Instagram and WhatsApp (4 letters)"` -> `META`
+     - **Rule 13 (Level 2)**: `"🎧 MANAGER'S TIP: Try including the name of the green-logo music app famous for its year-end 'Wrapped' listening stats"` -> `SPOTIFY`
+     - **Rule 20 (Level 2)**: `"🤖 MANAGER'S TIP: Try including the name of the viral AI chatbot created by OpenAI that kicked off the modern AI boom"` -> `CHATGPT`
+     - **Rule 31 (Level 3)**: `"🎬 MANAGER'S TIP: Try including the name of the global streaming platform famous for the iconic 'Ta-Dum' sound effect"` -> `NETFLIX`
+     - **Rule 39 (Level 3)**: `"✨ MANAGER'S TIP: Try including Google's flagship multimodal AI model and assistant that replaced Google Bard"` -> `GEMINI`
+     - **Rule 44 (Level 4)**: `"🍎 MANAGER'S TIP: Try including the 4-letter name of Apple's built-in voice assistant on the iPhone that responds to 'Hey...'"` -> `SIRI`
+     - **Rule 50 (Level 4)**: `"👻 MANAGER'S TIP: Try including the name of the yellow ghost app where friends send daily photos to keep snap streaks alive"` -> `SNAPCHAT`
+     - **Rule 56 (Level 4)**: `"⚡ MANAGER'S TIP: Try including the name of Elon Musk's electric car company famous for the Cybertruck and Model 3"` -> `TESLA`
+  3. Preserved Digit Sum Equilibrium: None of the new words contain digits, ensuring the 25-digit sum balance is never broken.
+  4. Updated dynamic question pools (`TECH_COMMON_RIDDLES`, `SYS_TECH_RIDDLES`, `CS_PIONEERS`, `CS_FUNDAMENTALS`) in [`src/utils/gameRules.js`](file:///d:/Association/vice-city-heist/src/utils/gameRules.js) to match this modern everyday tech theme.
+  5. Verified 68/68 unit test suite passes cleanly with zero failures (`node scripts/test_game_rules.js`).
+  6. Verified production bundle builds cleanly in 8.78s with zero errors (`npm run build`).
+- **Status**: `COMPLETED`
+
+---
 
 ### 🎮 TSK-011: Live Browser Playthrough & Level Transition Verification
 - **Date Logged**: `2026-10-23 00:00:00 IST`

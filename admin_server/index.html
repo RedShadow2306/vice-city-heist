@@ -586,6 +586,42 @@
       </div>
     </div>
 
+    <!-- OFFICIAL TOURNAMENT PODIUM & TIEBREAKER LEADERBOARD -->
+    <div class="roster-card" style="border: 1px solid rgba(255, 209, 102, 0.4); box-shadow: 0 0 25px rgba(255, 209, 102, 0.15); margin-bottom: 24px;">
+      <div class="roster-header" style="background: rgba(255, 209, 102, 0.08); border-bottom: 1px solid rgba(255, 209, 102, 0.3);">
+        <div class="roster-title">
+          <span style="color: var(--vice-gold);">🏆 OFFICIAL CHAMPIONSHIP PODIUM & TIEBREAKER RANKINGS</span>
+          <span class="player-counter" style="background: rgba(255, 209, 102, 0.2); border-color: var(--vice-gold); color: var(--vice-gold);">RANKED BY CONDITIONS CLEARED & TOTAL TIME TAKEN</span>
+        </div>
+        <button class="btn-action" style="padding: 6px 14px; font-size: 11px; background: rgba(72, 213, 208, 0.15); border: 1px solid var(--vice-cyan); color: var(--vice-cyan); border-radius: 6px; cursor: pointer;" onclick="copyPodiumReport()">
+          📋 COPY PODIUM REPORT
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>PODIUM RANK</th>
+              <th>STATION ALIAS & AGENT</th>
+              <th>COLLEGE / TEAM</th>
+              <th>VAULT STATUS</th>
+              <th>CONDITIONS CLEARED</th>
+              <th>TIME TAKEN / ELAPSED</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="podium-tbody">
+            <tr>
+              <td colspan="7" class="table-empty-notice">
+                Awaiting player progression data across vault floors...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- LIVE ROSTER -->
     <div class="roster-card">
       <div class="roster-header">
@@ -706,10 +742,153 @@
       try {
         const res = await fetch('/api/state');
         const data = await res.json();
-        renderRoster(data.players || []);
+        const playersList = data.players || [];
+        renderPodium(playersList);
+        renderRoster(playersList);
       } catch (err) {
         // server might be temporarily unreachable
       }
+    }
+
+    let latestRankings = [];
+
+    function renderPodium(players) {
+      const tbody = document.getElementById('podium-tbody');
+      if (!tbody) return;
+
+      if (!players || players.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="table-empty-notice">
+              Awaiting player progression data across vault floors...
+            </td>
+          </tr>`;
+        latestRankings = [];
+        return;
+      }
+
+      // Sort according to tiebreaker algorithm:
+      // 1. Level 4 completed / Grand victory first (sorted by least total time)
+      // 2. Non-finishers: primary sort by rulesCleared descending, secondary sort by totalElapsedSeconds ascending
+      const sorted = [...players].sort((a, b) => {
+        const aWon = a.isGrandWinner || a.status === 'GRAND_VICTORY' || a.status === 'GRAND_WON' || (a.currentLevel >= 4 && (a.rulesCleared || 0) >= 59);
+        const bWon = b.isGrandWinner || b.status === 'GRAND_VICTORY' || b.status === 'GRAND_WON' || (b.currentLevel >= 4 && (b.rulesCleared || 0) >= 59);
+        if (aWon && !bWon) return -1;
+        if (!aWon && bWon) return 1;
+
+        if (aWon && bWon) {
+          const aSec = a.totalClearanceSeconds || a.totalElapsedSeconds || 999999;
+          const bSec = b.totalClearanceSeconds || b.totalElapsedSeconds || 999999;
+          if (aSec !== bSec) return aSec - bSec;
+          return (b.score || 0) - (a.score || 0);
+        }
+
+        // Neither finished Level 4:
+        // 1. Most rules/conditions cleared
+        const aRules = a.rulesCleared || 0;
+        const bRules = b.rulesCleared || 0;
+        if (bRules !== aRules) return bRules - aRules;
+
+        // 2. Least time taken
+        const aTime = a.totalElapsedSeconds || a.totalClearanceSeconds || (999999 - (a.timeLeft || 0));
+        const bTime = b.totalElapsedSeconds || b.totalClearanceSeconds || (999999 - (b.timeLeft || 0));
+        if (aTime !== bTime) return aTime - bTime;
+
+        return (b.score || 0) - (a.score || 0);
+      });
+
+      latestRankings = sorted;
+
+      let html = '';
+      sorted.forEach((p, idx) => {
+        const isWinner = idx === 0;
+        const isRunnerUp = idx === 1;
+        const isThird = idx === 2;
+        const isLevel4Cleared = p.isGrandWinner || p.status === 'GRAND_VICTORY' || p.status === 'GRAND_WON' || (p.currentLevel >= 4 && (p.rulesCleared || 0) >= 59);
+
+        const rankBadge = isWinner
+          ? `<span class="badge-status badge-passed" style="font-weight:900; background:rgba(255,209,102,0.25); border:1px solid var(--vice-gold); color:var(--vice-gold);">🥇 1ST PLACE ${isLevel4Cleared ? '👑' : ''} <span style="font-size:10px; background:var(--vice-gold); color:#000; padding:1px 4px; border-radius:3px; margin-left:4px;">CASH PRIZE</span></span>`
+          : isRunnerUp
+          ? `<span class="badge-status" style="font-weight:800; background:rgba(72,213,208,0.2); border:1px solid var(--vice-cyan); color:var(--vice-cyan);">🥈 2ND PLACE</span>`
+          : isThird
+          ? `<span class="badge-status" style="font-weight:800; background:rgba(248,67,145,0.2); border:1px solid var(--vice-pink); color:var(--vice-pink);">🥉 3RD PLACE</span>`
+          : `<span class="badge-status" style="font-weight:700; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.2); color:#fff;">#${idx + 1}</span>`;
+
+        const timeTakenStr = p.clearanceFormatted || p.elapsedFormatted || (p.totalElapsedSeconds ? `${String(Math.floor(p.totalElapsedSeconds / 60)).padStart(2, '0')}m ${String(p.totalElapsedSeconds % 60).padStart(2, '0')}s` : (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : '00m 00s'));
+
+        const isFrozen = Boolean(p.isFrozen || p.isBreached);
+        const nextLvl = Math.min(4, (p.currentLevel || 1) + 1);
+
+        html += `
+          <tr style="${isWinner ? 'background: rgba(255, 209, 102, 0.08);' : isRunnerUp ? 'background: rgba(72, 213, 208, 0.05);' : ''}">
+            <td>${rankBadge}</td>
+            <td>
+              <div class="agent-cell">
+                <span class="agent-name">${p.alias || 'Station'}</span>
+                <span class="agent-alias">${p.name || 'Anonymous'} (ID: ${p.id.slice(0, 6)})</span>
+              </div>
+            </td>
+            <td>${p.college || 'Vice City Division'}</td>
+            <td>
+              <span class="badge-status ${isLevel4Cleared ? 'badge-passed' : 'badge-active'}">
+                ${isLevel4Cleared ? '🏆 LEVEL 4 COMPLETED' : `FLOOR ${p.currentLevel || 1} IN PROGRESS`}
+              </span>
+            </td>
+            <td>
+              <div style="font-family: var(--font-mono); font-weight: 800; color: var(--vice-cyan); font-size: 14px;">
+                ${p.rulesCleared || 0} / 59
+              </div>
+              <div style="font-size: 10px; color: rgba(255, 242, 227, 0.6); text-transform: uppercase;">
+                ${Math.round(((p.rulesCleared || 0) / 59) * 100)}% Cleared
+              </div>
+            </td>
+            <td>
+              <span style="font-family: var(--font-mono); font-weight: 800; color: #FFF; font-size: 14px;">
+                ${timeTakenStr}
+              </span>
+            </td>
+            <td>
+              <div class="action-btns-cell">
+                ${isFrozen ? `
+                  <button class="btn-row-action unfreeze" onclick="sendCommand('UNFREEZE_PLAYER', '${p.id}')">☀️ THAW</button>
+                ` : `
+                  <button class="btn-row-action btn-freeze-row" onclick="sendCommand('FREEZE_PLAYER', '${p.id}')">❄️ FREEZE</button>
+                `}
+                <button class="btn-row-action btn-advance-row" onclick="advancePlayer('${p.id}', ${nextLvl})" title="Advance player to Level ${nextLvl}">
+                  ⏩ PROMOTE (L${nextLvl})
+                </button>
+                <button class="btn-row-action btn-remove" onclick="removePlayer('${p.id}', '${(p.name || 'Agent').replace(/'/g, "\\'")}')">
+                  🚫 REMOVE
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function copyPodiumReport() {
+      if (!latestRankings || latestRankings.length === 0) {
+        alert("No player records available to copy.");
+        return;
+      }
+      const header = `🏆 EL BANCO CORRUPTO GRANDE // OFFICIAL CASH PRIZE TIEBREAKER REPORT\n` +
+        `Timestamp: ${new Date().toLocaleString()}\n` +
+        `================================================================================\n\n`;
+      const rows = latestRankings.map((p, idx) => {
+        const medal = idx === 0 ? "🥇 [1ST PLACE - CASH PRIZE WINNER]" : idx === 1 ? "🥈 [2ND PLACE]" : idx === 2 ? "🥉 [3RD PLACE]" : `   [#${idx + 1}]`;
+        const timeStr = p.clearanceFormatted || p.elapsedFormatted || (p.totalElapsedSeconds ? `${p.totalElapsedSeconds}s` : (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "In Progress"));
+        const finishStr = p.completedAt ? `Finished at: ${p.completedAt}` : `Floor ${p.currentLevel || 1}`;
+        return `${medal} ${p.alias} (${p.name || "Agent"}) - ${p.college || "Vice City"}\n   Conditions Cleared: ${p.rulesCleared || 0} / 59 | Total Time Taken: ${timeStr} | Score: $${(p.score || 0).toLocaleString()} | ${finishStr}`;
+      }).join("\n\n");
+
+      navigator.clipboard.writeText(header + rows).then(() => {
+        alert("Official Championship Podium Report copied to clipboard!");
+      }).catch(err => {
+        alert("Could not copy to clipboard: " + err);
+      });
     }
 
     function renderRoster(players) {
@@ -759,7 +938,7 @@
             <td>${p.college || 'Vice City'}</td>
             <td>${statusBadge}</td>
             <td><strong>Level ${p.currentLevel || 1}</strong></td>
-            <td>${p.rulesCleared || 0} Layers</td>
+            <td>${p.rulesCleared || 0} / 59</td>
             <td>${p.timeLeft ? formatTime(p.timeLeft) : '10:00'}</td>
             <td>
               <div class="action-btns-cell">

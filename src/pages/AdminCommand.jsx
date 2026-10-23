@@ -1016,8 +1016,8 @@ function AdminDashboard() {
 
       // Both cleared Level 4: TIEBREAKER IS FASTEST CLEARANCE TIME
       if (aWon && bWon) {
-        const aSec = a.totalClearanceSeconds || 999999;
-        const bSec = b.totalClearanceSeconds || 999999;
+        const aSec = a.totalClearanceSeconds || a.totalElapsedSeconds || 999999;
+        const bSec = b.totalClearanceSeconds || b.totalElapsedSeconds || 999999;
         if (aSec !== bSec) return aSec - bSec;
         const aTs = a.completedTimestamp || 9999999999999;
         const bTs = b.completedTimestamp || 9999999999999;
@@ -1025,10 +1025,23 @@ function AdminDashboard() {
         return b.score - a.score;
       }
 
-      // Neither cleared Level 4: sort by highest level, then most rules, then score
-      if (b.currentLevel !== a.currentLevel) return b.currentLevel - a.currentLevel;
-      if (b.rulesCleared !== a.rulesCleared) return b.rulesCleared - a.rulesCleared;
-      return b.score - a.score;
+      // Neither cleared Level 4 (e.g. players in Level 4, or time expired):
+      // Primary criteria: Most conditions/rules cleared (e.g. 48 vs 44)
+      const aRules = a.rulesCleared || 0;
+      const bRules = b.rulesCleared || 0;
+      if (bRules !== aRules) {
+        return bRules - aRules;
+      }
+
+      // Secondary tiebreaker: Least total time elapsed (faster solver ranks higher)
+      const aTime = a.totalElapsedSeconds || a.totalClearanceSeconds || (999999 - (a.timeLeft || 0));
+      const bTime = b.totalElapsedSeconds || b.totalClearanceSeconds || (999999 - (b.timeLeft || 0));
+      if (aTime !== bTime) {
+        return aTime - bTime;
+      }
+
+      // Tertiary: Highest score
+      return (b.score || 0) - (a.score || 0);
     });
   }, [players]);
 
@@ -1038,9 +1051,9 @@ function AdminDashboard() {
       `================================================================================\n`;
     const rows = tiebreakerRankings.map((p, idx) => {
       const medal = idx === 0 ? "🥇 [1ST PLACE - CASH PRIZE WINNER]" : idx === 1 ? "🥈 [2ND PLACE]" : idx === 2 ? "🥉 [3RD PLACE]" : `   [#${idx + 1}]`;
-      const timeStr = p.clearanceFormatted || (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "In Progress");
-      const finishStr = p.completedAt ? `Finished at: ${p.completedAt}` : `Level: ${p.currentLevel} (Rules: ${p.rulesCleared})`;
-      return `${medal} ${p.alias} (${p.name || "Agent"}) - ${p.college || "Vice City"}\n   Clearance Time: ${timeStr} | Score: $${p.score.toLocaleString()} | ${finishStr}`;
+      const timeStr = p.clearanceFormatted || p.elapsedFormatted || (p.totalElapsedSeconds ? `${p.totalElapsedSeconds}s` : (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "In Progress"));
+      const finishStr = p.completedAt ? `Finished at: ${p.completedAt}` : `Floor ${p.currentLevel || 1} (Cleared: ${p.rulesCleared || 0} / 59 Conditions)`;
+      return `${medal} ${p.alias} (${p.name || "Agent"}) - ${p.college || "Vice City"}\n   Conditions Cleared: ${p.rulesCleared || 0} / 59 | Total Time Taken: ${timeStr} | Score: $${(p.score || 0).toLocaleString()} | ${finishStr}`;
     }).join("\n\n");
 
     const fullReport = header + rows;
@@ -1670,13 +1683,16 @@ function AdminDashboard() {
                         </span>
                       </td>
                       <td>
-                        <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                          {p.rulesCleared} / {p.currentLevel >= 4 ? 59 : p.currentLevel === 3 ? 39 : p.currentLevel === 2 ? 23 : 10}
-                        </span>
+                        <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, color: "var(--vice-cyan)", fontSize: "14px" }}>
+                          {p.rulesCleared || 0} / 59
+                        </div>
+                        <div style={{ fontSize: "10px", color: "rgba(255, 242, 227, 0.6)", textTransform: "uppercase" }}>
+                          {Math.round(((p.rulesCleared || 0) / 59) * 100)}% Cleared
+                        </div>
                       </td>
                       <td>
-                        <span className="clearance-time-highlight">
-                          {p.clearanceFormatted || (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "--")}
+                        <span className="clearance-time-highlight" style={{ fontSize: "14px", fontWeight: 800 }}>
+                          {p.clearanceFormatted || p.elapsedFormatted || (p.totalElapsedSeconds ? `${String(Math.floor(p.totalElapsedSeconds / 60)).padStart(2, "0")}m ${String(p.totalElapsedSeconds % 60).padStart(2, "0")}s` : (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "00m 00s"))}
                         </span>
                       </td>
                       <td>

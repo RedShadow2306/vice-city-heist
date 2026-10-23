@@ -59,34 +59,13 @@ assert(rules[7].category === "Network Address", `Rule 8 category is Network Addr
 assert(rules[8].text.includes("DD-MM-YYYY"), `Rule 9 is Calendar Date (DD-MM-YYYY): "${rules[8].text}"`);
 assert(rules[9].text.includes("DIRECTION REASONING"), `Rule 10 is Direction Reasoning: "${rules[9].text}"`);
 
-// 4. Verify Direction Short Forms (NW, SW, NE, SE, E)
-console.log("\n▶ TEST 4: Direction Short Forms Support");
+// 4. Verify Level 1 Compass Direction Support
+console.log("\n▶ TEST 4: Compass Direction Verification");
 assert(rules[9].check("E"), "Rule 10 accepts short form 'E'");
 assert(rules[9].check("EAST"), "Rule 10 accepts full word 'EAST'");
 
-assert(rules[10].check("NW"), "Rule 11 accepts short form 'NW'");
-assert(rules[10].check("NORTHWEST"), "Rule 11 accepts full word 'NORTHWEST'");
-
-assert(rules[12].check("SW"), "Rule 13 accepts short form 'SW'");
-assert(rules[12].check("SOUTHWEST"), "Rule 13 accepts full word 'SOUTHWEST'");
-
-assert(rules[19].check("NE"), "Rule 20 accepts short form 'NE'");
-assert(rules[19].check("NORTHEAST"), "Rule 20 accepts full word 'NORTHEAST'");
-
-assert(rules[30].check("SE"), "Rule 31 accepts short form 'SE'");
-assert(rules[30].check("SOUTHEAST"), "Rule 31 accepts full word 'SOUTHEAST'");
-
 // 5. Test Live Password Validation on Level 1 (with Digit Sum = 25)
 console.log("\n▶ TEST 5: Level 1 Master Key Solving & Digit Sum Dynamics");
-// Let's create a test password for Level 1:
-// - Uppercase: 'V'
-// - Lowercase: 'a'
-// - Special: '!'
-// - IPv4: '10.0.0.1' (digits 1,0,0,0,1 sum to 2)
-// - Date: '01-01-2000' (digits 0,1,0,1,2,0,0,0 sum to 4)
-// - Direction: 'E'
-// - Current digits sum = 2 + 4 = 6.
-// - To reach 25: need 19 -> e.g. 9 + 9 + 1 = 19
 const testPasswordLvl1 = "Va!E10.0.0.1_01-01-2000_991";
 console.log(`  Evaluating Test Password: "${testPasswordLvl1}"`);
 console.log(`  Password Digit Sum: ${getDigitSum(testPasswordLvl1)}`);
@@ -99,95 +78,175 @@ level1Rules.forEach((r) => {
 
 // 6. Test Digit Sum Sensitivity (The Constraint Puzzle)
 console.log("\n▶ TEST 6: Digit Sum Constraint Enforced");
-// If we change '991' to '992', sum becomes 26 -> Rule 7 should fail!
 const overSumPw = "Va!E10.0.0.1_01-01-2000_992";
 assert(!rules[6].check(overSumPw), "Rule 7 correctly FAILS when digit sum is 26 instead of 25");
 
-// If we change '991' to '990', sum becomes 24 -> Rule 7 should fail!
 const underSumPw = "Va!E10.0.0.1_01-01-2000_990";
 assert(!rules[6].check(underSumPw), "Rule 7 correctly FAILS when digit sum is 24 instead of 25");
 
-// 7. Verify Aptitude Questions Across Levels 2, 3, 4
-console.log("\n▶ TEST 7: Aptitude & Reasoning Questions Validation");
-// Distance 3m East, 4m North -> 5
-assert(rules[11].check("5m"), "Rule 12 (Distance) passes with '5m'");
-assert(rules[11].check("5"), "Rule 12 (Distance) passes with '5'");
+// 7. Verify Modern Generation & Aptitude Questions Across Levels 2, 3, 4
+console.log("\n▶ TEST 7: Modern Generation & Aptitude Questions Validation");
 
-// Alphabet DW
-assert(rules[13].check("DW"), "Rule 14 (Alphabet sequence) passes with 'DW'");
+// Level 2 (rules[10] to rules[22])
+// Rule 11: Length >= 12
+assert(rules[10].check("123456789012"), "Rule 11 (Length 12) passes with 12 characters");
 
-// Blood relation SON
-assert(rules[14].check("SON"), "Rule 15 (Blood relations) passes with 'SON'");
+// Rule 12: Dual Uppercase
+assert(rules[11].check("AB"), "Rule 12 (Dual uppercase) passes with 'AB'");
 
-// Ranking 16
-assert(rules[15].check("16"), "Rule 16 (Ranking) passes with '16'");
+// Rule 13: Manager's Tip - Meta AI (Instagram/WhatsApp)
+assert(rules[12].check("META"), "Rule 13 (Instagram/WhatsApp AI) passes with 'META'");
+assert(rules[12].text.includes("MANAGER'S TIP"), "Rule 13 framed as Manager's Tip");
 
-// Work & time 3
-assert(rules[18].check("3"), "Rule 19 (Work & Time) passes with '3'");
+// Rule 14: Distance 3m East, 4m North -> 5
+assert(rules[13].check("5m"), "Rule 14 (Distance) passes with '5m'");
+assert(rules[13].check("5"), "Rule 14 (Distance) passes with '5'");
 
-// Clock 90 deg
+// Rule 15: Zero Tumbler Quorum (at least four 0s) - replacing old SON riddle
+assert(rules[14].check("0000"), "Rule 15 (4 zeros) passes with '0000'");
+assert(!rules[14].check("000"), "Rule 15 (4 zeros) fails with only 3 zeros '000'");
+
+// Rule 16: Alphabet sequence DW
+assert(rules[15].check("DW"), "Rule 16 (Alphabet sequence) passes with 'DW'");
+
+// Rule 17: Ranking 16
+assert(rules[16].check("16"), "Rule 17 (Ranking) passes with '16'");
+
+// Rule 18: Roman XIX
+assert(rules[17].check("XIX"), "Rule 18 (Roman XIX) passes with 'XIX'");
+
+// Rule 19: Prime 11
+assert(rules[18].check("11"), "Rule 19 (Prime reasoning) passes with '11'");
+
+// Rule 20: Work & time 3
+assert(rules[19].check("3"), "Rule 20 (Work & Time) passes with '3'");
+
+// Rule 21: Syllogism HEAVY
+assert(rules[20].check("HEAVY"), "Rule 21 (Syllogism) passes with 'HEAVY'");
+
+// Rule 22: Clock 90 deg
 assert(rules[21].check("90"), "Rule 22 (Clock hand angle) passes with '90'");
 
-// Prime 11
-assert(rules[22].check("11"), "Rule 23 (Prime reasoning) passes with '11'");
+// Rule 23: Cipher LFZ
+assert(rules[22].check("LFZ"), "Rule 23 (Cipher) passes with 'LFZ'");
 
-// Speed 60 km/h
+// Level 3 (rules[23] to rules[38])
+// Rule 24: Length >= 15
+assert(rules[23].check("123456789012345"), "Rule 24 (Length 15) passes with 15 characters");
+
+// Rule 25: Encapsulation {...}
+assert(rules[24].check("{VAULT}"), "Rule 25 (Encapsulation) passes with '{VAULT}'");
+
+// Rule 27: Manager's Tip - ChatGPT
+assert(rules[26].check("CHATGPT"), "Rule 27 (ChatGPT AI) passes with 'CHATGPT'");
+assert(rules[26].check("GPT"), "Rule 27 (ChatGPT AI) passes with 'GPT'");
+
+// Rule 28: Speed 60 km/h
 assert(rules[27].check("60"), "Rule 28 (Speed) passes with '60'");
 
-// Truth-teller YES
-assert(rules[28].check("YES"), "Rule 29 (Truth-teller) passes with 'YES'");
+// Rule 29: Manager's Tip - Netflix Ta-Dum
+assert(rules[28].check("NETFLIX"), "Rule 29 (Netflix) passes with 'NETFLIX'");
 
-// Set logic 2
-assert(rules[29].check("2"), "Rule 30 (Set logic) passes with '2'");
+// Rule 30: Squares 36
+assert(rules[29].check("36"), "Rule 30 (Squares series) passes with '36'");
 
-// Squares 36
-assert(rules[31].check("36"), "Rule 32 (Squares series) passes with '36'");
+// Rule 31: Truth-teller YES
+assert(rules[30].check("YES"), "Rule 31 (Truth-teller) passes with 'YES'");
 
-// Clock mirror 9
-assert(rules[32].check("9"), "Rule 33 (Mirror clock) passes with '9'");
+// Rule 32: Age 10
+assert(rules[31].check("10"), "Rule 32 (Age problem) passes with '10'");
 
-// Letter sum 7
-assert(rules[33].check("7"), "Rule 34 (Letter sum BAD) passes with '7'");
+// Rule 33: Lateral riddle HOLE or PIT
+assert(rules[32].check("HOLE"), "Rule 33 (Lateral riddle) passes with 'HOLE'");
+assert(rules[32].check("PIT"), "Rule 33 (Lateral riddle) passes with 'PIT'");
 
-// Age 10
-assert(rules[34].check("10"), "Rule 35 (Age problem) passes with '10'");
+// Rule 34: Clock mirror 9
+assert(rules[33].check("9"), "Rule 34 (Mirror clock) passes with '9'");
 
-// Lateral riddle HOLE
-assert(rules[35].check("HOLE"), "Rule 36 (Lateral riddle) passes with 'HOLE'");
+// Rule 35: Odd one out CUBE
+assert(rules[34].check("CUBE"), "Rule 35 (Odd one out) passes with 'CUBE'");
 
-// Odd one out CUBE
-assert(rules[37].check("CUBE"), "Rule 38 (Odd one out) passes with 'CUBE'");
+// Rule 36: Set logic 2
+assert(rules[35].check("2"), "Rule 36 (Set logic) passes with '2'");
 
-// Logic gate XOR
-assert(rules[38].check("XOR"), "Rule 39 (Logic gate) passes with 'XOR'");
+// Rule 37: Caesar shift VDIH
+assert(rules[36].check("VDIH"), "Rule 37 (Caesar VDIH) passes with 'VDIH'");
 
-// Fibonacci 21
-assert(rules[40].check("21"), "Rule 41 (Fibonacci) passes with '21'");
+// Rule 38: Seating D
+assert(rules[37].check("D"), "Rule 38 (Seating D) passes with 'D'");
 
-// Handshakes 10
-assert(rules[42].check("10"), "Rule 43 (Handshakes) passes with '10'");
+// Rule 39: ROT13 YBPX
+assert(rules[38].check("YBPX"), "Rule 39 (ROT13 YBPX) passes with 'YBPX'");
 
-// Binary 10
-assert(rules[43].check("10"), "Rule 44 (Binary nibble 1010) passes with '10'");
+// Level 4 (rules[39] to rules[58])
+// Rule 40: Length >= 18
+assert(rules[39].check("123456789012345678"), "Rule 40 (Length 18) passes with 18 characters");
 
-// River crossing GOAT
-assert(rules[47].check("GOAT"), "Rule 48 (River crossing) passes with 'GOAT'");
+// Rule 41: Manager's Tip - Google Gemini AI
+assert(rules[40].check("GEMINI"), "Rule 41 (Google Gemini AI) passes with 'GEMINI'");
 
-// Anagram SILENT
-assert(rules[50].check("SILENT"), "Rule 51 (Anagram LISTEN) passes with 'SILENT'");
+// Rule 42: Fibonacci 21
+assert(rules[41].check("21"), "Rule 42 (Fibonacci) passes with '21'");
 
-// Calendar MONDAY
-assert(rules[52].check("MONDAY"), "Rule 53 (70 days calendar) passes with 'MONDAY'");
+// Rule 43: Manager's Tip - Spotify Wrapped
+assert(rules[42].check("SPOTIFY"), "Rule 43 (Spotify Wrapped) passes with 'SPOTIFY'");
 
-// Race BOB
-assert(rules[53].check("BOB"), "Rule 54 (Race elimination) passes with 'BOB'");
+// Rule 44: Arithmetic Mean 30
+assert(rules[43].check("30"), "Rule 44 (Arithmetic Mean) passes with '30'");
 
-// Keyboard riddle
-assert(rules[54].check("KEYBOARD"), "Rule 55 (Keys riddle) passes with 'KEYBOARD'");
+// Rule 45: River crossing GOAT
+assert(rules[44].check("GOAT"), "Rule 45 (River crossing) passes with 'GOAT'");
 
-// Final lock
+// Rule 46: Handshakes 10
+assert(rules[45].check("10"), "Rule 46 (Handshakes) passes with '10'");
+
+// Rule 47: Anagram SILENT
+assert(rules[46].check("SILENT"), "Rule 47 (Anagram LISTEN) passes with 'SILENT'");
+
+// Rule 48: Probability 25%
+assert(rules[47].check("25"), "Rule 48 (Coin probability) passes with '25'");
+
+// Rule 49: Deductive elimination BOB
+assert(rules[48].check("BOB"), "Rule 49 (Race elimination) passes with 'BOB'");
+
+// Rule 50: Loop displacement 0
+assert(rules[49].check("0"), "Rule 50 (Loop displacement) passes with '0'");
+
+// Rule 51: Calendar MONDAY
+assert(rules[50].check("MONDAY"), "Rule 51 (70 days calendar) passes with 'MONDAY'");
+
+// Rule 52: Ratio 25
+assert(rules[51].check("25"), "Rule 52 (Ratio) passes with '25'");
+
+// Rule 53: Palindrome RADAR
+assert(rules[52].check("RADAR"), "Rule 53 (5-letter palindrome) passes with 'RADAR'");
+
+// Rule 54: Midpoint M
+assert(rules[53].check("M"), "Rule 54 (Alphabet midpoint) passes with 'M'");
+
+// Rule 55: Reflection symmetry MOM
+assert(rules[54].check("MOM"), "Rule 55 (Mirror symmetry) passes with 'MOM'");
+
+// Rule 56: Keyboard riddle
+assert(rules[55].check("KEYBOARD"), "Rule 56 (Keys riddle) passes with 'KEYBOARD'");
+
+// Rule 57: Even parity
+assert(rules[56].check("EVENSTRING12"), "Rule 57 (Even parity) passes with even length");
+
+// Rule 58: Grand equilibrium
+assert(rules[57].category === "Master Equilibrium", "Rule 58 is Grand Equilibrium (Digit sum = 25)");
+
+// Rule 59: Final lock
 assert(rules[58].check("LOCK"), "Rule 59 (Final lockdown) passes with 'LOCK'");
 
 console.log("\n════════════════════════════════════════════════════════════════");
-console.log(`📊 FINAL RESULT: ${passedTests} / ${totalTests} TESTS PASSED (100%)`);
+console.log(`📊 FINAL RESULT: ${passedTests} / ${totalTests} TESTS PASSED (${Math.round((passedTests / totalTests) * 100)}%)`);
 console.log("════════════════════════════════════════════════════════════════\n");
+
+if (passedTests === totalTests) {
+  console.log("🎉 ALL TESTS PASSED WITH 100% SUCCESS!");
+  process.exit(0);
+} else {
+  console.error(`💥 ${totalTests - passedTests} TEST(S) FAILED!`);
+  process.exit(1);
+}
