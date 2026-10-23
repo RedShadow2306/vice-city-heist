@@ -299,6 +299,39 @@
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     }
 
+    .roster-card.podium-card {
+      border: 1px solid rgba(255, 209, 102, 0.4);
+      box-shadow: 0 0 25px rgba(255, 209, 102, 0.15);
+      margin-bottom: 24px;
+    }
+
+    .roster-header.podium-header {
+      background: rgba(255, 209, 102, 0.08);
+      border-bottom: 1px solid rgba(255, 209, 102, 0.3);
+      padding: 12px 16px;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .podium-title-span {
+      color: var(--vice-gold);
+    }
+
+    .player-counter.podium-counter {
+      background: rgba(255, 209, 102, 0.2);
+      border: 1px solid var(--vice-gold);
+      color: var(--vice-gold);
+    }
+
+    .btn-action.podium-copy-btn {
+      padding: 6px 14px;
+      font-size: 11px;
+      background: rgba(72, 213, 208, 0.15);
+      border: 1px solid var(--vice-cyan);
+      color: var(--vice-cyan);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
     .roster-header {
       display: flex;
       align-items: center;
@@ -587,13 +620,13 @@
     </div>
 
     <!-- OFFICIAL TOURNAMENT PODIUM & TIEBREAKER LEADERBOARD -->
-    <div class="roster-card" style="border: 1px solid rgba(255, 209, 102, 0.4); box-shadow: 0 0 25px rgba(255, 209, 102, 0.15); margin-bottom: 24px;">
-      <div class="roster-header" style="background: rgba(255, 209, 102, 0.08); border-bottom: 1px solid rgba(255, 209, 102, 0.3);">
+    <div class="roster-card podium-card">
+      <div class="roster-header podium-header">
         <div class="roster-title">
-          <span style="color: var(--vice-gold);">🏆 OFFICIAL CHAMPIONSHIP PODIUM & TIEBREAKER RANKINGS</span>
-          <span class="player-counter" style="background: rgba(255, 209, 102, 0.2); border-color: var(--vice-gold); color: var(--vice-gold);">RANKED BY CONDITIONS CLEARED & TOTAL TIME TAKEN</span>
+          <span class="podium-title-span">🏆 OFFICIAL CHAMPIONSHIP PODIUM & TIEBREAKER RANKINGS</span>
+          <span class="player-counter podium-counter">RANKED BY CONDITIONS CLEARED & TOTAL TIME TAKEN</span>
         </div>
-        <button class="btn-action" style="padding: 6px 14px; font-size: 11px; background: rgba(72, 213, 208, 0.15); border: 1px solid var(--vice-cyan); color: var(--vice-cyan); border-radius: 6px; cursor: pointer;" onclick="copyPodiumReport()">
+        <button class="btn-action podium-copy-btn" onclick="copyPodiumReport()">
           📋 COPY PODIUM REPORT
         </button>
       </div>
@@ -771,8 +804,8 @@
       // 1. Level 4 completed / Grand victory first (sorted by least total time)
       // 2. Non-finishers: primary sort by rulesCleared descending, secondary sort by totalElapsedSeconds ascending
       const sorted = [...players].sort((a, b) => {
-        const aWon = a.isGrandWinner || a.status === 'GRAND_VICTORY' || a.status === 'GRAND_WON' || (a.currentLevel >= 4 && (a.rulesCleared || 0) >= 59);
-        const bWon = b.isGrandWinner || b.status === 'GRAND_VICTORY' || b.status === 'GRAND_WON' || (b.currentLevel >= 4 && (b.rulesCleared || 0) >= 59);
+        const aWon = a.isGrandWinner || a.status === 'GRAND_VICTORY' || a.status === 'GRAND_WON' || (a.currentLevel >= 4 && (a.rulesCleared || 0) >= 80);
+        const bWon = b.isGrandWinner || b.status === 'GRAND_VICTORY' || b.status === 'GRAND_WON' || (b.currentLevel >= 4 && (b.rulesCleared || 0) >= 80);
         if (aWon && !bWon) return -1;
         if (!aWon && bWon) return 1;
 
@@ -804,7 +837,7 @@
         const isWinner = idx === 0;
         const isRunnerUp = idx === 1;
         const isThird = idx === 2;
-        const isLevel4Cleared = p.isGrandWinner || p.status === 'GRAND_VICTORY' || p.status === 'GRAND_WON' || (p.currentLevel >= 4 && (p.rulesCleared || 0) >= 59);
+        const isLevel4Cleared = p.isGrandWinner || p.status === 'GRAND_VICTORY' || p.status === 'GRAND_WON' || (p.currentLevel >= 4 && (p.rulesCleared || 0) >= 80);
 
         const rankBadge = isWinner
           ? `<span class="badge-status badge-passed" style="font-weight:900; background:rgba(255,209,102,0.25); border:1px solid var(--vice-gold); color:var(--vice-gold);">🥇 1ST PLACE ${isLevel4Cleared ? '👑' : ''} <span style="font-size:10px; background:var(--vice-gold); color:#000; padding:1px 4px; border-radius:3px; margin-left:4px;">CASH PRIZE</span></span>`
@@ -836,10 +869,10 @@
             </td>
             <td>
               <div style="font-family: var(--font-mono); font-weight: 800; color: var(--vice-cyan); font-size: 14px;">
-                ${p.rulesCleared || 0} / 59
+                ${p.rulesCleared || 0} / 80
               </div>
               <div style="font-size: 10px; color: rgba(255, 242, 227, 0.6); text-transform: uppercase;">
-                ${Math.round(((p.rulesCleared || 0) / 59) * 100)}% Cleared
+                ${Math.round(((p.rulesCleared || 0) / 80) * 100)}% Cleared
               </div>
             </td>
             <td>
@@ -881,7 +914,7 @@
         const medal = idx === 0 ? "🥇 [1ST PLACE - CASH PRIZE WINNER]" : idx === 1 ? "🥈 [2ND PLACE]" : idx === 2 ? "🥉 [3RD PLACE]" : `   [#${idx + 1}]`;
         const timeStr = p.clearanceFormatted || p.elapsedFormatted || (p.totalElapsedSeconds ? `${p.totalElapsedSeconds}s` : (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "In Progress"));
         const finishStr = p.completedAt ? `Finished at: ${p.completedAt}` : `Floor ${p.currentLevel || 1}`;
-        return `${medal} ${p.alias} (${p.name || "Agent"}) - ${p.college || "Vice City"}\n   Conditions Cleared: ${p.rulesCleared || 0} / 59 | Total Time Taken: ${timeStr} | Score: $${(p.score || 0).toLocaleString()} | ${finishStr}`;
+        return `${medal} ${p.alias} (${p.name || "Agent"}) - ${p.college || "Vice City"}\n   Conditions Cleared: ${p.rulesCleared || 0} / 80 | Total Time Taken: ${timeStr} | Score: $${(p.score || 0).toLocaleString()} | ${finishStr}`;
       }).join("\n\n");
 
       navigator.clipboard.writeText(header + rows).then(() => {
@@ -938,7 +971,7 @@
             <td>${p.college || 'Vice City'}</td>
             <td>${statusBadge}</td>
             <td><strong>Level ${p.currentLevel || 1}</strong></td>
-            <td>${p.rulesCleared || 0} / 59</td>
+            <td>${p.rulesCleared || 0} / 80</td>
             <td>${p.timeLeft ? formatTime(p.timeLeft) : '10:00'}</td>
             <td>
               <div class="action-btns-cell">

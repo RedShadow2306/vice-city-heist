@@ -2523,9 +2523,9 @@
   height: 100vh;
   z-index: 9500;
   background: 
-    linear-gradient(to top, rgba(38, 24, 47, 0.88) 0%, rgba(18, 11, 32, 0.72) 50%, rgba(7, 9, 19, 0.9) 100%),
-    radial-gradient(circle at center, rgba(248, 67, 145, 0.12) 0%, rgba(5, 6, 12, 0.92) 100%),
-    url('/images/vice-hero.jpg') center 20% / cover no-repeat;
+    linear-gradient(to top, rgba(10, 15, 25, 0.82) 0%, rgba(6, 10, 18, 0.6) 50%, rgba(10, 15, 25, 0.85) 100%),
+    radial-gradient(circle at center, rgba(72, 213, 208, 0.08) 0%, rgba(5, 7, 15, 0.65) 100%),
+    url('/images/vault_lockers.jpg') center center / cover no-repeat;
   padding: 16px clamp(16px, 2.5vw, 36px) 14px;
   display: flex;
   flex-direction: column;
@@ -2910,14 +2910,18 @@
 }
 
 .crt-monitor-cabinet {
-  background: linear-gradient(175deg, #3d4a44 0%, #29332e 40%, #1a221f 100%);
-  border: 4px solid #4a5c53;
-  border-radius: 22px;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 20%, transparent 60%, rgba(0, 0, 0, 0.45) 100%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 3px),
+    linear-gradient(180deg, #536270 0%, #3e4a56 25%, #2a343e 60%, #1c232a 100%);
+  border: 4px solid #6c7c8c;
+  border-radius: 20px;
   box-shadow: 
     0 25px 70px rgba(0, 0, 0, 0.95),
     0 0 40px rgba(0, 0, 0, 0.8),
-    inset 0 2px 3px rgba(255, 255, 255, 0.2),
-    inset 0 -6px 12px rgba(0, 0, 0, 0.7);
+    inset 0 2px 4px rgba(255, 255, 255, 0.45),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(0, 0, 0, 0.6);
   padding: 12px 18px 14px;
   max-width: 620px;
   width: 100%;
@@ -2928,6 +2932,7 @@
   box-sizing: border-box;
   height: auto;
   cursor: text;
+  position: relative;
 }
 
 /* Cabinet Top Vents & Brand Badge */
@@ -2993,13 +2998,17 @@
 }
 
 .crt-screen-bezel {
-  background: #0c120f;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 35%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 2px),
+    linear-gradient(175deg, #2f3842 0%, #1c2229 45%, #0e1317 100%);
   border-radius: 16px;
-  border: 5px solid #1a231f;
+  border: 5px solid #475462;
   box-shadow: 
     inset 0 14px 28px rgba(0, 0, 0, 0.98),
     inset 0 -8px 16px rgba(0, 0, 0, 0.85),
-    0 3px 6px rgba(0, 0, 0, 0.6);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.7);
   padding: 10px;
 }
 
@@ -6046,4 +6055,160 @@
   padding: 2px 6px;
   border-radius: 3px;
   font-weight: 800;
+}
+
+
+/* ── Defeated Lobby Lockout Banner ── */
+.lobby-defeated-lock-alert {
+  background: rgba(255, 60, 60, 0.12);
+  border: 1px solid rgba(255, 75, 75, 0.45);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 12px 0 16px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255, 60, 60, 0.2);
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.defeated-lock-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 900;
+  color: #ff6b6b;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+
+.defeated-lock-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 230, 230, 0.9);
+  margin-bottom: 10px;
+}
+
+.lobby-locked-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: rgba(255, 60, 60, 0.25);
+  border: 1px solid #ff4b4b;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
+/* ══════════════════════════════════════════════════════
+   MANAGER VOICE TELEMETRY & CONTROLS
+   ══════════════════════════════════════════════════════ */
+.telemetry-soundwave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 16px;
+  margin: 4px 0;
+}
+
+.telemetry-soundwave .sw-bar {
+  width: 3px;
+  height: 4px;
+  background: var(--vice-teal, #48D5D0);
+  border-radius: 2px;
+  transition: height 0.2s ease;
+}
+
+.telemetry-soundwave.active .sw-bar {
+  background: var(--vice-hotpink, #FF2A6D);
+  animation: swBarDance 0.7s infinite alternate ease-in-out;
+}
+
+.telemetry-soundwave.active .sw-bar.b1 { animation-delay: 0.1s; }
+.telemetry-soundwave.active .sw-bar.b2 { animation-delay: 0.3s; }
+.telemetry-soundwave.active .sw-bar.b3 { animation-delay: 0.15s; }
+.telemetry-soundwave.active .sw-bar.b4 { animation-delay: 0.4s; }
+.telemetry-soundwave.active .sw-bar.b5 { animation-delay: 0.25s; }
+
+@keyframes swBarDance {
+  0% { height: 4px; }
+  100% { height: 16px; }
+}
+
+.gba-voice-telemetry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(72, 213, 208, 0.25);
+}
+
+.gba-voice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 16, 28, 0.85);
+  border: 1px solid rgba(72, 213, 208, 0.5);
+  color: var(--vice-teal, #48d5d0);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px rgba(72, 213, 208, 0.2);
+}
+
+.gba-voice-btn:hover {
+  background: rgba(72, 213, 208, 0.18);
+  border-color: var(--vice-gold, #ffd166);
+  color: var(--vice-gold, #ffd166);
+  box-shadow: 0 0 16px rgba(255, 209, 102, 0.4);
+}
+
+.gba-voice-btn.speaking {
+  background: rgba(255, 42, 109, 0.25);
+  border-color: var(--vice-hotpink, #ff2a6d);
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(255, 42, 109, 0.6);
+  animation: pulseVoiceBtn 1.2s infinite alternate;
+}
+
+@keyframes pulseVoiceBtn {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.02); }
+}
+
+.mini-live-wave {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 12px;
+}
+
+.mini-live-wave span {
+  width: 2.5px;
+  background: var(--vice-hotpink, #ff2a6d);
+  border-radius: 1px;
+  animation: miniWaveBounce 0.8s infinite ease-in-out;
+}
+
+.mini-live-wave .lw1 { height: 5px; animation-delay: 0s; }
+.mini-live-wave .lw2 { height: 12px; animation-delay: 0.2s; }
+.mini-live-wave .lw3 { height: 7px; animation-delay: 0.4s; }
+
+@keyframes miniWaveBounce {
+  0%, 100% { height: 3px; }
+  50% { height: 12px; }
+}
+
+.voice-audio-tag {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: rgba(226, 232, 240, 0.5);
+  letter-spacing: 0.06em;
 }

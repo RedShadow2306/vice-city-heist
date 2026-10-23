@@ -13,6 +13,15 @@ class SoundEngine {
   static _droneGain = null;
   static _passedAudio = null;
   static _wastedAudio = null;
+  static _activeManagerAudio = null;
+  static _managerVoiceUrls = {
+    intro: getAssetUrl('/audio/manager/manager_intro.mp3'),
+    intermission_1: getAssetUrl('/audio/manager/manager_intermission_1.mp3'),
+    intermission_2: getAssetUrl('/audio/manager/manager_intermission_2.mp3'),
+    intermission_3: getAssetUrl('/audio/manager/manager_intermission_3.mp3'),
+    victory: getAssetUrl('/audio/manager/manager_victory.mp3'),
+    defeat: getAssetUrl('/audio/manager/manager_defeat.mp3'),
+  };
 
   static init() {
     if (this._ctx) {
@@ -39,9 +48,68 @@ class SoundEngine {
     }
     if (this._wastedAudio) this._wastedAudio.muted = Boolean(v);
     if (this._passedAudio) this._passedAudio.muted = Boolean(v);
+    if (this._activeManagerAudio) {
+      this._activeManagerAudio.muted = Boolean(v);
+      if (v) this.stopManagerVoice();
+    }
   }
 
   static get isMuted() { return this._muted; }
+
+  static isManagerVoicePlaying() {
+    return Boolean(this._activeManagerAudio && !this._activeManagerAudio.paused && !this._activeManagerAudio.ended);
+  }
+
+  static playManagerVoice(key, { onStart, onEnded, onError } = {}) {
+    this.stopManagerVoice();
+    if (this._muted) return null;
+    const url = this._managerVoiceUrls[key];
+    if (!url) return null;
+
+    try {
+      const audio = new Audio(url);
+      audio.volume = 0.95;
+      this._activeManagerAudio = audio;
+      if (onStart) audio.addEventListener('play', onStart);
+      if (onEnded) {
+        audio.addEventListener('ended', () => {
+          if (this._activeManagerAudio === audio) this._activeManagerAudio = null;
+          onEnded();
+        });
+      }
+      if (onError) {
+        audio.addEventListener('error', (e) => {
+          if (this._activeManagerAudio === audio) this._activeManagerAudio = null;
+          onError(e);
+        });
+      }
+      
+      const p = audio.play();
+      if (p !== undefined) {
+        p.catch((err) => {
+          console.warn(`[ManagerVoice] Autoplay restricted for ${key}:`, err);
+          if (this._activeManagerAudio === audio) this._activeManagerAudio = null;
+          if (onError) onError(err);
+        });
+      }
+      return audio;
+    } catch (err) {
+      console.warn(`[ManagerVoice] Failed to play ${key}:`, err);
+      if (this._activeManagerAudio) this._activeManagerAudio = null;
+      if (onError) onError(err);
+      return null;
+    }
+  }
+
+  static stopManagerVoice() {
+    if (this._activeManagerAudio) {
+      try {
+        this._activeManagerAudio.pause();
+        this._activeManagerAudio.currentTime = 0;
+      } catch (_) {}
+      this._activeManagerAudio = null;
+    }
+  }
 
   static _osc(type, freq, startTime, endTime, gainPeak = 0.3) {
     if (this._muted || !this._ctx) return;

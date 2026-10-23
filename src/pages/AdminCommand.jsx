@@ -508,7 +508,7 @@ function AdminDashboard() {
       totalClearanceSeconds: Number(p.totalClearanceSeconds || p.total_clearance_seconds || 0),
       clearanceFormatted: p.clearanceFormatted || p.clearance_formatted || "",
       levelTimes: p.levelTimes || p.level_times || {},
-      isGrandWinner: Boolean(p.isGrandWinner || p.is_grand_winner || p.status === "GRAND_VICTORY" || (chapter >= 4 && rulesCleared >= 59)),
+      isGrandWinner: Boolean(p.isGrandWinner || p.is_grand_winner || p.status === "GRAND_VICTORY" || (chapter >= 4 && rulesCleared >= 80)),
       currentPassword: p.current_password || p.currentPassword || p.password || "",
       passwordHistory: p.password_history || p.passwordHistory || [],
       lastSeen: p.last_seen || p.lastSeen || Date.now(),
@@ -1009,8 +1009,8 @@ function AdminDashboard() {
     const list = [...players];
     return list.sort((a, b) => {
       // 1. Level 4 Cleared / Grand Victory (Priority 1)
-      const aWon = a.isGrandWinner || a.status === "GRAND_VICTORY" || (a.currentLevel >= 4 && a.rulesCleared >= 59);
-      const bWon = b.isGrandWinner || b.status === "GRAND_VICTORY" || (b.currentLevel >= 4 && b.rulesCleared >= 59);
+      const aWon = a.isGrandWinner || a.status === "GRAND_VICTORY" || (a.currentLevel >= 4 && a.rulesCleared >= 80);
+      const bWon = b.isGrandWinner || b.status === "GRAND_VICTORY" || (b.currentLevel >= 4 && b.rulesCleared >= 80);
       if (aWon && !bWon) return -1;
       if (!aWon && bWon) return 1;
 
@@ -1052,8 +1052,8 @@ function AdminDashboard() {
     const rows = tiebreakerRankings.map((p, idx) => {
       const medal = idx === 0 ? "🥇 [1ST PLACE - CASH PRIZE WINNER]" : idx === 1 ? "🥈 [2ND PLACE]" : idx === 2 ? "🥉 [3RD PLACE]" : `   [#${idx + 1}]`;
       const timeStr = p.clearanceFormatted || p.elapsedFormatted || (p.totalElapsedSeconds ? `${p.totalElapsedSeconds}s` : (p.totalClearanceSeconds ? `${p.totalClearanceSeconds}s` : "In Progress"));
-      const finishStr = p.completedAt ? `Finished at: ${p.completedAt}` : `Floor ${p.currentLevel || 1} (Cleared: ${p.rulesCleared || 0} / 59 Conditions)`;
-      return `${medal} ${p.alias} (${p.name || "Agent"}) - ${p.college || "Vice City"}\n   Conditions Cleared: ${p.rulesCleared || 0} / 59 | Total Time Taken: ${timeStr} | Score: $${(p.score || 0).toLocaleString()} | ${finishStr}`;
+      const finishStr = p.completedAt ? `Finished at: ${p.completedAt}` : `Floor ${p.currentLevel || 1} (Cleared: ${p.rulesCleared || 0} / 80 Conditions)`;
+      return `${medal} ${p.alias} (${p.name || "Agent"}) - ${p.college || "Vice City"}\n   Conditions Cleared: ${p.rulesCleared || 0} / 80 | Total Time Taken: ${timeStr} | Score: $${(p.score || 0).toLocaleString()} | ${finishStr}`;
     }).join("\n\n");
 
     const fullReport = header + rows;
@@ -1307,7 +1307,7 @@ function AdminDashboard() {
         escapeCSV(rSubs[2] || "--"),
         lTimes[3] ?? (p.currentLevel > 3 ? "Cleared" : "--"),
         escapeCSV(rSubs[3] || "--"),
-        lTimes[4] ?? (p.rulesCleared >= 59 ? "Cleared" : "--"),
+        lTimes[4] ?? (p.rulesCleared >= 80 ? "Cleared" : "--"),
         escapeCSV(rSubs[4] || "--"),
         p.totalClearanceSeconds || "--",
         escapeCSV(p.clearanceFormatted || "--"),
@@ -1461,10 +1461,10 @@ function AdminDashboard() {
               SoundEngine.playClick();
               setShowRulesInspector(true);
             }}
-            title="Inspect all 59 vault questions and conditions in level order, reroll riddles, and customize questions"
+            title="Inspect all 80 vault questions and conditions in level order, reroll riddles, and customize questions"
           >
             <span className="btn-icon">📜</span>
-            <span className="btn-text">CIPHER QUESTIONS (59)</span>
+            <span className="btn-text">CIPHER QUESTIONS (80)</span>
           </button>
 
           <button
@@ -1659,7 +1659,7 @@ function AdminDashboard() {
                   const isWinner = idx === 0;
                   const isRunnerUp = idx === 1;
                   const isThird = idx === 2;
-                  const isLevel4Cleared = p.isGrandWinner || p.status === "GRAND_VICTORY" || (p.currentLevel >= 4 && p.rulesCleared >= 59);
+                  const isLevel4Cleared = p.isGrandWinner || p.status === "GRAND_VICTORY" || (p.currentLevel >= 4 && p.rulesCleared >= 80);
 
                   return (
                     <tr
@@ -1684,10 +1684,10 @@ function AdminDashboard() {
                       </td>
                       <td>
                         <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, color: "var(--vice-cyan)", fontSize: "14px" }}>
-                          {p.rulesCleared || 0} / 59
+                          {p.rulesCleared || 0} / 80
                         </div>
                         <div style={{ fontSize: "10px", color: "rgba(255, 242, 227, 0.6)", textTransform: "uppercase" }}>
-                          {Math.round(((p.rulesCleared || 0) / 59) * 100)}% Cleared
+                          {Math.round(((p.rulesCleared || 0) / 80) * 100)}% Cleared
                         </div>
                       </td>
                       <td>
@@ -2310,35 +2310,35 @@ function AdminDashboard() {
                   className={`inspector-tab-btn ${rulesFloorFilter === "ALL" ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter("ALL")}
                 >
-                  ALL FLOORS (59)
+                  ALL FLOORS (80)
                 </button>
                 <button
                   type="button"
                   className={`inspector-tab-btn fl1-tab ${rulesFloorFilter === 1 ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter(1)}
                 >
-                  FL.1 TELLERS (1-10) · 10m
+                  FL.1 TELLERS (1-15) · 15m
                 </button>
                 <button
                   type="button"
                   className={`inspector-tab-btn fl2-tab ${rulesFloorFilter === 2 ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter(2)}
                 >
-                  FL.2 CASH (11-23) · 9m
+                  FL.2 CASH (16-33) · 13m
                 </button>
                 <button
                   type="button"
                   className={`inspector-tab-btn fl3-tab ${rulesFloorFilter === 3 ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter(3)}
                 >
-                  FL.3 TITANIUM (24-39) · 8m
+                  FL.3 TITANIUM (34-54) · 11m
                 </button>
                 <button
                   type="button"
                   className={`inspector-tab-btn fl4-tab ${rulesFloorFilter === 4 ? "active" : ""}`}
                   onClick={() => setRulesFloorFilter(4)}
                 >
-                  FL.4 OMEGA (40-59) · 7m
+                  FL.4 OMEGA (55-80) · 9m
                 </button>
               </div>
 
@@ -2362,7 +2362,7 @@ function AdminDashboard() {
                   type="button"
                   className="inspector-action-btn btn-copy-summary"
                   onClick={copyAllRulesSummary}
-                  title="Copy formatted 59-question guide to clipboard"
+                  title="Copy formatted 80-question guide to clipboard"
                 >
                   📋 {copiedRulesSummary ? "COPIED TO CLIPBOARD!" : "COPY QUESTIONS GUIDE"}
                 </button>

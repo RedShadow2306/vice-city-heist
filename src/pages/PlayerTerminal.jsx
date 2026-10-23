@@ -171,6 +171,40 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
   const [isRegistered, setIsRegistered] = useState(() => Boolean(localStorage.getItem("vch_registered")));
   const [soundEnabled, setSoundEnabled] = useState(true);
 
+  /* Manager Gordon Bennett AI Neural Voiceover State */
+  const [isManagerSpeaking, setIsManagerSpeaking] = useState(false);
+  const [activeVoiceKey, setActiveVoiceKey] = useState(null);
+
+  const playManagerVoice = useCallback((key) => {
+    if (!soundEnabled) return;
+    setActiveVoiceKey(key);
+    SoundEngine.playManagerVoice(key, {
+      onStart: () => setIsManagerSpeaking(true),
+      onEnded: () => {
+        setIsManagerSpeaking(false);
+        setActiveVoiceKey(null);
+      },
+      onError: () => {
+        setIsManagerSpeaking(false);
+        setActiveVoiceKey(null);
+      },
+    });
+  }, [soundEnabled]);
+
+  const stopManagerVoice = useCallback(() => {
+    SoundEngine.stopManagerVoice();
+    setIsManagerSpeaking(false);
+    setActiveVoiceKey(null);
+  }, []);
+
+  const toggleManagerVoice = useCallback((key) => {
+    if (isManagerSpeaking && activeVoiceKey === key) {
+      stopManagerVoice();
+    } else {
+      playManagerVoice(key);
+    }
+  }, [isManagerSpeaking, activeVoiceKey, playManagerVoice, stopManagerVoice]);
+
   /* Lockout & Security Freeze State */
   const [isLockedBreach, setIsLockedBreach] = useState(() => localStorage.getItem("vch_locked_breach") === "true");
   const [isEjected, setIsEjected] = useState(() => localStorage.getItem("vch_ejected") === "true");
@@ -239,6 +273,34 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
       }
     }
   }, [screen, storySlideshow.stage, isPreviewMode, soundEnabled]);
+
+  /* Auto-play Manager Voice upon entering briefing / intermissions / victory / defeat */
+  useEffect(() => {
+    if (screen === "briefing") {
+      playManagerVoice("intro");
+    } else if (screen === "end") {
+      playManagerVoice("victory");
+    } else if (screen === "mission_failed" || screen === "wasted_cinematic" || screen === "wasted_slideshow") {
+      playManagerVoice("defeat");
+    } else if (screen !== "story_slideshow") {
+      stopManagerVoice();
+    }
+    return () => {
+      if (screen !== "story_slideshow") {
+        stopManagerVoice();
+      }
+    };
+  }, [screen, playManagerVoice, stopManagerVoice]);
+
+  useEffect(() => {
+    if (screen === "story_slideshow") {
+      if (storySlideshow.stage === "briefing") {
+        playManagerVoice(`intermission_${storySlideshow.levelCleared}`);
+      } else {
+        stopManagerVoice();
+      }
+    }
+  }, [screen, storySlideshow.stage, storySlideshow.levelCleared, playManagerVoice, stopManagerVoice]);
 
   /* Timer Ref & Fullscreen Helpers */
   const timerRef = useRef(null);
@@ -796,11 +858,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
           localStorage.removeItem("vch_ejected");
           SoundEngine.init();
           SoundEngine.playUnlock();
-          if (screen === "mission_failed" || screen === "wasted_cinematic" || screen === "wasted_slideshow") {
-            setScreen("game");
-            setTimeLeft(cfg.startSeconds);
-            timeLeftRef.current = cfg.startSeconds;
-          }
+          setCurrentLevel(1);
+          setUnlockedCount(1);
+          setPassword("");
+          passwordRef.current = "";
+          setTimeLeft(CAMPAIGN_LEVELS[1].startSeconds);
+          timeLeftRef.current = CAMPAIGN_LEVELS[1].startSeconds;
+          setScreen("lobby");
         }
       } else if (type === "reset_to_name_input") {
         if (!pid || pid === playerId || (evt.data?.target === "ejected" && (isEjected || localStorage.getItem("vch_ejected") === "true"))) {
@@ -847,11 +911,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 localStorage.removeItem("vch_locked_breach");
                 localStorage.removeItem("vch_breach_reason");
                 localStorage.removeItem("vch_ejected");
-                if (screen === "mission_failed" || screen === "wasted_cinematic" || screen === "wasted_slideshow") {
-                  setScreen("game");
-                  setTimeLeft(cfg.startSeconds);
-                  timeLeftRef.current = cfg.startSeconds;
-                }
+                setCurrentLevel(1);
+                setUnlockedCount(1);
+                setPassword("");
+                passwordRef.current = "";
+                setTimeLeft(CAMPAIGN_LEVELS[1].startSeconds);
+                timeLeftRef.current = CAMPAIGN_LEVELS[1].startSeconds;
+                setScreen("lobby");
               } else if (cmd.action === "FREEZE_PLAYER" && cmd.playerId === playerId) {
                 setIsPlayerFrozen(true);
                 try { localStorage.setItem("vch_player_frozen_" + playerId, "true"); } catch (_) {}
@@ -1375,6 +1441,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
   /* ── Start Active Defense on Current Level ── */
   const handleStartActiveDefense = (levelToStart) => {
+    stopManagerVoice();
     requestFullscreenSafe();
     SoundEngine.init();
     if (soundEnabled) {
@@ -1795,44 +1862,61 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                   </span>
                 </div>
 
-                <p className="waiting-dispatch-msg">
-                  STANDBY IN THE BANK LOBBY. AWAITING CENTRAL DISPATCH (PORT 5176) TO LAUNCH STORY MODE.
-                </p>
+                {isLockedBreach ? (
+                  <div className="lobby-defeated-lock-alert">
+                    <div className="defeated-lock-badge">🚨 DEFEATED ON FLOOR {currentLevel} // STATION LOCKED</div>
+                    <p className="defeated-lock-desc">
+                      You were defeated during Level {currentLevel} defense! Tommy Vercetti breached your security perimeter.
+                      Your terminal is locked in the waiting lobby. You cannot retry on your own.
+                      Await Central Dispatch (Admin Port 5176) authorization to unlock and restart a new tournament attempt.
+                    </p>
+                    <div className="lobby-locked-indicator">
+                      <span className="locked-padlock-icon">🔒</span>
+                      <span>LOCKED: AWAITING CENTRAL DISPATCH (PORT 5176) APPROVAL</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="waiting-dispatch-msg">
+                      STANDBY IN THE BANK LOBBY. AWAITING CENTRAL DISPATCH (PORT 5176) TO LAUNCH STORY MODE.
+                    </p>
 
-                <div className="lobby-practice-action">
-                  <button
-                    type="button"
-                    className="lobby-back-btn"
-                    onClick={() => {
-                      if (soundEnabled) SoundEngine.playClick();
-                      setIsRegistered(false);
-                      localStorage.removeItem("vch_registered");
-                      try {
-                        fetch(`${ADMIN_API_URL}/api/player/unregister`, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: playerId }),
-                        }).catch(() => {});
-                      } catch (_) {}
-                      deletePlayerFromSupabase(playerId);
-                      reportToAdmin({ status: "NAME_ENTRY", isRegistered: false });
-                    }}
-                    title="Return to name & terminal registration page"
-                  >
-                    ⮌ BACK TO AGENT REGISTRATION
-                  </button>
+                    <div className="lobby-practice-action">
+                      <button
+                        type="button"
+                        className="lobby-back-btn"
+                        onClick={() => {
+                          if (soundEnabled) SoundEngine.playClick();
+                          setIsRegistered(false);
+                          localStorage.removeItem("vch_registered");
+                          try {
+                            fetch(`${ADMIN_API_URL}/api/player/unregister`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ id: playerId }),
+                            }).catch(() => {});
+                          } catch (_) {}
+                          deletePlayerFromSupabase(playerId);
+                          reportToAdmin({ status: "NAME_ENTRY", isRegistered: false });
+                        }}
+                        title="Return to name & terminal registration page"
+                      >
+                        ⮌ BACK TO AGENT REGISTRATION
+                      </button>
 
-                  {isSoloAllowed && (
-                    <button
-                      type="button"
-                      className="solo-start-btn"
-                      onClick={launchStoryMode}
-                      title="Click for solo testing or offline demo"
-                    >
-                      ▶ [SOLO TEST: LAUNCH STORY MODE DIRECTLY]
-                    </button>
-                  )}
-                </div>
+                      {isSoloAllowed && (
+                        <button
+                          type="button"
+                          className="solo-start-btn"
+                          onClick={launchStoryMode}
+                          title="Click for solo testing or offline demo"
+                        >
+                          ▶ [SOLO TEST: LAUNCH STORY MODE DIRECTLY]
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -1953,7 +2037,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               <div className="scene-badge-row">
                 <span className="scene-badge emergency-alarm">🚨 EMERGENCY AIRLOCK // SUB-LEVEL 1</span>
                 <span className="threat-indicator-pill">THREAT: CRITICAL</span>
-                <span className="time-limit-badge">⏱️ 10:00 TIMER PER FLOOR</span>
+                <span className="time-limit-badge">⏱️ 15:00 TIMER · FLOOR 1</span>
               </div>
               <h2 className="vice-display-lg scene-title">{cfg.title}</h2>
               <p className="scene-sub">VERCETTI'S GANG HAS INFILTRATED THE OUTER PERIMETER — BLAST GATES ARMED</p>
@@ -1964,21 +2048,21 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               {/* Left Comms Bay: Manager Gordon Bennett Portrait with Radar Ring & Live Soundwaves */}
               <div className="gba-manager-slide-container slide-in">
                 <div className="manager-comms-bay">
-                  <div className="manager-portrait-frame speaking">
+                  <div className={`manager-portrait-frame ${isManagerSpeaking ? "speaking" : ""}`}>
                     <img src={managerImgSrc} alt="Bank Manager Gordon Bennett" className="manager-portrait-img" />
                     <div className="manager-radar-ring" aria-hidden="true" />
                   </div>
                   <div className="manager-comms-telemetry">
                     <span className="telemetry-name">GORDON BENNETT</span>
                     <span className="telemetry-role">MANAGING DIRECTOR</span>
-                    <div className="telemetry-soundwave" aria-hidden="true">
+                    <div className={`telemetry-soundwave ${isManagerSpeaking ? "active" : ""}`} aria-hidden="true">
                       <span className="sw-bar b1" />
                       <span className="sw-bar b2" />
                       <span className="sw-bar b3" />
                       <span className="sw-bar b4" />
                       <span className="sw-bar b5" />
                     </div>
-                    <span className="telemetry-freq">RF: 142.85 MHz [LIVE]</span>
+                    <span className="telemetry-freq">RF: 142.85 MHz [{isManagerSpeaking ? "TRANSMITTING" : "LIVE"}]</span>
                   </div>
                 </div>
               </div>
@@ -1994,8 +2078,29 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 </div>
                 <div className="gba-text-content">
                   <p className="gba-typewriter-text">
-                    "ASSISTANT! Tommy Vercetti and his crew just blasted through the lobby! Tommy has a 10-minute timer per floor before each blast gate breaches! You must set an unbreakable cipher on this terminal immediately! Every suggestion you make, I will verify the security protocols!"
+                    "ASSISTANT! Tommy Vercetti and his crew just blasted through the lobby! Tommy has an armed crew drilling before each blast gate breaches! You must set an unbreakable cipher on this terminal immediately! Every suggestion you make, I will verify the security protocols! Move fast!"
                   </p>
+                </div>
+
+                {/* Voiceover Replay & Live Status Controls */}
+                <div className="gba-voice-telemetry-row">
+                  <button
+                    type="button"
+                    className={`gba-voice-btn ${isManagerSpeaking && activeVoiceKey === "intro" ? "speaking" : ""}`}
+                    onClick={() => toggleManagerVoice("intro")}
+                    title={isManagerSpeaking && activeVoiceKey === "intro" ? "Pause Bennett's voice transmission" : "Play / Replay Bennett's voice transmission"}
+                  >
+                    <span className="voice-wave-icon">{isManagerSpeaking && activeVoiceKey === "intro" ? "🔊" : "▶"}</span>
+                    <span className="voice-status-text">
+                      {isManagerSpeaking && activeVoiceKey === "intro" ? "COMM TRANSMISSION LIVE..." : "REPLAY VOICE TRANSMISSION"}
+                    </span>
+                    {isManagerSpeaking && activeVoiceKey === "intro" && (
+                      <span className="mini-live-wave">
+                        <span className="lw1" /><span className="lw2" /><span className="lw3" />
+                      </span>
+                    )}
+                  </button>
+                  <span className="voice-audio-tag">AI COMM · 142.85 MHz</span>
                 </div>
 
                 {/* Tactical Parameters Badges */}
@@ -2004,7 +2109,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                     <span className="param-icon">⏱️</span>
                     <div className="param-text">
                       <span className="param-label">TIME LIMIT</span>
-                      <span className="param-val">10 MINUTES</span>
+                      <span className="param-val">15 MINUTES</span>
                     </div>
                   </div>
                   <div className="param-chip">
@@ -2046,7 +2151,12 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
       {/* ── SCREEN 4: ACTIVE PASSWORD DEFENSE GAME (Full Setup: Vault Background + Zoomed-In CRT + Attached Rules Panel + Manager Bubble) ── */}
       {screen === "game" && (
-        <section className="vault-game-stage">
+        <section
+          className="vault-game-stage"
+          style={{
+            backgroundImage: `linear-gradient(to top, rgba(10, 15, 25, 0.82) 0%, rgba(6, 10, 18, 0.6) 50%, rgba(10, 15, 25, 0.85) 100%), radial-gradient(circle at center, rgba(72, 213, 208, 0.08) 0%, rgba(5, 7, 15, 0.65) 100%), url(${getAssetUrl('/images/vault_lockers.jpg')})`
+          }}
+        >
           {/* Ambient overlays & Association Texture Layers */}
           <div className="vault-screen-association-texture" aria-hidden="true" />
           <div className="vault-screen-sunflare" aria-hidden="true" />
@@ -2604,28 +2714,20 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                 <>
                   <button
                     type="button"
-                    className="gta-action-btn retry-btn"
-                    onClick={() => {
-                      setIsLockedBreach(false);
-                      localStorage.removeItem("vch_locked_breach");
-                      localStorage.removeItem("vch_breach_reason");
-                      handleStartActiveDefense(currentLevel);
-                    }}
-                  >
-                    🔄 RETRY LEVEL {currentLevel} DEFENSE
-                  </button>
-                  <button
-                    type="button"
                     className="gta-action-btn secondary-btn"
                     onClick={() => {
-                      setIsLockedBreach(false);
-                      localStorage.removeItem("vch_locked_breach");
-                      localStorage.removeItem("vch_breach_reason");
                       setScreen("lobby");
                       exitFullscreenSafe();
                     }}
                   >
-                    🏠 RETURN TO LOBBY
+                    🏠 RETURN TO WAITING LOBBY (LOCKED AWAITING ADMIN APPROVAL)
+                  </button>
+                  <button
+                    type="button"
+                    className={`gta-action-btn secondary-btn ${isManagerSpeaking && activeVoiceKey === "defeat" ? "speaking" : ""}`}
+                    onClick={() => toggleManagerVoice("defeat")}
+                  >
+                    {isManagerSpeaking && activeVoiceKey === "defeat" ? "🎙️ DISTRESS CALL PLAYING..." : "🎙️ REPLAY MANAGER DISTRESS CALL"}
                   </button>
                 </>
               ) : isSoloAllowed ? (
@@ -2799,7 +2901,7 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
 
               <div className="gba-interactive-wrapper briefing-gba">
                 <div className="gba-manager-slide-container slide-in">
-                  <div className="manager-portrait-frame speaking">
+                  <div className={`manager-portrait-frame ${isManagerSpeaking ? "speaking" : ""}`}>
                     <img src={managerImgSrc} alt="Bank Manager" className="manager-portrait-img" />
                   </div>
                 </div>
@@ -2816,6 +2918,28 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
                       {INTERMISSION_STORIES[storySlideshow.levelCleared]?.speech}
                     </p>
                   </div>
+
+                  {/* Voiceover Replay & Live Status Controls */}
+                  <div className="gba-voice-telemetry-row">
+                    <button
+                      type="button"
+                      className={`gba-voice-btn ${isManagerSpeaking && activeVoiceKey === `intermission_${storySlideshow.levelCleared}` ? "speaking" : ""}`}
+                      onClick={() => toggleManagerVoice(`intermission_${storySlideshow.levelCleared}`)}
+                      title="Play / Replay Bennett's voice briefing"
+                    >
+                      <span className="voice-wave-icon">{isManagerSpeaking && activeVoiceKey === `intermission_${storySlideshow.levelCleared}` ? "🔊" : "▶"}</span>
+                      <span className="voice-status-text">
+                        {isManagerSpeaking && activeVoiceKey === `intermission_${storySlideshow.levelCleared}` ? "COMM TRANSMISSION LIVE..." : "REPLAY VOICE TRANSMISSION"}
+                      </span>
+                      {isManagerSpeaking && activeVoiceKey === `intermission_${storySlideshow.levelCleared}` && (
+                        <span className="mini-live-wave">
+                          <span className="lw1" /><span className="lw2" /><span className="lw3" />
+                        </span>
+                      )}
+                    </button>
+                    <span className="voice-audio-tag">AI COMM · 142.85 MHz</span>
+                  </div>
+
                   <div className="gba-prompt-arrow blink">▼</div>
                 </div>
               </div>
@@ -2858,31 +2982,13 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
               <div className="failed-actions-row">
                 <button
                   type="button"
-                  className="vice-btn primary-btn retry-defense-btn"
-                  onClick={() => {
-                    setIsLockedBreach(false);
-                    localStorage.removeItem("vch_locked_breach");
-                    localStorage.removeItem("vch_breach_reason");
-                    handleStartActiveDefense(currentLevel);
-                  }}
-                >
-                  🔄 RESTART LEVEL {currentLevel} DEFENSE
-                </button>
-
-                <button
-                  type="button"
                   className="dev-override-btn lobby-return-btn"
                   onClick={() => {
-                    setIsLockedBreach(false);
-                    setIsEjected(false);
-                    localStorage.removeItem("vch_locked_breach");
-                    localStorage.removeItem("vch_breach_reason");
-                    localStorage.removeItem("vch_ejected");
                     setScreen("lobby");
                     exitFullscreenSafe();
                   }}
                 >
-                  ➔ RETURN TO SECURITY LOBBY
+                  ➔ RETURN TO SECURITY LOBBY (AWAIT ADMIN APPROVAL)
                 </button>
               </div>
             ) : isSoloAllowed ? (
@@ -2924,6 +3030,24 @@ export default function PlayerTerminal({ frozen: parentFrozen }) {
             <p className="victory-speech">
               Manager Bennett: <em>"UNBELIEVABLE! You defended all 4 security vaults across 40 minutes of intense siege! The Omega Quantum Vault is permanently clamped shut, and VCPD SWAT arrested Vercetti's crew! By order of the Board, you are hereby appointed LEGENDARY GRAND DEFENDER OF VICE CITY!"</em>
             </p>
+
+            <div className="victory-voice-row" style={{ marginTop: "14px", marginBottom: "18px", display: "flex", justifyContent: "center" }}>
+              <button
+                type="button"
+                className={`gba-voice-btn victory-voice-btn ${isManagerSpeaking && activeVoiceKey === "victory" ? "speaking" : ""}`}
+                onClick={() => toggleManagerVoice("victory")}
+              >
+                <span className="voice-wave-icon">{isManagerSpeaking && activeVoiceKey === "victory" ? "🔊" : "🏆"}</span>
+                <span className="voice-status-text">
+                  {isManagerSpeaking && activeVoiceKey === "victory" ? "BENNETT COMMENDATION PLAYING..." : "REPLAY BENNETT'S VICTORY SPEECH"}
+                </span>
+                {isManagerSpeaking && activeVoiceKey === "victory" && (
+                  <span className="mini-live-wave">
+                    <span className="lw1" /><span className="lw2" /><span className="lw3" />
+                  </span>
+                )}
+              </button>
+            </div>
 
             <div className="action-row center-actions">
               <button
