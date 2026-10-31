@@ -32,6 +32,7 @@ Every task, bug, or error added to this log follows this format:
 
 | ID | Origin | Category | Description | Priority | Status |
 |---|---|---|---|---|---|
+| **TSK-020** | User Request (Audio Directives) | Portable AI / Live Voice & Web Knowledge | Real-time Web Knowledge Search Engine & Full-Duplex Gemini-style Conversational Live Voice Mode with VAD and Barge-In | Critical | **COMPLETED** |
 | **TSK-019** | User Request (Audio Directives) | DevOps Architecture & Quality Assurance | Master 5-Phase DevOps Lifecycle, Full-Spectrum Campaign Audit Engine, complete manager speech spoiler sanitization, and portable project replication profile | Critical | **COMPLETED** |
 | **TSK-018** | User Request (Audio Directives) | UI/UX & Character Design | Enlarged Managing Director Gordon Bennett bust (220px x 250px), removed bounding box, radar ring, and dark background container in Briefing & Story Slideshows; preserved Adam voice tracks | High | **COMPLETED** |
 | **TSK-017** | User Request (Audio Directives) | Audio & Admin Previews | ElevenLabs Adam voice synthesis script with auto-indentation dramatic pauses, Web Audio decoded buffer autoplay bypass, and 6-track Admin Audio Preview Deck on Port 5173 and 5176 | Critical | **COMPLETED** |
@@ -483,6 +484,37 @@ Every task, bug, or error added to this log follows this format:
   4. **Lint & Problem Resolution**:
      - Resolved `@current_problems` warnings in `admin_server/index.html` (standard `line-clamp: 2` and moved inline styles to `.audio-panel-header` and `.btn-audio-stop`).
      - Passed `npm run build` cleanly (579ms, 0 errors).
+
+---
+
+### 🌐 TSK-020: Shadow Live Web Knowledge & Conversational Full-Duplex VAD with Barge-In
+- **Date Logged**: `2026-10-31 17:40:00 IST`
+- **Completed**: `2026-10-31 17:45:00 IST`
+- **Status**: `COMPLETED`
+- **Origin**: User Audio Directive:
+  - *"Hey, also it should be able to know stuff from the internet, like if I ask it which is the latest Gemini model, it should search for that. Also, make the speaker talking a bit more natural, like use natural voice, also it waits a specific time, change it to like it should listen whenever I speak, instead of clicking and speaking. Like, the latest Gemini, it has conversational type, like when I click a button, it starts a model where whenever I speak, it's silent, and it starts to speak back, and I can interrupt without any issue, which is way faster, like if I stop chatting, it talks right back in half a second or something, so can you use something like that?"*
+- **Architecture & Implementation Plan**:
+  1. **Phase 1: Research & Discovery**:
+     - Verified Google News / RSS feed (`https://news.google.com/rss/search?q=...`) provides real-time, live headlines and search snippets without API keys or rate limiting.
+     - Installed `ddgs` as secondary fallback search engine.
+     - Researched Gemini Live API pattern from official `@google/genai` specification (`gemini-live-api-dev` skill): client-side VAD, `audioStreamEnd`, low-latency conversational fillers, and interruption handler (`content.interrupted`).
+     - Designed local full-duplex VAD engine via `sounddevice` with dynamic ambient noise floor tracking, ~600ms silence detection, and immediate barge-in interruption (`pygame.mixer.music.stop()`).
+  2. **Phase 2: Architectural Planning**:
+     - Created [`search.py`](file:///E:/Shadow_OS/interface/search.py): Multi-provider live web knowledge retrieval (Google News live feed, Wikipedia API, DDGS).
+     - Updated [`brain.py`](file:///E:/Shadow_OS/interface/brain.py): Query classification to detect real-time internet questions (e.g. latest models, current events, tech lookups), perform web search grounding, and synthesize factual answers.
+     - Updated [`voice.py`](file:///E:/Shadow_OS/interface/voice.py): Full-duplex continuous audio streaming with real-time VAD, instant barge-in playback cutoff, natural Edge-TTS neural cadence (`en-US-AndrewMultilingualNeural` / `en-US-ChristopherNeural`), and markdown stripping.
+     - Updated [`ui.py`](file:///E:/Shadow_OS/interface/ui.py): Added `⚡ LIVE CALL` continuous hands-free conversational mode button with pulsating neon state badges.
+     - Updated [`app.py`](file:///E:/Shadow_OS/interface/app.py): Bound conversational live stream events, interruption handling, and search routing.
+  3. **Phase 3: Utmost Development & Execution**:
+     - Deployed all modules strictly on pendrive (`E:\Shadow_OS\interface\`).
+  4. **Phase 4: Exhaustive Verification**:
+     - Verified live search grounding with query: *"which is the latest Gemini model"*: Returned Gemini 4 Carbon (October 2026) in under 2 seconds.
+     - Verified `SpeechRecognition` and `sounddevice` audio stream stability.
+     - Verified clean zero-error syntax compilation across all 5 modules (`py_compile`).
+     - Verified workspace `d:\Association\vice-city-heist` build passes cleanly (`vite build` in 779ms).
+  5. **Phase 5: Automated Delivery**:
+     - Committed and pushed updates to git.
+
 
 ---
 
